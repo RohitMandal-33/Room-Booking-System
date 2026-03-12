@@ -4,6 +4,11 @@ import com.swifttechnology.bookingsystem.navigation.ScreenRoutes
 import com.swifttechnology.bookingsystem.shared.components.SidebarItem
 import com.swifttechnology.bookingsystem.shared.components.defaultSidebarItems
 
+data class ExternalMember(
+    val name: String,
+    val email: String
+)
+
 data class RoomBookingFormState(
     val meetingTitle: String = "",
     val date: String = "",
@@ -11,6 +16,7 @@ data class RoomBookingFormState(
     val endTime: String = "",
     val meetingType: String = "",
     val participants: List<String> = emptyList(),
+    val externalMembers: List<ExternalMember> = emptyList(),
     val selectedRoom: String = ""
 )
 

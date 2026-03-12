@@ -23,12 +23,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.swifttechnology.bookingsystem.core.designsystem.MeetingRoomBookingTheme
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.core.model.Room
 import com.swifttechnology.bookingsystem.core.model.RoomAmenity
 import com.swifttechnology.bookingsystem.core.model.RoomStatus
+import com.swifttechnology.bookingsystem.core.model.defaultRooms
 
 @Composable
 fun RoomCard(room: Room) {
@@ -185,3 +188,12 @@ private fun AmenityChip(amenity: RoomAmenity) {
     }
 }
 
+@Preview(showBackground = true)
+@Composable
+fun RoomCardPreview() {
+    MeetingRoomBookingTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            RoomCard(room = defaultRooms[1])
+        }
+    }
+}

@@ -25,6 +25,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,9 +45,11 @@ import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.features.booking.presentation.components.BookingClickableField
 import com.swifttechnology.bookingsystem.features.booking.presentation.components.BookingDropdownField
 import com.swifttechnology.bookingsystem.features.booking.presentation.components.BookingTextField
+import com.swifttechnology.bookingsystem.features.booking.presentation.components.ParticipantsSheetContent
 import com.swifttechnology.bookingsystem.features.booking.presentation.components.TimePickerDialog
 import com.swifttechnology.bookingsystem.shared.components.PrimaryButton
 import com.swifttechnology.bookingsystem.shared.layout.MainScaffold
+import com.swifttechnology.bookingsystem.shared.layout.BottomSheetView
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,9 +73,10 @@ fun BookRoomScreen(
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
     var showMeetingTypeDropdown by remember { mutableStateOf(false) }
-    var showInternalDropdown by remember { mutableStateOf(false) }
-    var showExternalDropdown by remember { mutableStateOf(false) }
+    var showParticipantsSheet by remember { mutableStateOf(false) }
     var showRoomDropdown by remember { mutableStateOf(false) }
+
+    val participantsSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val meetingTypes = listOf("Team Meeting", "Client Call", "Workshop", "Interview", "Training")
     val availableRooms = listOf("Room A - Horizon", "Room B - Summit", "Room C - Nexus", "Room D - Eclipse")
@@ -144,7 +148,7 @@ fun BookRoomScreen(
                 BookingDropdownField(
                     label = "Select Room",
                     value = formState.selectedRoom,
-                    placeholder = "Choose a room",
+                    placeholder = "Choose a meeting room",
                     isRequired = true,
                     expanded = showRoomDropdown,
                     options = availableRooms,
@@ -153,6 +157,14 @@ fun BookRoomScreen(
                         viewModel.onFormStateChanged(formState.copy(selectedRoom = it))
                         showRoomDropdown = false
                     }
+                )
+
+                BookingClickableField(
+                    label = "",
+                    value = if (formState.selectedRoom.isNotEmpty()) "Select a room to view details" else "",
+                    placeholder = "Select a room to view details",
+                    isRequired = false,
+                    onClick = { showRoomDropdown = true }
                 )
 
                 BookingClickableField(
@@ -203,14 +215,11 @@ fun BookRoomScreen(
                     onClick = { showEndTimePicker = true }
                 )
 
-                BookingDropdownField(
+                BookingClickableField(
                     label = "Participants",
-                    value = if (formState.participants.isEmpty()) ""
-                    else formState.participants.joinToString(", "),
+                    value = buildParticipantsSummary(formState),
                     placeholder = "Add Participants",
                     isRequired = false,
-                    expanded = showInternalDropdown,
-                    options = availableParticipants,
                     leadingIcon = {
                         Icon(
                             painter = painterResource(android.R.drawable.ic_menu_myplaces),
@@ -219,12 +228,7 @@ fun BookRoomScreen(
                             modifier = Modifier.size(20.dp)
                         )
                     },
-                    onExpandChange = { showInternalDropdown = it },
-                    onOptionSelected = { participant ->
-                        val current = formState.participants.toMutableList()
-                        if (participant in current) current.remove(participant) else current.add(participant)
-                        viewModel.onFormStateChanged(formState.copy(participants = current))
-                    }
+                    onClick = { showParticipantsSheet = true }
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -283,6 +287,25 @@ fun BookRoomScreen(
             }
         )
     }
+
+    if (showParticipantsSheet) {
+        BottomSheetView(
+            onDismiss = { showParticipantsSheet = false },
+            sheetState = participantsSheetState,
+            title = null
+        ) {
+            ParticipantsSheetContent(
+                formState = formState,
+                onFormStateChanged = viewModel::onFormStateChanged,
+                onClose = { showParticipantsSheet = false }
+
+            )
+        }
+    }
 }
 
-
+private fun buildParticipantsSummary(formState: RoomBookingFormState): String {
+    val internalNames = formState.participants.map { it.substringBefore("|").ifEmpty { it } }
+    val external = formState.externalMembers.map { "${it.name} (${it.email})" }
+    return (internalNames + external).joinToString(", ").takeIf { it.isNotEmpty() } ?: ""
+}
