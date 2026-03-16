@@ -53,7 +53,12 @@ fun MeetingRoomsScreen(
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             items(uiState.filteredRooms) { room ->
-                RoomCard(room = room)
+                RoomCard(
+                    room = room,
+                    isEditable = true,
+                    onEditClick = { /* Handle edit */ },
+                    onDeleteClick = { /* Handle delete */ }
+                )
             }
         }
     }

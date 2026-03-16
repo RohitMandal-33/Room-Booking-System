@@ -36,6 +36,7 @@ fun MainScaffold(
     modifier: Modifier = Modifier,
     searchPlaceholder: String = "Search...",
     containerColor: androidx.compose.ui.graphics.Color = MaterialTheme.customColors.dashboardBg,
+    onEditClick: () -> Unit = {},
     content: @Composable () -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -84,7 +85,8 @@ fun MainScaffold(
                     searchQuery = searchQuery,
                     onSearchQueryChanged = onSearchQueryChanged,
                     onMenuClick = { scope.launch { drawerState.open() } },
-                    searchPlaceholder = searchPlaceholder
+                    searchPlaceholder = searchPlaceholder,
+                    onEditClick = onEditClick
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 content()

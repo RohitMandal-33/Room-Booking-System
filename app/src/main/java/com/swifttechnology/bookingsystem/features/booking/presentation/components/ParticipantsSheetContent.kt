@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -20,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.PersonAdd
@@ -46,10 +49,12 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.swifttechnology.bookingsystem.core.designsystem.CornerRadius
 import com.swifttechnology.bookingsystem.core.designsystem.Info
+import com.swifttechnology.bookingsystem.core.designsystem.MeetingRoomBookingTheme
 import com.swifttechnology.bookingsystem.core.designsystem.Neutral300
 import com.swifttechnology.bookingsystem.core.designsystem.Neutral400
 import com.swifttechnology.bookingsystem.core.designsystem.Neutral700
@@ -81,6 +86,7 @@ private val sampleInternalParticipants = listOf(
     InternalParticipant("Mia Rodriguez", "mia.rodriguez@fintech.com", "Design")
 )
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ParticipantsSheetContent(
     formState: RoomBookingFormState,
@@ -151,6 +157,43 @@ fun ParticipantsSheetContent(
             }
         }
 
+        // Selected participants chips — shown only when at least one participant is selected
+        val selectedInternalKeys = formState.participants
+        val selectedExternalMembers = formState.externalMembers
+        val hasAnySelected = selectedInternalKeys.isNotEmpty() || selectedExternalMembers.isNotEmpty()
+
+        if (hasAnySelected) {
+            FlowRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.md, vertical = Spacing.xs),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+            ) {
+                selectedInternalKeys.forEach { key ->
+                    val name = key.substringBefore("|")
+                    SelectedParticipantChip(
+                        name = name,
+                        onRemove = {
+                            onFormStateChanged(
+                                formState.copy(participants = formState.participants - key)
+                            )
+                        }
+                    )
+                }
+                selectedExternalMembers.forEach { member ->
+                    SelectedParticipantChip(
+                        name = member.name,
+                        onRemove = {
+                            onFormStateChanged(
+                                formState.copy(externalMembers = formState.externalMembers - member)
+                            )
+                        }
+                    )
+                }
+            }
+        }
+
         Text(
             text = "Participants",
             style = MaterialTheme.typography.titleSmall,
@@ -159,7 +202,6 @@ fun ParticipantsSheetContent(
             modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm)
         )
 
-        // Internal / External pills
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -192,8 +234,8 @@ fun ParticipantsSheetContent(
                     filteredParticipants = sampleInternalParticipants
                         .filter { p ->
                             internalSearchQuery.isEmpty() ||
-                                p.name.contains(internalSearchQuery, ignoreCase = true) ||
-                                p.email.contains(internalSearchQuery, ignoreCase = true)
+                                    p.name.contains(internalSearchQuery, ignoreCase = true) ||
+                                    p.email.contains(internalSearchQuery, ignoreCase = true)
                         }
                 )
                 ParticipantType.EXTERNAL -> ExternalParticipantsContent(
@@ -216,6 +258,48 @@ fun ParticipantsSheetContent(
             onClick = onClose,
             modifier = Modifier.padding(Spacing.md)
         )
+    }
+}
+
+@Composable
+fun SelectedParticipantChip(
+    name: String,
+    onRemove: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(CornerRadius.full))
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(CornerRadius.full)
+            )
+            .padding(start = Spacing.sm, end = Spacing.xs, top = 4.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            text = name,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Box(
+            modifier = Modifier
+                .size(18.dp)
+                .clip(RoundedCornerShape(CornerRadius.full))
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
+                .clickable { onRemove() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = "Remove $name",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(11.dp)
+            )
+        }
     }
 }
 
@@ -288,7 +372,7 @@ private fun InternalParticipantsContent(
             .border(1.dp, Neutral300, RoundedCornerShape(CornerRadius.lg))
             .padding(Spacing.md)
     ) {
-        // Group by: People | Teams | All
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(0.dp)
@@ -667,6 +751,23 @@ private fun ParticipantsSheetTextField(
                 cursorColor = MaterialTheme.colorScheme.primary
             ),
             singleLine = true
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ParticipantsSheetContentPreview() {
+    MeetingRoomBookingTheme {
+        ParticipantsSheetContent(
+            formState = RoomBookingFormState(
+                participants = listOf("John Carter|john.carter@fintech.com", "Emily Davis|emily.davis@fintech.com"),
+                externalMembers = listOf(
+                    ExternalMember("Alice Smith", "alice.smith@example.com")
+                )
+            ),
+            onFormStateChanged = {},
+            onClose = {}
         )
     }
 }

@@ -52,7 +52,8 @@ fun DashboardScreen(
                 onLogout()
             }
         },
-        containerColor = MaterialTheme.customColors.dashboardBg
+        containerColor = MaterialTheme.customColors.dashboardBg,
+        onEditClick = { onNavigate(com.swifttechnology.bookingsystem.navigation.ScreenRoutes.MEETING_ROOMS) }
     ) {
         DashboardOverview()
     }

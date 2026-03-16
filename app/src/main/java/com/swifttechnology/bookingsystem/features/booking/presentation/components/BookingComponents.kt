@@ -130,10 +130,12 @@ fun BookingClickableField(
     isRequired: Boolean,
     leadingIcon: (@Composable () -> Unit)? = null,
     trailingIcon: (@Composable () -> Unit)? = null,
+    contentBelowLabel: (@Composable () -> Unit)? = null,
     onClick: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         FieldLabel(text = label, isRequired = isRequired)
+        contentBelowLabel?.invoke()
         Box(
             modifier = Modifier
                 .fillMaxWidth()

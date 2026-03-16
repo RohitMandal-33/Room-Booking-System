@@ -24,23 +24,64 @@ val defaultRooms = listOf(
     Room(
         "Board Room",
         RoomStatus.AVAILABLE,
-        10,
+        8,
         "Next Booking : 02:00 PM",
         defaultAmenities
     ),
     Room(
         "Training Room",
         RoomStatus.BOOKED,
-        10,
+        20,
         "Next Open Slot : 04:00 PM",
         defaultAmenities
     ),
     Room(
         "Focus Room 1",
         RoomStatus.DISABLED,
+        4,
+        "",
+        defaultAmenities
+    ),
+    Room(
+        "Focus Room 2",
+        RoomStatus.AVAILABLE,
+        4,
+        "Next Booking : 03:30 PM",
+        defaultAmenities
+    ),
+    Room(
+        "Meeting Room Alpha",
+        RoomStatus.BOOKED,
+        12,
+        "Next Open Slot : 05:00 PM",
+        defaultAmenities
+    ),
+    Room(
+        "Meeting Room Beta",
+        RoomStatus.AVAILABLE,
+        6,
+        "Next Booking : 01:30 PM",
+        defaultAmenities
+    ),
+    Room(
+        "Strategy Room",
+        RoomStatus.AVAILABLE,
         10,
+        "Next Booking : 04:15 PM",
+        defaultAmenities
+    ),
+    Room(
+        "Design Studio",
+        RoomStatus.BOOKED,
+        15,
+        "Next Open Slot : 06:00 PM",
+        defaultAmenities
+    ),
+    Room(
+        "Innovation Lab",
+        RoomStatus.DISABLED,
+        12,
         "",
         defaultAmenities
     )
 )
-

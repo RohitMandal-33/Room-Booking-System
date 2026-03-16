@@ -39,7 +39,8 @@ fun TopBar(
     onMenuClick: () -> Unit,
     searchPlaceholder: String = "Search people, participant",
     onTrailingClick: (() -> Unit)? = null,
-    trailingIcon: ImageVector? = null
+    trailingIcon: ImageVector? = null,
+    onEditClick: () -> Unit = {}
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -122,7 +123,7 @@ fun TopBar(
                     .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.customColors.neutral100)
                     .border(1.dp, MaterialTheme.customColors.neutral200, RoundedCornerShape(12.dp))
-                    .clickable { },
+                    .clickable { onEditClick() },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(

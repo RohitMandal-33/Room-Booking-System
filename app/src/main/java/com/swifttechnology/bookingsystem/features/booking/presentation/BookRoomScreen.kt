@@ -9,9 +9,11 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -41,16 +43,21 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.swifttechnology.bookingsystem.core.designsystem.Neutral400
 import com.swifttechnology.bookingsystem.core.designsystem.Neutral700
+import com.swifttechnology.bookingsystem.core.designsystem.Spacing
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.features.booking.presentation.components.BookingClickableField
 import com.swifttechnology.bookingsystem.features.booking.presentation.components.BookingDropdownField
 import com.swifttechnology.bookingsystem.features.booking.presentation.components.BookingTextField
 import com.swifttechnology.bookingsystem.features.booking.presentation.components.ParticipantsSheetContent
+import com.swifttechnology.bookingsystem.features.booking.presentation.components.SelectedParticipantChip
 import com.swifttechnology.bookingsystem.features.booking.presentation.components.TimePickerDialog
 import com.swifttechnology.bookingsystem.shared.components.PrimaryButton
 import com.swifttechnology.bookingsystem.shared.layout.MainScaffold
 import com.swifttechnology.bookingsystem.shared.layout.BottomSheetView
 import kotlinx.coroutines.launch
+import com.swifttechnology.bookingsystem.core.model.defaultRooms
+import com.swifttechnology.bookingsystem.shared.components.rooms.RoomCard
+import com.swifttechnology.bookingsystem.shared.components.rooms.RoomInfoCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,8 +86,11 @@ fun BookRoomScreen(
     val participantsSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val meetingTypes = listOf("Team Meeting", "Client Call", "Workshop", "Interview", "Training")
-    val availableRooms = listOf("Room A - Horizon", "Room B - Summit", "Room C - Nexus", "Room D - Eclipse")
+    val availableRooms = defaultRooms.map {it.name}
     val availableParticipants = listOf("Alice Johnson", "Bob Smith", "Carol White", "David Lee")
+    val selectedInternalKeys = formState.participants
+    val selectedExternalMembers = formState.externalMembers
+    val hasAnySelected = selectedInternalKeys.isNotEmpty() || selectedExternalMembers.isNotEmpty()
 
     MainScaffold(
         sidebarItems = uiState.sidebarItems,
@@ -158,14 +168,12 @@ fun BookRoomScreen(
                         showRoomDropdown = false
                     }
                 )
-
-                BookingClickableField(
-                    label = "",
-                    value = if (formState.selectedRoom.isNotEmpty()) "Select a room to view details" else "",
-                    placeholder = "Select a room to view details",
-                    isRequired = false,
-                    onClick = { showRoomDropdown = true }
-                )
+                // Room cared specific to name
+                defaultRooms.find { it.name == formState.selectedRoom }?.let {
+                    RoomInfoCard(
+                        room = it
+                    )
+                }
 
                 BookingClickableField(
                     label = "Date",
@@ -228,13 +236,49 @@ fun BookRoomScreen(
                             modifier = Modifier.size(20.dp)
                         )
                     },
+                    contentBelowLabel = {
+                        if (hasAnySelected) {
+                            FlowRow(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = Spacing.md, vertical = Spacing.xs),
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                                verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+                            ) {
+                                selectedInternalKeys.forEach { key ->
+                                    val name = key.substringBefore("|")
+                                    SelectedParticipantChip(
+                                        name = name,
+                                        onRemove = {
+                                            viewModel.onFormStateChanged(
+                                                formState.copy(participants = formState.participants - key)
+                                            )
+                                        }
+                                    )
+                                }
+                                selectedExternalMembers.forEach { member ->
+                                    SelectedParticipantChip(
+                                        name = member.name,
+                                        onRemove = {
+                                            viewModel.onFormStateChanged(
+                                                formState.copy(externalMembers = formState.externalMembers - member)
+                                            )
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    },
                     onClick = { showParticipantsSheet = true }
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 PrimaryButton(
-                    text = "Book Room",
+                    text = "Book Meeting Room",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Spacing.md),
                     onClick = { onSubmit(formState) }
                 )
 

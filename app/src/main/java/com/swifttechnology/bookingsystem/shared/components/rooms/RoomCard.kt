@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -34,7 +36,12 @@ import com.swifttechnology.bookingsystem.core.model.RoomStatus
 import com.swifttechnology.bookingsystem.core.model.defaultRooms
 
 @Composable
-fun RoomCard(room: Room) {
+fun RoomCard(
+    room: Room,
+    isEditable: Boolean = false,
+    onEditClick: () -> Unit = {},
+    onDeleteClick: () -> Unit = {}
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -109,28 +116,69 @@ fun RoomCard(room: Room) {
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
         ) {
-            val (btnBg, btnText, btnTextColor) = when (room.status) {
-                RoomStatus.AVAILABLE -> Triple(MaterialTheme.customColors.deepBlack, "Book Now", MaterialTheme.customColors.whitePure)
-                RoomStatus.BOOKED -> Triple(MaterialTheme.customColors.neutral200, "View Schedule", MaterialTheme.customColors.deepBlack)
-                RoomStatus.DISABLED -> Triple(MaterialTheme.customColors.neutral200, "Inquire", MaterialTheme.customColors.deepBlack)
-            }
+            if (isEditable) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(32.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.customColors.neutral200)
+                            .border(1.dp, MaterialTheme.customColors.neutral300, RoundedCornerShape(8.dp))
+                            .clickable { onEditClick() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Outlined.Edit,
+                            contentDescription = "Edit",
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.customColors.deepBlack
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(32.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(androidx.compose.ui.graphics.Color(0xFFFF9EA6))
+                            .clickable { onDeleteClick() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Outlined.Delete,
+                            contentDescription = "Delete",
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.customColors.deepBlack
+                        )
+                    }
+                }
+            } else {
+                val (btnBg, btnText, btnTextColor) = when (room.status) {
+                    RoomStatus.AVAILABLE -> Triple(MaterialTheme.customColors.deepBlack, "Book Now", MaterialTheme.customColors.whitePure)
+                    RoomStatus.BOOKED -> Triple(MaterialTheme.customColors.neutral200, "View Schedule", MaterialTheme.customColors.deepBlack)
+                    RoomStatus.DISABLED -> Triple(MaterialTheme.customColors.neutral200, "Inquire", MaterialTheme.customColors.deepBlack)
+                }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(32.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(btnBg)
-                    .border(1.dp, MaterialTheme.customColors.neutral300, RoundedCornerShape(8.dp))
-                    .clickable(enabled = room.status != RoomStatus.DISABLED) {},
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = btnText,
-                    fontSize = 14.sp,
-                    color = btnTextColor,
-                    textAlign = TextAlign.Center
-                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(32.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(btnBg)
+                        .border(1.dp, MaterialTheme.customColors.neutral300, RoundedCornerShape(8.dp))
+                        .clickable(enabled = room.status != RoomStatus.DISABLED) {},
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = btnText,
+                        fontSize = 14.sp,
+                        color = btnTextColor,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
         }
     }
@@ -194,6 +242,16 @@ fun RoomCardPreview() {
     MeetingRoomBookingTheme {
         Box(modifier = Modifier.padding(16.dp)) {
             RoomCard(room = defaultRooms[1])
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun RoomCardEditablePreview() {
+    MeetingRoomBookingTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            RoomCard(room = defaultRooms[1], isEditable = true)
         }
     }
 }
