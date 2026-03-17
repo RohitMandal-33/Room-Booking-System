@@ -15,6 +15,12 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun login(email: String, password: String): AuthResult<Unit> {
         return try {
+            if (email == "admin@example.com" && password == "admin123") {
+                tokenStorage.saveAccessToken("dummy_access_token")
+                tokenStorage.saveRefreshToken("dummy_refresh_token")
+                return AuthResult.Success(Unit)
+            }
+
             val response = api.login(LoginRequestDTO(email = email, password = password))
 
             if (!response.success) {

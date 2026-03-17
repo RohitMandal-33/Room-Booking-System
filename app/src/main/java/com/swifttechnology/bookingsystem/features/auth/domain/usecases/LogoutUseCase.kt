@@ -5,7 +5,7 @@ import com.swifttechnology.bookingsystem.features.auth.domain.repository.AuthRep
 import com.swifttechnology.bookingsystem.features.auth.domain.util.AuthResult
 import javax.inject.Inject
 
-/** Use case: logout and clear all stored tokens. */
+// Use case: logout and clear all stored tokens.
 class LogoutUseCase @Inject constructor(
     private val repository: AuthRepository,
     private val tokenStorage: TokenStorage

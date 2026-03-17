@@ -1,5 +1,7 @@
 package com.swifttechnology.bookingsystem.features.booking.presentation.components
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -324,16 +326,18 @@ fun BookingNavBar(onDismiss: () -> Unit) {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimePickerDialog(
     onDismiss: () -> Unit,
     onConfirm: (Int, Int) -> Unit
 ) {
+    val currentTime = java.time.LocalTime.now()
     val timePickerState = rememberTimePickerState(
-        initialHour = 9,
-        initialMinute = 0,
-        is24Hour = true
+        initialHour = currentTime.hour,
+        initialMinute = currentTime.minute,
+        is24Hour = false
     )
 
     AlertDialog(

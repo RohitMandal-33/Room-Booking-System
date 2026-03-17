@@ -15,7 +15,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.swifttechnology.bookingsystem.navigation.ScreenRoutes
 import com.swifttechnology.bookingsystem.shared.components.rooms.RoomCard
 import com.swifttechnology.bookingsystem.shared.layout.MainScaffold
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @Composable
@@ -56,8 +55,12 @@ fun MeetingRoomsScreen(
                 RoomCard(
                     room = room,
                     isEditable = true,
-                    onEditClick = { /* Handle edit */ },
-                    onDeleteClick = { /* Handle delete */ }
+                    onEditClick = { updatedRoom ->
+                        viewModel.updateRoom(original = room, updated = updatedRoom)
+                    },
+                    onDeleteClick = { roomToDelete ->
+                        viewModel.deleteRoom(roomToDelete)
+                    }
                 )
             }
         }

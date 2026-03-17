@@ -1,6 +1,7 @@
 package com.swifttechnology.bookingsystem.features.meetingrooms.presentation
 
 import androidx.lifecycle.ViewModel
+import com.swifttechnology.bookingsystem.core.model.Room
 import com.swifttechnology.bookingsystem.core.model.defaultRooms
 import com.swifttechnology.bookingsystem.core.storage.TokenStorage
 import com.swifttechnology.bookingsystem.shared.components.SidebarItem
@@ -20,6 +21,20 @@ class MeetingRoomsViewModel @Inject constructor(
         MeetingRoomsUiState(rooms = defaultRooms)
     )
     val uiState: StateFlow<MeetingRoomsUiState> = _uiState.asStateFlow()
+
+    fun updateRoom(original: Room, updated: Room) {
+        _uiState.update { current ->
+            current.copy(
+                rooms = current.rooms.map { if (it == original) updated else it }
+            )
+        }
+    }
+
+    fun deleteRoom(room: Room) {
+        _uiState.update { current ->
+            current.copy(rooms = current.rooms.filterNot { it == room })
+        }
+    }
 
     fun onSidebarItemSelected(item: SidebarItem) {
         _uiState.update { current ->

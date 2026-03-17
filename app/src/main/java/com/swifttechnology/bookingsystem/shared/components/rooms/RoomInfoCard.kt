@@ -71,7 +71,7 @@ fun RoomInfoCard(
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
 
-        // ── Header ────────────────────────────────────────────────────────────
+        //  Header
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)

@@ -32,7 +32,7 @@ fun NavHostController.navigateBackToDashboard() {
     }
 }
 
-/** Navigate to Login and clear the entire back stack (e.g. on logout from any screen). */
+/** Navigate to Login and clear the entire back stack */
 fun NavHostController.navigateBackToLogin() {
     navigate(AppRoute.Login.route) {
         popUpTo(0) { inclusive = true }

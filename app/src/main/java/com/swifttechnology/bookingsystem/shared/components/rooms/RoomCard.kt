@@ -16,13 +16,23 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -39,9 +49,41 @@ import com.swifttechnology.bookingsystem.core.model.defaultRooms
 fun RoomCard(
     room: Room,
     isEditable: Boolean = false,
-    onEditClick: () -> Unit = {},
-    onDeleteClick: () -> Unit = {}
+    onEditClick: (Room) -> Unit = {},
+    onDeleteClick: (Room) -> Unit = {}
 ) {
+    var isEditing by rememberSaveable(room.name) { mutableStateOf(false) }
+    var editedName by rememberSaveable(room.name) { mutableStateOf(room.name) }
+    var editedCapacity by rememberSaveable(room.name) { mutableStateOf(room.capacity.toString()) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+
+    LaunchedEffect(room) {
+        if (!isEditing) {
+            editedName = room.name
+            editedCapacity = room.capacity.toString()
+        }
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Delete room?") },
+            text = { Text("This will remove \"${room.name}\" from the list.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirm = false
+                        onDeleteClick(room)
+                    }
+                ) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") }
+            }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -61,14 +103,23 @@ fun RoomCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = room.name,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = 0.1.sp,
-                    color = if (room.status == RoomStatus.DISABLED) MaterialTheme.customColors.neutral700 else MaterialTheme.customColors.deepBlack,
-                    modifier = Modifier.weight(1f)
-                )
+                if (isEditable && isEditing) {
+                    OutlinedTextField(
+                        value = editedName,
+                        onValueChange = { editedName = it },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                } else {
+                    Text(
+                        text = room.name,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 0.1.sp,
+                        color = if (room.status == RoomStatus.DISABLED) MaterialTheme.customColors.neutral700 else MaterialTheme.customColors.deepBlack,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
                 StatusBadge(status = room.status)
             }
 
@@ -90,12 +141,21 @@ fun RoomCard(
                 } else {
                     Spacer(Modifier.width(1.dp))
                 }
-                Text(
-                    text = "Capacity : ${room.capacity}",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.customColors.textBody,
-                    letterSpacing = 0.4.sp
-                )
+                if (isEditable && isEditing) {
+                    OutlinedTextField(
+                        value = editedCapacity,
+                        onValueChange = { editedCapacity = it.filter { ch -> ch.isDigit() } },
+                        singleLine = true,
+                        modifier = Modifier.width(140.dp)
+                    )
+                } else {
+                    Text(
+                        text = "Capacity : ${room.capacity}",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.customColors.textBody,
+                        letterSpacing = 0.4.sp
+                    )
+                }
             }
 
             Row(
@@ -128,12 +188,22 @@ fun RoomCard(
                             .clip(RoundedCornerShape(8.dp))
                             .background(MaterialTheme.customColors.neutral200)
                             .border(1.dp, MaterialTheme.customColors.neutral300, RoundedCornerShape(8.dp))
-                            .clickable { onEditClick() },
+                            .clickable {
+                                if (!isEditing) {
+                                    isEditing = true
+                                } else {
+                                    focusManager.clearFocus()
+                                    val capacity = editedCapacity.toIntOrNull() ?: room.capacity
+                                    val trimmedName = editedName.trim().ifEmpty { room.name }
+                                    isEditing = false
+                                    onEditClick(room.copy(name = trimmedName, capacity = capacity))
+                                }
+                            },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = androidx.compose.material.icons.Icons.Outlined.Edit,
-                            contentDescription = "Edit",
+                            contentDescription = if (isEditing) "Save" else "Edit",
                             modifier = Modifier.size(18.dp),
                             tint = MaterialTheme.customColors.deepBlack
                         )
@@ -144,12 +214,21 @@ fun RoomCard(
                             .height(32.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .background(androidx.compose.ui.graphics.Color(0xFFFF9EA6))
-                            .clickable { onDeleteClick() },
+                            .clickable {
+                                if (isEditing) {
+                                    focusManager.clearFocus()
+                                    editedName = room.name
+                                    editedCapacity = room.capacity.toString()
+                                    isEditing = false
+                                } else {
+                                    showDeleteConfirm = true
+                                }
+                            },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = androidx.compose.material.icons.Icons.Outlined.Delete,
-                            contentDescription = "Delete",
+                            contentDescription = if (isEditing) "Cancel" else "Delete",
                             modifier = Modifier.size(18.dp),
                             tint = MaterialTheme.customColors.deepBlack
                         )

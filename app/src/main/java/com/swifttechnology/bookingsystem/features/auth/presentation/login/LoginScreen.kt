@@ -117,7 +117,20 @@ fun LoginScreen(
                         .height(72.dp)
                 )
 
-                Spacer(modifier = Modifier.height(75.dp))
+                Spacer(modifier = Modifier.height(30.dp))
+
+                Text(
+                    text = "Fill Test Data",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+                    modifier = Modifier
+                        .clickable {
+                            viewModel.onEmailChanged("admin@example.com")
+                            viewModel.onPasswordChanged("admin123")
+                        }
+                        .align(Alignment.End)
+                        .padding(bottom = 8.dp)
+                )
 
                 LoginTextField(
                     value = uiState.email,
