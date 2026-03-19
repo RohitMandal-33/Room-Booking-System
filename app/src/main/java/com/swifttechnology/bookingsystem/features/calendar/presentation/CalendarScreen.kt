@@ -66,6 +66,10 @@ import com.swifttechnology.bookingsystem.core.designsystem.Spacing
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.core.model.defaultRooms
 import com.swifttechnology.bookingsystem.core.model.Room
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents.DayColumnWithPicker
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents.DayTimePickerViewModel
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents.DayPickerUiState
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents.TimeRange
 import com.swifttechnology.bookingsystem.shared.layout.MainScaffold
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -85,9 +89,11 @@ import com.swifttechnology.bookingsystem.navigation.ScreenRoutes
 fun CalendarScreen(
     onLogout: () -> Unit,
     onNavigate: (String) -> Unit,
-    viewModel: CalendarViewModel = hiltViewModel()
+    viewModel: CalendarViewModel = hiltViewModel(),
+    pickerViewModel: DayTimePickerViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val pickerUiState by pickerViewModel.uiState.collectAsStateWithLifecycle()
 
     MainScaffold(
         sidebarItems = uiState.sidebarItems,
@@ -110,12 +116,19 @@ fun CalendarScreen(
     ) {
         CalendarContent(
             uiState = uiState,
+            pickerUiState = pickerUiState,
             onViewChange = viewModel::onViewChange,
             onPrev = viewModel::onPrev,
             onNext = viewModel::onNext,
             onDateSelected = viewModel::onDateSelected,
             onEventSelected = viewModel::onEventSelected,
-            onRoomSelected = viewModel::onRoomSelected
+            onRoomSelected = viewModel::onRoomSelected,
+            onPickerDragStarted = pickerViewModel::onDragStarted,
+            onPickerPreviewChanged = pickerViewModel::onPreviewChanged,
+            onPickerMoveCommitted = pickerViewModel::onMoveCommitted,
+            onPickerResizeTopCommitted = pickerViewModel::onResizeTopCommitted,
+            onPickerResizeBottomCommitted = pickerViewModel::onResizeBottomCommitted,
+            onPickerDragCancelled = pickerViewModel::onDragCancelled
         )
     }
 }
@@ -126,12 +139,19 @@ fun CalendarScreen(
 @Composable
 private fun CalendarContent(
     uiState: CalendarUiState,
+    pickerUiState: DayPickerUiState,
     onViewChange: (CalendarView) -> Unit,
     onPrev: () -> Unit,
     onNext: () -> Unit,
     onDateSelected: (LocalDate) -> Unit,
     onEventSelected: (MeetingEvent?) -> Unit,
-    onRoomSelected: (Room) -> Unit
+    onRoomSelected: (Room) -> Unit,
+    onPickerDragStarted: () -> Unit,
+    onPickerPreviewChanged: (TimeRange) -> Unit,
+    onPickerMoveCommitted: (Int) -> Unit,
+    onPickerResizeTopCommitted: (Int) -> Unit,
+    onPickerResizeBottomCommitted: (Int) -> Unit,
+    onPickerDragCancelled: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -188,10 +208,16 @@ private fun CalendarContent(
                     onEventClick = { onEventSelected(it) }
                 )
 
-                CalendarView.DAY -> DayView(
+                CalendarView.DAY -> DayColumnWithPicker(
                     selectedDate = uiState.selectedDate,
-                    events = uiState.events,
-                    onEventClick = { onEventSelected(it) }
+                    regularEvents = uiState.events,
+                    pickerState = pickerUiState,
+                    onDragStarted = onPickerDragStarted,
+                    onPreviewChanged = onPickerPreviewChanged,
+                    onMoveCommitted = onPickerMoveCommitted,
+                    onResizeTopCommitted = onPickerResizeTopCommitted,
+                    onResizeBottomCommitted = onPickerResizeBottomCommitted,
+                    onDragCancelled = onPickerDragCancelled
                 )
             }
         }
@@ -633,98 +659,6 @@ private fun WeekView(
                 }
                 HorizontalDivider(color = Color(0xFFF0F0F0), thickness = 0.5.dp)
             }
-        }
-    }
-}
-
-//  Day View 
-
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-private fun DayView(
-    selectedDate: LocalDate,
-    events: List<MeetingEvent>,
-    onEventClick: (MeetingEvent) -> Unit
-) {
-    val hours = 0..23
-    val scrollState = rememberScrollState()
-
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-    ) {
-        hours.forEach { hour ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(60.dp),
-                verticalAlignment = Alignment.Top
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(64.dp)
-                        .padding(end = 8.dp, top = 2.dp)
-                ) {
-                    Text(
-                        text = formatHour(hour),
-                        fontSize = 11.sp,
-                        color = Color(0xFFAAAAAA),
-                        textAlign = TextAlign.End,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .border(width = 0.5.dp, color = Color(0xFFEEEEEE))
-                ) {
-                    val dayEvents = events.filter {
-                        it.date == selectedDate && it.startTime.hour == hour
-                    }
-                    dayEvents.forEach { event ->
-                        val durationMins =
-                            java.time.Duration.between(event.startTime, event.endTime)
-                                .toMinutes()
-                        val heightFraction = (durationMins / 60f).coerceAtMost(1f)
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .fillMaxHeight(heightFraction)
-                                .padding(2.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(event.color)
-                                .clickable { onEventClick(event) }
-                                .padding(6.dp)
-                        ) {
-                            Column {
-                                Text(
-                                    event.title,
-                                    fontSize = 12.sp,
-                                    color = Color.White,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Text(
-                                    "${
-                                        event.startTime.format(
-                                            DateTimeFormatter.ofPattern("h:mm a")
-                                        )
-                                    } - ${
-                                        event.endTime.format(
-                                            DateTimeFormatter.ofPattern("h:mm a")
-                                        )
-                                    }",
-                                    fontSize = 10.sp,
-                                    color = Color.White.copy(alpha = 0.8f)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-            HorizontalDivider(color = Color(0xFFF0F0F0), thickness = 0.5.dp)
         }
     }
 }
