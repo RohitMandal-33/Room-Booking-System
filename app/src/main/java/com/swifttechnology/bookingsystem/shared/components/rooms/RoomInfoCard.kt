@@ -2,6 +2,7 @@ package com.swifttechnology.bookingsystem.shared.components.rooms
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,8 +14,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material3.Divider
@@ -39,22 +42,16 @@ import com.swifttechnology.bookingsystem.core.model.defaultRooms
 
 /**
  * RoomInfoCard — displays room details in the booking form preview section.
- *
- * Matches the "Room Details" card design:
- *  - Purple location-pin icon + "Room Details" header
- *  - Room Name row (label + bold value)
- *  - Capacity row (label + people icon + bold value)
- *  - Horizontal divider
- *  - "AVAILABLE RESOURCES" section with amenity chips in a flow layout
- *
  * @param room  The room whose details are shown.
  * @param modifier  Optional modifier for the outer card container.
+ * @param onEditClick Optional callback for the edit button.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun RoomInfoCard(
     room: Room,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onEditClick: (() -> Unit)? = null
 ) {
     Column(
         modifier = modifier
@@ -66,34 +63,40 @@ fun RoomInfoCard(
                 spotColor = Color.Black.copy(alpha = 0.10f)
             )
             .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.customColors.neutral100)
+            .background(MaterialTheme.customColors.bookRoomInputBackground)
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
 
         //  Header
         Row(
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Icon(
-                imageVector = Icons.Outlined.LocationOn,
-                contentDescription = null,
-                modifier = Modifier.size(22.dp),
-                tint = Color(0xFF7C3AED) // purple-600
-            )
-            Text(
-                text = "Room Details",
-                fontSize = 17.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 0.2.sp,
-                color = MaterialTheme.customColors.deepBlack
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.LocationOn,
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp),
+                    tint = Color(0xFF7C3AED) // purple-600
+                )
+                Text(
+                    text = "Room Details",
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.2.sp,
+                    color = MaterialTheme.customColors.deepBlack
+                )
+            }
         }
 
         Spacer(Modifier.height(16.dp))
 
-        // ── Room Name row ─────────────────────────────────────────────────────
+        // Room Name row
         InfoRow(
             label = "Room Name",
             content = {
@@ -109,7 +112,7 @@ fun RoomInfoCard(
 
         Spacer(Modifier.height(12.dp))
 
-        // ── Capacity row ──────────────────────────────────────────────────────
+        // Capacity row
         InfoRow(
             label = "Capacity",
             content = {
@@ -136,7 +139,7 @@ fun RoomInfoCard(
 
         Spacer(Modifier.height(20.dp))
 
-        // ── Divider ───────────────────────────────────────────────────────────
+        // Divider
         Divider(
             color = MaterialTheme.customColors.neutral300,
             thickness = 0.8.dp,
@@ -145,7 +148,7 @@ fun RoomInfoCard(
 
         Spacer(Modifier.height(20.dp))
 
-        // ── Available Resources ───────────────────────────────────────────────
+        //  Available Resources
         Text(
             text = "AVAILABLE RESOURCES",
             fontSize = 11.sp,
@@ -168,12 +171,8 @@ fun RoomInfoCard(
     }
 }
 
-// ── Private helpers ───────────────────────────────────────────────────────────
+// Private helpers
 
-/**
- * A single label / value row used for Room Name and Capacity.
- * The label is left-aligned in a neutral pill, the value is right-aligned.
- */
 @Composable
 private fun InfoRow(
     label: String,
@@ -237,7 +236,7 @@ private fun ResourceChip(amenity: RoomAmenity) {
 fun RoomInfoCardPreview() {
     MeetingRoomBookingTheme {
         Box(modifier = Modifier.padding(16.dp)) {
-            RoomInfoCard(room = defaultRooms[1])
+            RoomInfoCard(room = defaultRooms[1], onEditClick = {})
         }
     }
 }

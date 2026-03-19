@@ -78,6 +78,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.YearMonth
 import java.time.temporal.TemporalAdjusters
+import com.swifttechnology.bookingsystem.navigation.ScreenRoutes
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -104,7 +105,8 @@ fun CalendarScreen(
             }
         },
         containerColor = MaterialTheme.customColors.whitePure,
-        searchPlaceholder = "Search people, participants..."
+        searchPlaceholder = "Search people, participants...",
+        onEditClick = { onNavigate(ScreenRoutes.meetingRooms(editable = true)) }
     ) {
         CalendarContent(
             uiState = uiState,
@@ -154,8 +156,7 @@ private fun CalendarContent(
             onNext = onNext
         )
 
-        // FIX: DayStrip is placed here in the normal layout flow so it pushes
-        // content down rather than floating over it with a magic padding offset.
+
         if (uiState.currentView == CalendarView.DAY) {
             DayStrip(
                 selectedDate = uiState.selectedDate,
@@ -276,7 +277,7 @@ private fun TopBar(
     }
 }
 
-// ─── View Toggle ─────────────────────────────────────────────────────────────
+//View Toggle
 
 @Composable
 private fun ViewToggleBar(currentView: CalendarView, onViewChange: (CalendarView) -> Unit) {
@@ -356,7 +357,7 @@ private fun NavigationHeader(
     }
 }
 
-// ─── Day of Week Header ──────────────────────────────────────────────────────
+// Day of Week Header 
 
 @Composable
 private fun DayOfWeekHeader(withTimeColumn: Boolean) {
@@ -381,7 +382,7 @@ private fun DayOfWeekHeader(withTimeColumn: Boolean) {
     }
 }
 
-// ─── Month View ──────────────────────────────────────────────────────────────
+// Month View
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -523,7 +524,7 @@ private fun MonthCell(
     }
 }
 
-// ─── Week View ───────────────────────────────────────────────────────────────
+// Week View 
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -636,7 +637,7 @@ private fun WeekView(
     }
 }
 
-// ─── Day View ────────────────────────────────────────────────────────────────
+//  Day View 
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -648,9 +649,7 @@ private fun DayView(
     val hours = 0..23
     val scrollState = rememberScrollState()
 
-    // FIX: Removed the standalone Box header and HorizontalDivider that were
-    // previously here. DayStrip in CalendarContent now handles the date row in
-    // normal layout flow, so no duplicate header is rendered.
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -730,14 +729,13 @@ private fun DayView(
     }
 }
 
-// ─── Day Strip ───────────────────────────────────────────────────────────────
+//Day Strip
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun DayStrip(
     selectedDate: LocalDate,
-    // FIX: Removed the modifier parameter — DayStrip no longer needs external
-    // positioning since it lives in normal layout flow inside CalendarContent.
+
     onDateClick: (LocalDate) -> Unit
 ) {
     val weekStart = selectedDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
@@ -776,7 +774,7 @@ private fun DayStrip(
     HorizontalDivider(color = Color(0xFFEEEEEE))
 }
 
-// ─── Meeting Detail Dialog ───────────────────────────────────────────────────
+// Meeting Detail Dialog
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable

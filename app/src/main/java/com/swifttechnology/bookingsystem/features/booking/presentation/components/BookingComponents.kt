@@ -2,6 +2,8 @@ package com.swifttechnology.bookingsystem.features.booking.presentation.componen
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,6 +25,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
@@ -86,8 +90,9 @@ fun BookingTextField(
     isRequired: Boolean,
     onValueChange: (String) -> Unit
 ) {
+    var isFocused by remember { mutableStateOf(false) }
+    val primaryColor = MaterialTheme.colorScheme.primary
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        var isFocused by remember { mutableStateOf(false) }
         FieldLabel(text = label, isRequired = isRequired)
         TextField(
             value = value,
@@ -104,16 +109,18 @@ fun BookingTextField(
                 .height(56.dp)
                 .onFocusChanged { isFocused = it.isFocused }
                 .shadow(
-                    elevation = if (isFocused) 8.dp else 0.dp,
+                    elevation = if (isFocused) 12.dp else 0.dp,
                     shape = RoundedCornerShape(CornerRadius.lg),
-                    clip = false
+                    clip = false,
+                    ambientColor = if (isFocused) primaryColor.copy(alpha = 0.25f) else Color.Transparent,
+                    spotColor = if (isFocused) primaryColor.copy(alpha = 0.55f) else Color.Transparent
                 ),
             shape = RoundedCornerShape(CornerRadius.lg),
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = MaterialTheme.customColors.bookRoomInputBackground,
                 unfocusedContainerColor = MaterialTheme.customColors.bookRoomInputBackground,
                 disabledContainerColor = MaterialTheme.customColors.bookRoomInputBackground,
-                focusedIndicatorColor = Color.Transparent,
+                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
                 unfocusedIndicatorColor = Color.Transparent,
                 focusedTextColor = MaterialTheme.customColors.bookRoomLabel,
                 unfocusedTextColor = MaterialTheme.customColors.bookRoomLabel,
@@ -135,6 +142,8 @@ fun BookingClickableField(
     contentBelowLabel: (@Composable () -> Unit)? = null,
     onClick: () -> Unit
 ) {
+    var isPressed by remember { mutableStateOf(false) }
+    val primaryColor = MaterialTheme.colorScheme.primary
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         FieldLabel(text = label, isRequired = isRequired)
         contentBelowLabel?.invoke()
@@ -142,9 +151,26 @@ fun BookingClickableField(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp)
+                .shadow(
+                    elevation = if (isPressed) 12.dp else 0.dp,
+                    shape = RoundedCornerShape(CornerRadius.lg),
+                    clip = false,
+                    ambientColor = if (isPressed) primaryColor.copy(alpha = 0.25f) else Color.Transparent,
+                    spotColor = if (isPressed) primaryColor.copy(alpha = 0.55f) else Color.Transparent
+                )
                 .clip(RoundedCornerShape(CornerRadius.lg))
                 .background(MaterialTheme.customColors.bookRoomInputBackground)
-                .clickable { onClick() }
+                .then(
+                    if (isPressed) Modifier.border(
+                        1.5.dp,
+                        primaryColor.copy(alpha = 0.6f),
+                        RoundedCornerShape(CornerRadius.lg)
+                    ) else Modifier
+                )
+                .clickable {
+                    isPressed = !isPressed
+                    onClick()
+                }
                 .padding(horizontal = Spacing.md),
             contentAlignment = Alignment.CenterStart
         ) {
@@ -191,6 +217,16 @@ fun BookingDropdownField(
     onExpandChange: (Boolean) -> Unit,
     onOptionSelected: (String) -> Unit
 ) {
+    // Capture in composable scope for use in shadow modifier
+    val primaryColor = MaterialTheme.colorScheme.primary
+
+    // Animate arrow rotation: 0° when collapsed, 180° when expanded
+    val arrowRotation by animateFloatAsState(
+        targetValue = if (expanded) 180f else 0f,
+        animationSpec = tween(durationMillis = 250),
+        label = "arrowRotation"
+    )
+
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         FieldLabel(text = label, isRequired = isRequired)
         ExposedDropdownMenuBox(
@@ -201,6 +237,13 @@ fun BookingDropdownField(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
+                    .shadow(
+                        elevation = if (expanded) 12.dp else 0.dp,
+                        shape = RoundedCornerShape(CornerRadius.lg),
+                        clip = false,
+                        ambientColor = if (expanded) primaryColor.copy(alpha = 0.25f) else Color.Transparent,
+                        spotColor = if (expanded) primaryColor.copy(alpha = 0.55f) else Color.Transparent
+                    )
                     .clip(RoundedCornerShape(CornerRadius.lg))
                     .background(MaterialTheme.customColors.bookRoomInputBackground)
                     .menuAnchor()
@@ -221,15 +264,19 @@ fun BookingDropdownField(
                         Text(
                             text = value.ifEmpty { placeholder },
                             fontSize = 14.sp,
-                            color = if (value.isEmpty()) MaterialTheme.customColors.bookRoomPlaceholder else MaterialTheme.customColors.bookRoomLabel,
+                            color = if (value.isEmpty()) MaterialTheme.customColors.bookRoomPlaceholder
+                            else MaterialTheme.customColors.bookRoomLabel,
                             maxLines = 1
                         )
                     }
+                    // Animated rotating arrow icon
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowDown,
                         contentDescription = "Expand",
                         tint = Neutral700,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier
+                            .size(20.dp)
+                            .rotate(arrowRotation)
                     )
                 }
             }
@@ -237,94 +284,122 @@ fun BookingDropdownField(
             ExposedDropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { onExpandChange(false) },
-                modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                modifier = Modifier
+                    .shadow(
+                        elevation = 12.dp,
+                        shape = RoundedCornerShape(CornerRadius.lg),
+                        ambientColor = Color.Black.copy(alpha = 0.08f),
+                        spotColor = Color.Black.copy(alpha = 0.12f)
+                    )
+                    .background(
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = RoundedCornerShape(CornerRadius.lg)
+                    )
+                    .clip(RoundedCornerShape(CornerRadius.lg))
+                    .padding(vertical = Spacing.xs)
             ) {
-                options.forEach { option ->
+                options.forEachIndexed { index, option ->
                     DropdownMenuItem(
                         text = {
                             Text(
                                 text = option,
                                 fontSize = 14.sp,
-                                color = TextPrimary
+                                color = if (option == value) primaryColor else TextPrimary,
+                                fontWeight = if (option == value) FontWeight.SemiBold else FontWeight.Normal
                             )
                         },
-                        onClick = { onOptionSelected(option) }
+                        modifier = Modifier.background(
+                            if (option == value) primaryColor.copy(alpha = 0.08f)
+                            else Color.Transparent
+                        ),
+                        onClick = {
+                            onOptionSelected(option)
+                            onExpandChange(false)
+                        }
                     )
+                    // Divider between each item, skipped after the last one
+                    if (index < options.lastIndex) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = Spacing.md),
+                            thickness = 0.5.dp,
+                            color = Neutral300
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-@Composable
-fun BookingNavBar(onDismiss: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = Spacing.md, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        // Sidebar toggle button (left)
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .border(1.dp, Neutral300, CircleShape)
-                .background(MaterialTheme.colorScheme.surface)
-                .clickable { /* toggle sidebar */ },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                painter = painterResource(android.R.drawable.ic_menu_sort_by_size),
-                contentDescription = "Sidebar",
-                tint = TextPrimary,
-                modifier = Modifier.size(22.dp)
-            )
-        }
-
-        // Search bar (center)
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 12.dp)
-                .height(48.dp)
-                .clip(RoundedCornerShape(CornerRadius.full))
-                .background(MaterialTheme.colorScheme.surface)
-                .border(0.5.dp, Neutral300, RoundedCornerShape(CornerRadius.full))
-                .padding(horizontal = Spacing.md),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "Search people...",
-                    fontSize = 12.sp,
-                    color = Neutral400,
-                    letterSpacing = 0.4.sp
-                )
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = "Search",
-                    tint = Neutral700,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
-
-        // Close button
-        IconButton(onClick = onDismiss) {
-            Icon(
-                imageVector = Icons.Default.Close,
-                contentDescription = "Close",
-                tint = TextPrimary
-            )
-        }
-    }
-}
+//@Composable
+//fun BookingNavBar(onDismiss: () -> Unit) {
+//    Row(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .padding(horizontal = Spacing.md, vertical = 12.dp),
+//        verticalAlignment = Alignment.CenterVertically,
+//        horizontalArrangement = Arrangement.SpaceBetween
+//    ) {
+//
+//        Box(
+//            modifier = Modifier
+//                .size(48.dp)
+//                .clip(CircleShape)
+//                .border(1.dp, Neutral300, CircleShape)
+//                .background(MaterialTheme.colorScheme.surface)
+//                .clickable { /* toggle sidebar */ },
+//            contentAlignment = Alignment.Center
+//        ) {
+//            Icon(
+//                painter = painterResource(android.R.drawable.ic_menu_sort_by_size),
+//                contentDescription = "Sidebar",
+//                tint = TextPrimary,
+//                modifier = Modifier.size(22.dp)
+//            )
+//        }
+//
+//
+//        Box(
+//            modifier = Modifier
+//                .weight(1f)
+//                .padding(horizontal = 12.dp)
+//                .height(48.dp)
+//                .clip(RoundedCornerShape(CornerRadius.full))
+//                .background(MaterialTheme.colorScheme.surface)
+//                .border(0.5.dp, Neutral300, RoundedCornerShape(CornerRadius.full))
+//                .padding(horizontal = Spacing.md),
+//            contentAlignment = Alignment.CenterStart
+//        ) {
+//            Row(
+//                modifier = Modifier.fillMaxWidth(),
+//                verticalAlignment = Alignment.CenterVertically,
+//                horizontalArrangement = Arrangement.SpaceBetween
+//            ) {
+//                Text(
+//                    text = "Search people...",
+//                    fontSize = 12.sp,
+//                    color = Neutral400,
+//                    letterSpacing = 0.4.sp
+//                )
+//                Icon(
+//                    imageVector = Icons.Default.Search,
+//                    contentDescription = "Search",
+//                    tint = Neutral700,
+//                    modifier = Modifier.size(20.dp)
+//                )
+//            }
+//        }
+//
+//        // Close button
+//        IconButton(onClick = onDismiss) {
+//            Icon(
+//                imageVector = Icons.Default.Close,
+//                contentDescription = "Close",
+//                tint = TextPrimary
+//            )
+//        }
+//    }
+//}
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)

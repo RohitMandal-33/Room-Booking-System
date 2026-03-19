@@ -16,12 +16,18 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.shared.components.SidebarItem
 import com.swifttechnology.bookingsystem.shared.components.SidebarPanel
+import com.swifttechnology.bookingsystem.shared.components.DialogStyle
+import com.swifttechnology.bookingsystem.shared.components.ReusableAlertDialog
 import com.swifttechnology.bookingsystem.shared.components.TopBar
 import kotlinx.coroutines.launch
 
@@ -36,11 +42,13 @@ fun MainScaffold(
     modifier: Modifier = Modifier,
     searchPlaceholder: String = "Search...",
     containerColor: androidx.compose.ui.graphics.Color = MaterialTheme.customColors.dashboardBg,
+    showEditIcon: Boolean = false,
     onEditClick: () -> Unit = {},
     content: @Composable () -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    var showLogoutDialog by rememberSaveable { mutableStateOf(false) }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -62,7 +70,7 @@ fun MainScaffold(
                     onLogout = {
                         scope.launch {
                             drawerState.close()
-                            onLogout()
+                            showLogoutDialog = true
                         }
                     },
                     modifier = Modifier
@@ -72,6 +80,20 @@ fun MainScaffold(
             }
         }
     ) {
+        if (showLogoutDialog) {
+            ReusableAlertDialog(
+                style = DialogStyle.WARNING,
+                title = "Logout",
+                message = "Are you sure you want to log out?",
+                confirmText = "Logout",
+                onConfirm = {
+                    showLogoutDialog = false
+                    onLogout()
+                },
+                onDismiss = { showLogoutDialog = false }
+            )
+        }
+
         Scaffold(
             containerColor = containerColor
         ) { innerPadding ->
@@ -86,6 +108,7 @@ fun MainScaffold(
                     onSearchQueryChanged = onSearchQueryChanged,
                     onMenuClick = { scope.launch { drawerState.open() } },
                     searchPlaceholder = searchPlaceholder,
+                    showEditIcon = showEditIcon,
                     onEditClick = onEditClick
                 )
                 Spacer(modifier = Modifier.height(16.dp))

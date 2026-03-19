@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,6 +41,7 @@ fun TopBar(
     searchPlaceholder: String = "Search people, participant",
     onTrailingClick: (() -> Unit)? = null,
     trailingIcon: ImageVector? = null,
+    showEditIcon: Boolean = false,
     onEditClick: () -> Unit = {}
 ) {
     Row(
@@ -117,21 +119,40 @@ fun TopBar(
                 )
             }
         } else {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.customColors.neutral100)
-                    .border(1.dp, MaterialTheme.customColors.neutral200, RoundedCornerShape(12.dp))
-                    .clickable { onEditClick() },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.edit_square_24px),
-                    contentDescription = "Edit",
-                    modifier = Modifier.size(24.dp).padding(3.dp),
-                    tint = MaterialTheme.customColors.deepBlack
-                )
+            if (showEditIcon) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.customColors.neutral100)
+                        .border(1.dp, MaterialTheme.customColors.neutral200, RoundedCornerShape(12.dp))
+                        .clickable { onEditClick() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.edit_square_24px),
+                        contentDescription = "Edit",
+                        modifier = Modifier.size(24.dp).padding(3.dp),
+                        tint = MaterialTheme.customColors.deepBlack
+                    )
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.customColors.neutral100)
+                        .border(1.dp, MaterialTheme.customColors.neutral200, RoundedCornerShape(12.dp))
+                        .clickable { /* placeholder functionality */ },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.AccountCircle,
+                        contentDescription = "Profile",
+                        modifier = Modifier.size(24.dp).padding(3.dp),
+                        tint = MaterialTheme.customColors.deepBlack
+                    )
+                }
             }
         }
     }

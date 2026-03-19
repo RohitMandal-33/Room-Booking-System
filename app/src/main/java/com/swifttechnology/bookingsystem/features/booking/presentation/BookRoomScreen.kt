@@ -1,5 +1,7 @@
 package com.swifttechnology.bookingsystem.features.booking.presentation
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -33,6 +35,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -58,7 +61,9 @@ import kotlinx.coroutines.launch
 import com.swifttechnology.bookingsystem.core.model.defaultRooms
 import com.swifttechnology.bookingsystem.shared.components.rooms.RoomCard
 import com.swifttechnology.bookingsystem.shared.components.rooms.RoomInfoCard
+import com.swifttechnology.bookingsystem.navigation.ScreenRoutes
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookRoomScreen(
@@ -73,6 +78,8 @@ fun BookRoomScreen(
 
     var isContentVisible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { isContentVisible = true }
+
+    var isMeetingRoomsEditable by rememberSaveable { mutableStateOf(false) }
 
     val formState = uiState.formState
 
@@ -108,7 +115,11 @@ fun BookRoomScreen(
             }
         },
         containerColor = MaterialTheme.customColors.whitePure,
-        searchPlaceholder = "Search people, participants..."
+        searchPlaceholder = "Search people, participants...",
+        onEditClick = {
+            isMeetingRoomsEditable = true
+            onNavigate(ScreenRoutes.meetingRooms(editable = isMeetingRoomsEditable))
+        }
     ) {
         AnimatedVisibility(
             visible = isContentVisible,
@@ -171,7 +182,11 @@ fun BookRoomScreen(
                 // Room cared specific to name
                 defaultRooms.find { it.name == formState.selectedRoom }?.let {
                     RoomInfoCard(
-                        room = it
+                        room = it,
+                        onEditClick = {
+                            isMeetingRoomsEditable = true
+                            onNavigate(ScreenRoutes.meetingRooms(editable = isMeetingRoomsEditable))
+                        }
                     )
                 }
 

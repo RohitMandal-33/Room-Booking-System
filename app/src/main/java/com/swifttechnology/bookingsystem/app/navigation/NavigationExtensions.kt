@@ -6,6 +6,16 @@ import androidx.navigation.NavHostController
  * Centralized navigation actions. Use these in [AppRouter] (or from ViewModels with a
  * NavController reference) to keep routing logic and back-stack behavior in one place.
  */
+fun NavHostController.navigateTopLevel(route: String) {
+    navigate(route) {
+        popUpTo(graph.startDestinationId) {
+            saveState = true
+        }
+        launchSingleTop = true
+        restoreState = true
+    }
+}
+
 fun NavHostController.navigateToDashboard(fromLogin: Boolean = false) {
     navigate(AppRoute.Dashboard.route) {
         if (fromLogin) {
@@ -21,7 +31,7 @@ fun NavHostController.navigateToRoomBooking() {
 fun NavHostController.navigateToLogin(clearBackStack: Boolean = true) {
     navigate(AppRoute.Login.route) {
         if (clearBackStack) {
-            popUpTo(0) { inclusive = true }
+            popUpTo(graph.id) { inclusive = true }
         }
     }
 }
@@ -35,6 +45,6 @@ fun NavHostController.navigateBackToDashboard() {
 /** Navigate to Login and clear the entire back stack */
 fun NavHostController.navigateBackToLogin() {
     navigate(AppRoute.Login.route) {
-        popUpTo(0) { inclusive = true }
+        popUpTo(graph.id) { inclusive = true }
     }
 }

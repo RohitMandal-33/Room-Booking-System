@@ -9,10 +9,7 @@ import androidx.compose.ui.unit.dp
 import com.swifttechnology.bookingsystem.core.designsystem.CornerRadius
 import com.swifttechnology.bookingsystem.core.designsystem.Elevation
 
-/*
- * Convenience card-style modifier combining shadow + clip.
- * Mirrors iOS CardStyleModifier.
- */
+
 fun Modifier.cardStyle(
     cornerRadius: Dp = CornerRadius.lg,
     elevation: Dp = Elevation.sm
@@ -20,9 +17,7 @@ fun Modifier.cardStyle(
     .shadow(elevation = elevation, shape = RoundedCornerShape(cornerRadius))
     .clip(RoundedCornerShape(cornerRadius))
 
-/*
- * Elevated shadow modifier — mirrors iOS ShadowModifier.
- */
+
 fun Modifier.appShadow(
     elevation: Dp = Elevation.md,
     cornerRadius: Dp = CornerRadius.md

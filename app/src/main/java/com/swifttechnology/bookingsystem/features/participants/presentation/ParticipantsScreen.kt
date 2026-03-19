@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.swifttechnology.bookingsystem.navigation.ScreenRoutes
 import com.swifttechnology.bookingsystem.shared.components.ComingSoonContent
 import com.swifttechnology.bookingsystem.shared.layout.MainScaffold
 import kotlinx.coroutines.CoroutineScope
@@ -32,7 +33,8 @@ fun ParticipantsScreen(
                 viewModel.logout()
                 onLogout()
             }
-        }
+        },
+        onEditClick = { onNavigate(ScreenRoutes.meetingRooms(editable = true)) }
     ) {
         ComingSoonContent(title = uiState.selectedItem.label)
     }

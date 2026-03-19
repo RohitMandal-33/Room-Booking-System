@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.rememberCoroutineScope
+import com.swifttechnology.bookingsystem.navigation.ScreenRoutes
 import com.swifttechnology.bookingsystem.shared.layout.MainScaffold
 import kotlinx.coroutines.launch
 
@@ -53,7 +54,7 @@ fun DashboardScreen(
             }
         },
         containerColor = MaterialTheme.customColors.dashboardBg,
-        onEditClick = { onNavigate(com.swifttechnology.bookingsystem.navigation.ScreenRoutes.MEETING_ROOMS) }
+        onEditClick = { onNavigate(ScreenRoutes.meetingRooms(editable = true)) }
     ) {
         DashboardOverview()
     }
