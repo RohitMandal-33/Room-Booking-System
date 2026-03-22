@@ -18,9 +18,9 @@ data class DraggableEvent(
     val id: String = "picker_event",
     val timeRange: TimeRange = TimeRange(9 * 60, 10 * 60),   // 09:00 – 10:00
     val title: String = "New Meeting",
-    val color: Color = Color(0xFF9B6DFF)
+    val color: Color = Color(0xFF9B6DFF),
+    val wasAdjusted: Boolean = false   // true briefly after auto-shift due to conflict
 )
 
 // Which part of the event block the user is currently interacting with.
 enum class DragHandle { TOP, BODY, BOTTOM }
-

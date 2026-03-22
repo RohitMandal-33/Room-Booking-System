@@ -1,19 +1,19 @@
 package com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 data class DayPickerUiState(
-    val draggableEvent: DraggableEvent = DraggableEvent(),
-    val blockedSlots: List<TimeRange> = listOf(
-        TimeRange(10 * 60 + 30, 11 * 60 + 30), // 10:30 – 11:30
-        TimeRange(14 * 60, 15 * 60) // 14:00 – 15:00
-    ),
+    val draggableEvent: DraggableEvent? = null,
+    val blockedSlots: List<TimeRange> = emptyList(),
     val previewRange: TimeRange? = null,
     val isDragging: Boolean = false
 )
@@ -30,17 +30,30 @@ class DayTimePickerViewModel @Inject constructor() : ViewModel() {
     fun onPreviewChanged(preview: TimeRange) =
         _uiState.update { it.copy(previewRange = preview) }
 
+    fun onTimeSlotLongPressed(startMinutes: Int) = _uiState.update { state ->
+        val duration = 60
+        state.copy(
+            draggableEvent = DraggableEvent(
+                timeRange = TimeRange(startMinutes, startMinutes + duration)
+            )
+        )
+    }
+
     fun onMoveCommitted(proposedStart: Int) = _uiState.update { state ->
-        val dur = state.draggableEvent.timeRange.durationMinutes
+        val event = state.draggableEvent ?: return@update state
+        val dur = event.timeRange.durationMinutes
         val resolved = IntervalUtils.resolveMove(
             proposedStart = proposedStart,
             duration = dur,
             blocked = state.blockedSlots,
-            previousStart = state.draggableEvent.timeRange.startMinutes
+            previousStart = event.timeRange.startMinutes
         )
+        val adjusted = resolved != proposedStart
+        if (adjusted) scheduleAdjustedReset()
         state.copy(
-            draggableEvent = state.draggableEvent.copy(
-                timeRange = TimeRange(resolved, resolved + dur)
+            draggableEvent = event.copy(
+                timeRange = TimeRange(resolved, resolved + dur),
+                wasAdjusted = adjusted
             ),
             isDragging = false,
             previewRange = null
@@ -48,15 +61,19 @@ class DayTimePickerViewModel @Inject constructor() : ViewModel() {
     }
 
     fun onResizeTopCommitted(proposedStart: Int) = _uiState.update { state ->
+        val event = state.draggableEvent ?: return@update state
         val resolved = IntervalUtils.resolveResizeTop(
             proposedStart = proposedStart,
-            currentEnd = state.draggableEvent.timeRange.endMinutes,
+            currentEnd = event.timeRange.endMinutes,
             blocked = state.blockedSlots,
-            previousStart = state.draggableEvent.timeRange.startMinutes
+            previousStart = event.timeRange.startMinutes
         )
+        val adjusted = resolved != proposedStart
+        if (adjusted) scheduleAdjustedReset()
         state.copy(
-            draggableEvent = state.draggableEvent.copy(
-                timeRange = state.draggableEvent.timeRange.copy(startMinutes = resolved)
+            draggableEvent = event.copy(
+                timeRange = event.timeRange.copy(startMinutes = resolved),
+                wasAdjusted = adjusted
             ),
             isDragging = false,
             previewRange = null
@@ -64,15 +81,19 @@ class DayTimePickerViewModel @Inject constructor() : ViewModel() {
     }
 
     fun onResizeBottomCommitted(proposedEnd: Int) = _uiState.update { state ->
+        val event = state.draggableEvent ?: return@update state
         val resolved = IntervalUtils.resolveResizeBottom(
             proposedEnd = proposedEnd,
-            currentStart = state.draggableEvent.timeRange.startMinutes,
+            currentStart = event.timeRange.startMinutes,
             blocked = state.blockedSlots,
-            previousEnd = state.draggableEvent.timeRange.endMinutes
+            previousEnd = event.timeRange.endMinutes
         )
+        val adjusted = resolved != proposedEnd
+        if (adjusted) scheduleAdjustedReset()
         state.copy(
-            draggableEvent = state.draggableEvent.copy(
-                timeRange = state.draggableEvent.timeRange.copy(endMinutes = resolved)
+            draggableEvent = event.copy(
+                timeRange = event.timeRange.copy(endMinutes = resolved),
+                wasAdjusted = adjusted
             ),
             isDragging = false,
             previewRange = null
@@ -82,7 +103,19 @@ class DayTimePickerViewModel @Inject constructor() : ViewModel() {
     fun onDragCancelled() =
         _uiState.update { it.copy(isDragging = false, previewRange = null) }
 
+    fun onCancelBooking() =
+        _uiState.update { it.copy(draggableEvent = null, isDragging = false, previewRange = null) }
+
     fun setBlockedSlots(slots: List<TimeRange>) =
         _uiState.update { it.copy(blockedSlots = slots) }
-}
 
+    private fun scheduleAdjustedReset() {
+        viewModelScope.launch {
+            delay(1200L)
+            _uiState.update { state ->
+                val event = state.draggableEvent ?: return@update state
+                state.copy(draggableEvent = event.copy(wasAdjusted = false))
+            }
+        }
+    }
+}

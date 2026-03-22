@@ -1,15 +1,16 @@
 package com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents
 
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 object IntervalUtils {
 
-    const val SNAP_MINUTES = 10
-    const val MIN_DURATION_MINUTES = 30
+    const val SNAP_MINUTES = 5
+    const val MIN_DURATION_MINUTES = 15
     const val DAY_MINUTES = 1440
 
-    fun snapToInterval(rawMinutes: Float, interval: Int = SNAP_MINUTES): Int =
-        ((rawMinutes / interval).roundToInt() * interval).coerceIn(0, DAY_MINUTES)
+    fun snapToInterval(rawMinutes: Int, interval: Int = SNAP_MINUTES): Int =
+        ((rawMinutes.toDouble() / interval).roundToInt() * interval).coerceIn(0, DAY_MINUTES)
 
     fun formatMinutes(totalMinutes: Int): String {
         val h = (totalMinutes / 60).coerceIn(0, 23)
@@ -22,9 +23,16 @@ object IntervalUtils {
         return "$displayH:${m.toString().padStart(2, '0')} ${if (h < 12) "AM" else "PM"}"
     }
 
+    fun formatDuration(minutes: Int): String = when {
+        minutes < 60 -> "${minutes}min"
+        minutes % 60 == 0 -> "${minutes / 60}h"
+        else -> "${minutes / 60}h ${minutes % 60}min"
+    }
+
     /**
      * Find the nearest valid start position for a block-move drag.
-     * Falls back to [previousStart] if no safe slot exists.
+     * Scans both before and after every conflicting slot to find the
+     * closest gap. Falls back to [previousStart] if no safe slot exists.
      */
     fun resolveMove(
         proposedStart: Int,
@@ -36,15 +44,28 @@ object IntervalUtils {
         val candidate = TimeRange(clamped, clamped + duration)
         if (!hasOverlap(candidate, blocked)) return clamped
 
-        val offender = blocked.first { it.overlaps(candidate) }
-        val before = offender.startMinutes - duration
-        val after = offender.endMinutes
+        // Collect all candidate positions: just before or just after each blocked slot
+        data class Candidate(val start: Int, val distance: Int)
 
-        return when {
-            before >= 0 && !hasOverlap(TimeRange(before, before + duration), blocked) -> before
-            after + duration <= DAY_MINUTES && !hasOverlap(TimeRange(after, after + duration), blocked) -> after
-            else -> previousStart
+        val candidates = mutableListOf<Candidate>()
+        for (slot in blocked) {
+            val before = slot.startMinutes - duration
+            if (before >= 0) {
+                val tr = TimeRange(before, before + duration)
+                if (!hasOverlap(tr, blocked)) {
+                    candidates += Candidate(before, abs(before - clamped))
+                }
+            }
+            val after = slot.endMinutes
+            if (after + duration <= DAY_MINUTES) {
+                val tr = TimeRange(after, after + duration)
+                if (!hasOverlap(tr, blocked)) {
+                    candidates += Candidate(after, abs(after - clamped))
+                }
+            }
         }
+
+        return candidates.minByOrNull { it.distance }?.start ?: previousStart
     }
 
     // Resolve a top-handle resize (end is fixed, start moves).
@@ -82,4 +103,3 @@ object IntervalUtils {
     private fun hasOverlap(range: TimeRange, blocked: List<TimeRange>): Boolean =
         blocked.any { it.overlaps(range) }
 }
-

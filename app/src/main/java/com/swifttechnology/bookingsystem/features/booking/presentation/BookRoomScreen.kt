@@ -63,23 +63,28 @@ import com.swifttechnology.bookingsystem.shared.components.rooms.RoomCard
 import com.swifttechnology.bookingsystem.shared.components.rooms.RoomInfoCard
 import com.swifttechnology.bookingsystem.navigation.ScreenRoutes
 
+import androidx.compose.runtime.LaunchedEffect
+
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookRoomScreen(
-    onLogout: () -> Unit,
+    searchQuery: String,
     onNavigate: (String) -> Unit,
     onSubmit: (RoomBookingFormState) -> Unit = {},
+    onNavigateToEdit: () -> Unit = {},
     viewModel: BookRoomViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
 
+    LaunchedEffect(searchQuery) {
+        viewModel.onSearchQueryChanged(searchQuery)
+    }
+
     var isContentVisible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { isContentVisible = true }
-
-    var isMeetingRoomsEditable by rememberSaveable { mutableStateOf(false) }
 
     val formState = uiState.formState
 
@@ -98,29 +103,6 @@ fun BookRoomScreen(
     val selectedInternalKeys = formState.participants
     val selectedExternalMembers = formState.externalMembers
     val hasAnySelected = selectedInternalKeys.isNotEmpty() || selectedExternalMembers.isNotEmpty()
-
-    MainScaffold(
-        sidebarItems = uiState.sidebarItems,
-        selectedItem = uiState.selectedItem,
-        searchQuery = uiState.searchQuery,
-        onSearchQueryChanged = viewModel::onSearchQueryChanged,
-        onSidebarItemSelected = { item ->
-            viewModel.onSidebarItemSelected(item)
-            onNavigate(item.route)
-        },
-        onLogout = {
-            scope.launch {
-                viewModel.logout()
-                onLogout()
-            }
-        },
-        containerColor = MaterialTheme.customColors.whitePure,
-        searchPlaceholder = "Search people, participants...",
-        onEditClick = {
-            isMeetingRoomsEditable = true
-            onNavigate(ScreenRoutes.meetingRooms(editable = isMeetingRoomsEditable))
-        }
-    ) {
         AnimatedVisibility(
             visible = isContentVisible,
             enter = fadeIn(animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)) +
@@ -183,10 +165,7 @@ fun BookRoomScreen(
                 defaultRooms.find { it.name == formState.selectedRoom }?.let {
                     RoomInfoCard(
                         room = it,
-                        onEditClick = {
-                            isMeetingRoomsEditable = true
-                            onNavigate(ScreenRoutes.meetingRooms(editable = isMeetingRoomsEditable))
-                        }
+                        onEditClick = onNavigateToEdit
                     )
                 }
 
@@ -300,7 +279,6 @@ fun BookRoomScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
-    }
 
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState()

@@ -2,6 +2,7 @@ package com.swifttechnology.bookingsystem.navigation
 
 object ScreenRoutes {
     const val LOGIN = "login"
+    const val MAIN_APP = "main_app"
 
     const val DASHBOARD = "dashboard"
     const val CALENDAR = "calendar"

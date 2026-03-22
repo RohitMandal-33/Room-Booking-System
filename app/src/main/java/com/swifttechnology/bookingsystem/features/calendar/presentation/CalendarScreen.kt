@@ -2,6 +2,12 @@ package com.swifttechnology.bookingsystem.features.calendar.presentation
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.draw.shadow
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents.IntervalUtils
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -84,10 +90,12 @@ import java.time.YearMonth
 import java.time.temporal.TemporalAdjusters
 import com.swifttechnology.bookingsystem.navigation.ScreenRoutes
 
+import androidx.compose.runtime.LaunchedEffect
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CalendarScreen(
-    onLogout: () -> Unit,
+    searchQuery: String,
     onNavigate: (String) -> Unit,
     viewModel: CalendarViewModel = hiltViewModel(),
     pickerViewModel: DayTimePickerViewModel = hiltViewModel()
@@ -95,42 +103,32 @@ fun CalendarScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val pickerUiState by pickerViewModel.uiState.collectAsStateWithLifecycle()
 
-    MainScaffold(
-        sidebarItems = uiState.sidebarItems,
-        selectedItem = uiState.selectedItem,
-        searchQuery = uiState.searchQuery,
-        onSearchQueryChanged = viewModel::onSearchQueryChanged,
-        onSidebarItemSelected = { item ->
-            viewModel.onSidebarItemSelected(item)
-            onNavigate(item.route)
-        },
-        onLogout = {
-            CoroutineScope(Dispatchers.Main).launch {
-                viewModel.logout()
-                onLogout()
-            }
-        },
-        containerColor = MaterialTheme.customColors.whitePure,
-        searchPlaceholder = "Search people, participants...",
-        onEditClick = { onNavigate(ScreenRoutes.meetingRooms(editable = true)) }
-    ) {
-        CalendarContent(
-            uiState = uiState,
-            pickerUiState = pickerUiState,
-            onViewChange = viewModel::onViewChange,
-            onPrev = viewModel::onPrev,
-            onNext = viewModel::onNext,
-            onDateSelected = viewModel::onDateSelected,
-            onEventSelected = viewModel::onEventSelected,
-            onRoomSelected = viewModel::onRoomSelected,
-            onPickerDragStarted = pickerViewModel::onDragStarted,
-            onPickerPreviewChanged = pickerViewModel::onPreviewChanged,
-            onPickerMoveCommitted = pickerViewModel::onMoveCommitted,
-            onPickerResizeTopCommitted = pickerViewModel::onResizeTopCommitted,
-            onPickerResizeBottomCommitted = pickerViewModel::onResizeBottomCommitted,
-            onPickerDragCancelled = pickerViewModel::onDragCancelled
-        )
+    LaunchedEffect(searchQuery) {
+        viewModel.onSearchQueryChanged(searchQuery)
     }
+
+    LaunchedEffect(uiState.selectedDate, uiState.events) {
+        pickerViewModel.setBlockedSlots(viewModel.getBlockedSlotsForDate(uiState.selectedDate))
+    }
+
+    CalendarContent(
+        uiState = uiState,
+        pickerUiState = pickerUiState,
+        onViewChange = viewModel::onViewChange,
+        onPrev = viewModel::onPrev,
+        onNext = viewModel::onNext,
+        onDateSelected = viewModel::onDateSelected,
+        onEventSelected = viewModel::onEventSelected,
+        onRoomSelected = viewModel::onRoomSelected,
+        onGridLongPress = pickerViewModel::onTimeSlotLongPressed,
+        onPickerDragStarted = pickerViewModel::onDragStarted,
+        onPickerPreviewChanged = pickerViewModel::onPreviewChanged,
+        onPickerMoveCommitted = pickerViewModel::onMoveCommitted,
+        onPickerResizeTopCommitted = pickerViewModel::onResizeTopCommitted,
+        onPickerResizeBottomCommitted = pickerViewModel::onResizeBottomCommitted,
+        onPickerDragCancelled = pickerViewModel::onDragCancelled,
+        onPickerCancelBooking = pickerViewModel::onCancelBooking
+    )
 }
 
 //Calendar Content Root
@@ -146,12 +144,14 @@ private fun CalendarContent(
     onDateSelected: (LocalDate) -> Unit,
     onEventSelected: (MeetingEvent?) -> Unit,
     onRoomSelected: (Room) -> Unit,
+    onGridLongPress: (Int) -> Unit,
     onPickerDragStarted: () -> Unit,
     onPickerPreviewChanged: (TimeRange) -> Unit,
     onPickerMoveCommitted: (Int) -> Unit,
     onPickerResizeTopCommitted: (Int) -> Unit,
     onPickerResizeBottomCommitted: (Int) -> Unit,
-    onPickerDragCancelled: () -> Unit
+    onPickerDragCancelled: () -> Unit,
+    onPickerCancelBooking: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -208,17 +208,30 @@ private fun CalendarContent(
                     onEventClick = { onEventSelected(it) }
                 )
 
-                CalendarView.DAY -> DayColumnWithPicker(
-                    selectedDate = uiState.selectedDate,
-                    regularEvents = uiState.events,
-                    pickerState = pickerUiState,
-                    onDragStarted = onPickerDragStarted,
-                    onPreviewChanged = onPickerPreviewChanged,
-                    onMoveCommitted = onPickerMoveCommitted,
-                    onResizeTopCommitted = onPickerResizeTopCommitted,
-                    onResizeBottomCommitted = onPickerResizeBottomCommitted,
-                    onDragCancelled = onPickerDragCancelled
-                )
+                CalendarView.DAY -> Column(modifier = Modifier.fillMaxSize()) {
+                    DayColumnWithPicker(
+                        selectedDate = uiState.selectedDate,
+                        regularEvents = uiState.events,
+                        pickerState = pickerUiState,
+                        onGridLongPress = onGridLongPress,
+                        onDragStarted = onPickerDragStarted,
+                        onPreviewChanged = onPickerPreviewChanged,
+                        onMoveCommitted = onPickerMoveCommitted,
+                        onResizeTopCommitted = onPickerResizeTopCommitted,
+                        onResizeBottomCommitted = onPickerResizeBottomCommitted,
+                        onDragCancelled = onPickerDragCancelled,
+                        modifier = Modifier.weight(1f)
+                    )
+                    
+                    if (pickerUiState.draggableEvent != null) {
+                        DayBookingBottomBar(
+                            pickerState = pickerUiState,
+                            selectedDate = uiState.selectedDate,
+                            onCancel = onPickerCancelBooking,
+                            onProceed = { /* Handle navigate to booking screen later */ }
+                        )
+                    }
+                }
             }
         }
     }
@@ -855,5 +868,107 @@ private fun formatHour(hour: Int): String {
         in 1..11 -> "$hour:00 am"
         12 -> "12:00 pm"
         else -> "${hour - 12}:00 pm"
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+private fun DayBookingBottomBar(
+    pickerState: DayPickerUiState,
+    selectedDate: LocalDate,
+    onCancel: () -> Unit,
+    onProceed: () -> Unit
+) {
+    if (pickerState.draggableEvent == null) return
+
+    val event = pickerState.draggableEvent
+    val startMin = event.timeRange.startMinutes
+    val endMin = event.timeRange.endMinutes
+
+    val startTime = LocalTime.of(startMin / 60, startMin % 60)
+    val endTime = LocalTime.of(endMin / 60, endMin % 60)
+
+    val timeFormatter = DateTimeFormatter.ofPattern("hh:mm a")
+    val startTimeStr = startTime.format(timeFormatter)
+    val endTimeStr = endTime.format(timeFormatter)
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 16.dp,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                spotColor = Color.Black.copy(alpha = 0.1f)
+            )
+            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+            .background(Color.White)
+            .padding(20.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFFF3E8FF), RoundedCornerShape(12.dp))
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column {
+                Text(
+                    text = "Selected Time",
+                    fontSize = 12.sp,
+                    color = Color.Gray,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "$startTimeStr - $endTimeStr",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = PurplePrimary
+                )
+            }
+            Text(
+                text = IntervalUtils.formatDuration(event.timeRange.durationMinutes),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color.Black
+            )
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            OutlinedButton(
+                onClick = onCancel,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(52.dp),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, Color(0xFFE0E0E0))
+            ) {
+                Text("Cancel", color = Color.Black, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+            }
+
+            Button(
+                onClick = onProceed,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(52.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = PurplePrimary)
+            ) {
+                Text("Proceed to booking", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                Spacer(Modifier.width(8.dp))
+                Icon(
+                    imageVector = Icons.Filled.ChevronRight,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
     }
 }

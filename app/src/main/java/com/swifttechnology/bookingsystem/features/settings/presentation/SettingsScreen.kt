@@ -11,32 +11,20 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
+import androidx.compose.runtime.LaunchedEffect
+
 @Composable
 fun SettingsScreen(
-    onLogout: () -> Unit,
+    searchQuery: String,
     onNavigate: (String) -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    MainScaffold(
-        sidebarItems = uiState.sidebarItems,
-        selectedItem = uiState.selectedItem,
-        searchQuery = uiState.searchQuery,
-        onSearchQueryChanged = viewModel::onSearchQueryChanged,
-        onSidebarItemSelected = { item ->
-            viewModel.onSidebarItemSelected(item)
-            onNavigate(item.route)
-        },
-        onLogout = {
-            CoroutineScope(Dispatchers.Main).launch {
-                viewModel.logout()
-                onLogout()
-            }
-        },
-        onEditClick = { onNavigate(ScreenRoutes.meetingRooms(editable = true)) }
-    ) {
-        ComingSoonContent(title = uiState.selectedItem.label)
+    LaunchedEffect(searchQuery) {
+        viewModel.onSearchQueryChanged(searchQuery)
     }
+
+    ComingSoonContent(title = uiState.selectedItem.label)
 }
 

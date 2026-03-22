@@ -29,68 +29,48 @@ import com.swifttechnology.bookingsystem.shared.components.rooms.RoomCard
 import com.swifttechnology.bookingsystem.shared.layout.MainScaffold
 import kotlinx.coroutines.launch
 
+import androidx.compose.runtime.LaunchedEffect
+
 @Composable
 fun MeetingRoomsScreen(
-    onLogout: () -> Unit,
+    searchQuery: String,
     onNavigate: (String) -> Unit,
     onOpenRoomEdit: (String) -> Unit,
     isEditable: Boolean = false,
     viewModel: MeetingRoomsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val scope = rememberCoroutineScope()
-    var editable by rememberSaveable { mutableStateOf(isEditable) }
 
-    MainScaffold(
-        sidebarItems = uiState.sidebarItems,
-        selectedItem = uiState.selectedItem,
-        searchQuery = uiState.searchQuery,
-        onSearchQueryChanged = viewModel::onSearchQueryChanged,
-        onSidebarItemSelected = { item ->
-            if (item.route == ScreenRoutes.BOOK_ROOM) {
-                onNavigate(ScreenRoutes.BOOK_ROOM)
-            } else {
-                viewModel.onSidebarItemSelected(item)
-                onNavigate(item.route)
-            }
-        },
-        onLogout = {
-            scope.launch {
-                viewModel.logout()
-                onLogout()
-            }
-        },
-        showEditIcon = true,
-        onEditClick = { editable = !editable }
-    ) {
+    LaunchedEffect(searchQuery) {
+        viewModel.onSearchQueryChanged(searchQuery)
+    }
 
-        Box(modifier = Modifier.fillMaxSize()) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 88.dp), // extra bottom pad so last card isn't hidden behind FAB
-                verticalArrangement = Arrangement.spacedBy(24.dp)
-            ) {
-                items(uiState.filteredRooms) { room ->
-                    RoomCard(
-                        room = room,
-                        isEditable = editable,
-                        onEditClick = { roomToEdit ->
-                            onOpenRoomEdit(roomToEdit.name)
-                        },
-                        onDeleteClick = { roomToDelete ->
-                            viewModel.deleteRoom(roomToDelete)
-                        }
-                    )
-                }
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 88.dp), // extra bottom pad so last card isn't hidden behind FAB
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            items(uiState.filteredRooms) { room ->
+                RoomCard(
+                    room = room,
+                    isEditable = isEditable,
+                    onEditClick = { roomToEdit ->
+                        onOpenRoomEdit(roomToEdit.name)
+                    },
+                    onDeleteClick = { roomToDelete ->
+                        viewModel.deleteRoom(roomToDelete)
+                    }
+                )
             }
-
-            AddFab(
-                onClick = { /* open booking/create dialog */ },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(24.dp)
-            )
         }
+
+        AddFab(
+            onClick = { /* open booking/create dialog */ },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(24.dp)
+        )
     }
 }
 

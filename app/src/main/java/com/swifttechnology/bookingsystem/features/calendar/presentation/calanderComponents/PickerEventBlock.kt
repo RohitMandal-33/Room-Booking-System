@@ -1,5 +1,7 @@
 package com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -7,6 +9,7 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
@@ -26,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -41,14 +45,19 @@ import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 
 // Sizing constants
-private val DOT_SIZE         = 10.dp          // visible dot diameter
-private val TOUCH_TARGET     = 36.dp          // invisible touch-zone box (larger than dot)
-private val CORNER_RADIUS    = 8.dp
+private val DOT_SIZE = 10.dp
+private val TOUCH_TARGET = 40.dp
+private val CORNER_RADIUS = 10.dp
 
+// How far from the corner the dot sits along the edge
+private val DOT_EDGE_INSET = 20.dp
 
-private val PickerFill   = Color(0xFFE8EAF6)
+// Colors
+private val PickerFill = Color(0xFFEDE7F6)
+private val PickerFillAdjusted = Color(0xFFFFE0B2)
 private val PickerBorder = Color(0xFF5C6BC0)
-private val PickerDot    = Color(0xFF5C6BC0)
+private val PickerBorderAdjusted = Color(0xFFFF9800)
+private val PickerDot = Color(0xFF5C6BC0)
 
 @Composable
 internal fun PickerEventBlock(
@@ -64,28 +73,38 @@ internal fun PickerEventBlock(
     onDragCancelled: () -> Unit,
     onPointerViewportY: (Float) -> Unit
 ) {
-    val haptic       = LocalHapticFeedback.current
-    val density      = LocalDensity.current
+    val haptic = LocalHapticFeedback.current
+    val density = LocalDensity.current
 
-    // Convert touch-target size to px for hit-testing
     val touchTargetPx = with(density) { TOUCH_TARGET.toPx() }
-    val minHeightPx   = IntervalUtils.MIN_DURATION_MINUTES * minutePx
-    val dayMaxPx      = IntervalUtils.DAY_MINUTES * minutePx
+    val minHeightPx = IntervalUtils.MIN_DURATION_MINUTES * minutePx
+    val dayMaxPx = IntervalUtils.DAY_MINUTES * minutePx
 
-    val topPxState    = remember { mutableFloatStateOf(event.timeRange.startMinutes * minutePx) }
+    val topPxState = remember { mutableFloatStateOf(event.timeRange.startMinutes * minutePx) }
     val heightPxState = remember { mutableFloatStateOf(event.timeRange.durationMinutes * minutePx) }
     var isDraggingLocally by remember { mutableStateOf(false) }
 
     LaunchedEffect(event.timeRange) {
         if (!isDraggingLocally) {
-            topPxState.floatValue    = event.timeRange.startMinutes * minutePx
+            topPxState.floatValue = event.timeRange.startMinutes * minutePx
             heightPxState.floatValue = event.timeRange.durationMinutes * minutePx
         }
     }
 
     var lastHapticSnap by remember { mutableIntStateOf(-1) }
 
-    // Outer Box: no clip so dots can overlap the border
+    // Animated colors for conflict-adjust flash
+    val animatedFill by animateColorAsState(
+        targetValue = if (event.wasAdjusted) PickerFillAdjusted else PickerFill,
+        animationSpec = tween(durationMillis = 400),
+        label = "pickerFillAnim"
+    )
+    val animatedBorder by animateColorAsState(
+        targetValue = if (event.wasAdjusted) PickerBorderAdjusted else PickerBorder,
+        animationSpec = tween(durationMillis = 400),
+        label = "pickerBorderAnim"
+    )
+
     Box(
         modifier = modifier
             .offset { IntOffset(0, topPxState.floatValue.roundToInt()) }
@@ -96,37 +115,33 @@ internal fun PickerEventBlock(
                 layout(placeable.width, h) { placeable.place(0, 0) }
             }
             .padding(horizontal = 4.dp)
-            //  All gesture detection lives here
             .pointerInput(event.id) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
                     down.consume()
 
-                    val touchX   = down.position.x
-                    val touchY   = down.position.y
-                    val blockW   = size.width.toFloat()
-                    val blockH   = size.height.toFloat()
+                    val touchX = down.position.x
+                    val touchY = down.position.y
+                    val blockW = size.width.toFloat()
+                    val blockH = size.height.toFloat()
 
-                    // Corner-based handle detection:
-                    //   TOP    → top-left  corner box
-                    //   BOTTOM → bottom-right corner box
-                    //   BODY   → everything else
+                    // Handle detection: top-left strip, bottom-right strip, or body
                     val handle = when {
-                        touchX < touchTargetPx && touchY < touchTargetPx ->
+                        touchY < touchTargetPx && touchX < blockW * 0.5f ->
                             DragHandle.TOP
-                        touchX > blockW - touchTargetPx && touchY > blockH - touchTargetPx ->
+                        touchY > blockH - touchTargetPx && touchX > blockW * 0.5f ->
                             DragHandle.BOTTOM
                         else ->
                             DragHandle.BODY
                     }
 
-                    val baseTopPx    = topPxState.floatValue
+                    val baseTopPx = topPxState.floatValue
                     val baseHeightPx = heightPxState.floatValue
                     val baseStartMin = event.timeRange.startMinutes
-                    val baseEndMin   = event.timeRange.endMinutes
+                    val baseEndMin = event.timeRange.endMinutes
 
                     isDraggingLocally = true
-                    lastHapticSnap    = -1
+                    lastHapticSnap = -1
                     onDragStarted()
 
                     var accPx = 0f
@@ -142,7 +157,7 @@ internal fun PickerEventBlock(
                                 topPxState.floatValue = rawTop
 
                                 val snappedStart =
-                                    IntervalUtils.snapToInterval(rawTop / minutePx)
+                                    IntervalUtils.snapToInterval((rawTop / minutePx).roundToInt())
                                 if (snappedStart != lastHapticSnap) {
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     lastHapticSnap = snappedStart
@@ -158,12 +173,12 @@ internal fun PickerEventBlock(
                             DragHandle.TOP -> {
                                 val rawTop = (baseTopPx + accPx)
                                     .coerceIn(0f, baseTopPx + baseHeightPx - minHeightPx)
-                                topPxState.floatValue    = rawTop
+                                topPxState.floatValue = rawTop
                                 heightPxState.floatValue =
                                     (baseHeightPx - accPx).coerceAtLeast(minHeightPx)
 
                                 val snappedStart =
-                                    IntervalUtils.snapToInterval(rawTop / minutePx)
+                                    IntervalUtils.snapToInterval((rawTop / minutePx).roundToInt())
                                 if (snappedStart != lastHapticSnap) {
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     lastHapticSnap = snappedStart
@@ -177,7 +192,7 @@ internal fun PickerEventBlock(
                                 heightPxState.floatValue = rawBottom - baseTopPx
 
                                 val snappedEnd =
-                                    IntervalUtils.snapToInterval(rawBottom / minutePx)
+                                    IntervalUtils.snapToInterval((rawBottom / minutePx).roundToInt())
                                 if (snappedEnd != lastHapticSnap) {
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     lastHapticSnap = snappedEnd
@@ -193,75 +208,104 @@ internal fun PickerEventBlock(
 
                     isDraggingLocally = false
 
-                    val finalTop     = topPxState.floatValue
-                    val finalBottom  = finalTop + heightPxState.floatValue
-                    val snappedStart = IntervalUtils.snapToInterval(finalTop / minutePx)
-                    val snappedEnd   = IntervalUtils.snapToInterval(finalBottom / minutePx)
+                    val finalTop = topPxState.floatValue
+                    val finalBottom = finalTop + heightPxState.floatValue
+                    val snappedStart = IntervalUtils.snapToInterval((finalTop / minutePx).roundToInt())
+                    val snappedEnd = IntervalUtils.snapToInterval((finalBottom / minutePx).roundToInt())
 
                     when (handle) {
-                        DragHandle.BODY   -> onMoveCommitted(snappedStart)
-                        DragHandle.TOP    -> onResizeTopCommitted(snappedStart)
+                        DragHandle.BODY -> onMoveCommitted(snappedStart)
+                        DragHandle.TOP -> onResizeTopCommitted(snappedStart)
                         DragHandle.BOTTOM -> onResizeBottomCommitted(snappedEnd)
                     }
                 }
             }
     ) {
-        //Visible block: border + fill
+        // Visible block: border + fill with shadow
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .shadow(
+                    elevation = if (isDraggingLocally) 8.dp else 2.dp,
+                    shape = RoundedCornerShape(CORNER_RADIUS),
+                    clip = false
+                )
                 .clip(RoundedCornerShape(CORNER_RADIUS))
-                .background(PickerFill)
-                .border(1.5.dp, PickerBorder, RoundedCornerShape(CORNER_RADIUS))
+                .background(animatedFill)
+                .border(1.5.dp, animatedBorder, RoundedCornerShape(CORNER_RADIUS))
         ) {
-            Text(
-                text = event.title,
-                fontSize = 12.sp,
-                color = PickerBorder,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
+            // Content layout: title only
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        start = 16.dp,
-                        end = 16.dp,
-                        top = 8.dp,
-                        bottom = 8.dp
-                    )
-            )
+                    .fillMaxSize()
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    text = event.title,
+                    fontSize = 12.sp,
+                    color = PickerBorder,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
 
-        //  TOP-LEFT: transparent touch target + dot centred on corner (shifted a little right)
+        // TOP-LEFT resize dot
+        // The dot sits exactly on the top border line:
+        //   - Aligned to TopStart so x=0 is the left edge of the block
+        //   - x offset = DOT_EDGE_INSET moves it away from the left corner
+        //   - y offset = -(DOT_SIZE / 2) so the dot straddles the top border (half above, half below)
+        // The TOUCH_TARGET wrapper is centered on the dot for a comfortable hit area.
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(TOUCH_TARGET)
                 .align(Alignment.TopStart)
-                // Shifted right by 12dp from the edge
-                .offset(x = -(TOUCH_TARGET / 2) + 12.dp, y = -(TOUCH_TARGET / 2))
+                // Center the touch target horizontally over the dot position:
+                // dot center is at x = DOT_EDGE_INSET, so shift by (DOT_EDGE_INSET - TOUCH_TARGET/2)
+                .offset(
+                    x = DOT_EDGE_INSET - TOUCH_TARGET / 2,
+                    // Center touch target vertically on the border line:
+                    // dot center is at y = 0, so shift by -(TOUCH_TARGET / 2)
+                    y = -(TOUCH_TARGET / 2)
+                )
                 .background(Color.Transparent)
         ) {
             Box(
                 modifier = Modifier
                     .size(DOT_SIZE)
+                    .shadow(2.dp, CircleShape)
                     .background(PickerDot, CircleShape)
             )
         }
 
-        // BOTTOM-RIGHT: transparent touch target + dot centred on corner (shifted a little left)
+        // BOTTOM-RIGHT resize dot
+        // The dot sits exactly on the bottom border line:
+        //   - Aligned to BottomEnd so x=0 is the right edge of the block
+        //   - x offset = -(DOT_EDGE_INSET) moves it away from the right corner (negative = leftward from end)
+        //   - y offset = +(DOT_SIZE / 2) so the dot straddles the bottom border (half above, half below)
+        // The TOUCH_TARGET wrapper is centered on the dot for a comfortable hit area.
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(TOUCH_TARGET)
                 .align(Alignment.BottomEnd)
-                // Shifted left by 12dp from the edge
-                .offset(x = (TOUCH_TARGET / 2) - 12.dp, y = (TOUCH_TARGET / 2))
+                // Center the touch target horizontally over the dot position:
+                // dot center is at x = -DOT_EDGE_INSET from the right, so shift by -(DOT_EDGE_INSET - TOUCH_TARGET/2)
+                .offset(
+                    x = -(DOT_EDGE_INSET - TOUCH_TARGET / 2),
+                    // Center touch target vertically on the border line:
+                    // dot center is at y = 0 (bottom), so shift by +(TOUCH_TARGET / 2)
+                    y = TOUCH_TARGET / 2
+                )
                 .background(Color.Transparent)
         ) {
             Box(
                 modifier = Modifier
                     .size(DOT_SIZE)
+                    .shadow(2.dp, CircleShape)
                     .background(PickerDot, CircleShape)
             )
         }

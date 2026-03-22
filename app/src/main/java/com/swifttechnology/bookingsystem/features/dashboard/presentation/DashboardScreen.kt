@@ -29,35 +29,21 @@ import kotlinx.coroutines.launch
 
 
 
+import androidx.compose.runtime.LaunchedEffect
+
 @Composable
 fun DashboardScreen(
-    onLogout: () -> Unit,
+    searchQuery: String,
     onNavigate: (String) -> Unit,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val scope = rememberCoroutineScope()
 
-    MainScaffold(
-        sidebarItems = uiState.sidebarItems,
-        selectedItem = uiState.selectedItem,
-        searchQuery = uiState.searchQuery,
-        onSearchQueryChanged = viewModel::onSearchQueryChanged,
-        onSidebarItemSelected = { item ->
-            viewModel.onSidebarItemSelected(item)
-            onNavigate(item.route)
-        },
-        onLogout = {
-            scope.launch {
-                viewModel.logout()
-                onLogout()
-            }
-        },
-        containerColor = MaterialTheme.customColors.dashboardBg,
-        onEditClick = { onNavigate(ScreenRoutes.meetingRooms(editable = true)) }
-    ) {
-        DashboardOverview()
+    LaunchedEffect(searchQuery) {
+        viewModel.onSearchQueryChanged(searchQuery)
     }
+
+    DashboardOverview()
 }
 
 @Composable

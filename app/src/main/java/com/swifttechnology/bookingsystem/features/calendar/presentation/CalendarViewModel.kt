@@ -6,6 +6,7 @@ import androidx.annotation.RequiresApi
 import com.swifttechnology.bookingsystem.core.model.Room
 import com.swifttechnology.bookingsystem.core.model.defaultRooms
 import com.swifttechnology.bookingsystem.core.storage.TokenStorage
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents.TimeRange
 import com.swifttechnology.bookingsystem.shared.components.SidebarItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
@@ -104,6 +105,17 @@ class CalendarViewModel @Inject constructor(
 
     suspend fun logout() {
         tokenStorage.clear()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun getBlockedSlotsForDate(date: LocalDate): List<TimeRange> {
+        return _uiState.value.events
+            .filter { it.date == date }
+            .map { event ->
+                val startMin = event.startTime.hour * 60 + event.startTime.minute
+                val endMin = event.endTime.hour * 60 + event.endTime.minute
+                TimeRange(startMin, endMin)
+            }
     }
 }
 
