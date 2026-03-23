@@ -2,11 +2,14 @@ package com.swifttechnology.bookingsystem.features.calendar.presentation
 
 import android.os.Build
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.annotation.RequiresApi
 import com.swifttechnology.bookingsystem.core.model.Room
-import com.swifttechnology.bookingsystem.core.model.defaultRooms
-import com.swifttechnology.bookingsystem.core.storage.TokenStorage
+import com.swifttechnology.bookingsystem.core.model.RoomStatus
+import com.swifttechnology.bookingsystem.features.auth.domain.repository.AuthRepository
+import com.swifttechnology.bookingsystem.features.booking.domain.repository.BookingRepository
 import com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents.TimeRange
+import com.swifttechnology.bookingsystem.features.meetingrooms.domain.repository.RoomRepository
 import com.swifttechnology.bookingsystem.shared.components.SidebarItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
@@ -17,21 +20,100 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
 import kotlin.math.min
 
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
-    private val tokenStorage: TokenStorage
+    private val authRepository: AuthRepository,
+    private val roomRepository: RoomRepository,
+    private val bookingRepository: BookingRepository
 ) : ViewModel() {
     @RequiresApi(Build.VERSION_CODES.O)
     private val _uiState = MutableStateFlow(
         CalendarUiState(
-            selectedRoom = defaultRooms.firstOrNull(),
+            selectedRoom = null,
             events = sampleEvents()
         )
     )
     val uiState: StateFlow<CalendarUiState> = _uiState.asStateFlow()
+
+    private val _rooms = MutableStateFlow<List<Room>>(emptyList())
+    val rooms: StateFlow<List<Room>> = _rooms.asStateFlow()
+
+    init {
+        loadRooms()
+        loadBookings()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun loadRooms() {
+        viewModelScope.launch {
+            roomRepository.listActiveRooms()
+                .onSuccess { page ->
+                    val roomList = page.data?.map { dto ->
+                        Room(
+                            id = dto.id,
+                            name = dto.roomName,
+                            status = RoomStatus.fromApiString(dto.status),
+                            capacity = dto.capacity,
+                            resources = dto.resources ?: emptyList()
+                        )
+                    } ?: emptyList()
+                    _rooms.value = roomList
+                    if (roomList.isNotEmpty()) {
+                        _uiState.update { it.copy(selectedRoom = roomList.first()) }
+                    }
+                }
+                .onFailure { /* Keep empty rooms on failure */ }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun loadBookings() {
+        viewModelScope.launch {
+            bookingRepository.getAllBookings()
+                .onSuccess { bookings ->
+                    val events = bookings.mapIndexedNotNull { index, dto ->
+                        try {
+                            val date = LocalDate.parse(dto.date ?: return@mapIndexedNotNull null)
+                            val startTime = dto.startTime?.let {
+                                LocalTime.of(it.hour, it.minute)
+                            } ?: return@mapIndexedNotNull null
+                            val endTime = dto.endTime?.let {
+                                LocalTime.of(it.hour, it.minute)
+                            } ?: return@mapIndexedNotNull null
+
+                            val color = when (dto.meetingType) {
+                                "INTERNAL" -> Color(0xFF4CD8A8)
+                                "CLIENT" -> Color(0xFFFF8C5A)
+                                "EXECUTIVE" -> Color(0xFF4A90E2)
+                                else -> Color(0xFF4CD8A8)
+                            }
+
+                            MeetingEvent(
+                                id = (dto.id ?: index.toLong()).toInt(),
+                                title = dto.meetingTitle ?: "Meeting",
+                                date = date,
+                                startTime = startTime,
+                                endTime = endTime,
+                                color = color,
+                                description = dto.description ?: "",
+                                meetingRoom = dto.roomName ?: ""
+                            )
+                        } catch (e: Exception) {
+                            null
+                        }
+                    }
+                    if (events.isNotEmpty()) {
+                        _uiState.update { it.copy(events = events) }
+                    }
+                    // If no API events, keep the sample events
+                }
+                .onFailure { /* Keep sample events on failure */ }
+        }
+    }
 
     fun onSidebarItemSelected(item: SidebarItem) {
         _uiState.update { current ->
@@ -104,7 +186,7 @@ class CalendarViewModel @Inject constructor(
     }
 
     suspend fun logout() {
-        tokenStorage.clear()
+        authRepository.logout()
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -152,4 +234,3 @@ private fun sampleEvents(): List<MeetingEvent> {
         MeetingEvent(7, "Weekly Standup", d(27), LocalTime.of(9, 0), LocalTime.of(9, 30), eventOrange)
     )
 }
-

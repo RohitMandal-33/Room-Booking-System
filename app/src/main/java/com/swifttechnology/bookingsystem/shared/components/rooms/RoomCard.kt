@@ -24,6 +24,7 @@ import androidx.compose.material.icons.outlined.BorderColor
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Slideshow
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material.icons.outlined.Wifi
@@ -62,10 +63,10 @@ import com.swifttechnology.bookingsystem.core.model.defaultAmenities
 import com.swifttechnology.bookingsystem.core.model.defaultRooms
 
 private val allAvailableAmenities = listOf(
-    RoomAmenity("Projector", Icons.Outlined.Slideshow),
-    RoomAmenity("Whiteboard", Icons.Outlined.BorderColor),
-    RoomAmenity("Video", Icons.Outlined.Videocam),
-    RoomAmenity("WiFi", Icons.Outlined.Wifi)
+    RoomAmenity("PROJECTOR", Icons.Outlined.Slideshow),
+    RoomAmenity("WHITEBOARD", Icons.Outlined.BorderColor),
+    RoomAmenity("TV", Icons.Outlined.Videocam),
+    RoomAmenity("WIFI", Icons.Outlined.Wifi)
 )
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -105,7 +106,6 @@ fun RoomCard(
             editedAmenities.addAll(room.amenities)
         }
     }
-
 
     // Add amenity dialog
     if (showAddAmenityDialog) {
@@ -168,7 +168,6 @@ fun RoomCard(
         )
     }
 
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -184,7 +183,7 @@ fun RoomCard(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
 
-
+            //  Room name + status badge
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -236,6 +235,7 @@ fun RoomCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Left side: time label or empty spacer
                 if (room.timeLabel.isNotEmpty()) {
                     Text(
                         text = room.timeLabel,
@@ -247,6 +247,8 @@ fun RoomCard(
                 } else {
                     Spacer(Modifier.width(1.dp))
                 }
+
+                // Right side: capacity
                 if (isEditable && isEditing) {
                     OutlinedTextField(
                         value = editedCapacity,
@@ -257,6 +259,14 @@ fun RoomCard(
                             fontSize = 12.sp,
                             color = MaterialTheme.customColors.deepBlack
                         ),
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Outlined.Person,
+                                contentDescription = "Capacity",
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.customColors.textBody
+                            )
+                        },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.customColors.neutral300,
                             unfocusedBorderColor = MaterialTheme.customColors.neutral300,
@@ -274,17 +284,28 @@ fun RoomCard(
                         }
                     )
                 } else {
-                    Text(
-                        text = "Capacity : ${room.capacity}",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.customColors.textBody,
-                        letterSpacing = 0.4.sp
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Person,
+                            contentDescription = "Capacity",
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.customColors.textBody
+                        )
+                        Text(
+                            text = "Capacity : ${room.capacity}",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.customColors.textBody,
+                            letterSpacing = 0.4.sp
+                        )
+                    }
                 }
             }
 
+            // Amenity chips
             if (isEditable && isEditing) {
-                // Editable amenity chips in a FlowRow
                 FlowRow(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -298,14 +319,9 @@ fun RoomCard(
                             onRemove = { editedAmenities.remove(amenity) }
                         )
                     }
-
-                    // + Add button
-                    AddAmenityChip(
-                        onClick = { showAddAmenityDialog = true }
-                    )
+                    AddAmenityChip(onClick = { showAddAmenityDialog = true })
                 }
             } else {
-                // Read-only amenity chips
                 FlowRow(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -322,7 +338,7 @@ fun RoomCard(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // ── Bottom: Action buttons ───────────────────────────────
+        //Action buttons
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -388,7 +404,7 @@ fun RoomCard(
             } else {
                 // Normal mode action button
                 val (btnBg, btnText, btnTextColor) = when (room.status) {
-                    RoomStatus.AVAILABLE -> Triple(
+                    RoomStatus.AVAILABLE, RoomStatus.ACTIVE -> Triple(
                         MaterialTheme.customColors.deepBlack,
                         "Book Now",
                         MaterialTheme.customColors.whitePure
@@ -398,7 +414,7 @@ fun RoomCard(
                         "View Schedule",
                         MaterialTheme.customColors.deepBlack
                     )
-                    RoomStatus.DISABLED -> Triple(
+                    RoomStatus.DISABLED, RoomStatus.INACTIVE -> Triple(
                         MaterialTheme.customColors.neutral200,
                         "Inquire",
                         MaterialTheme.customColors.deepBlack
@@ -431,16 +447,13 @@ fun RoomCard(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// SUPPORTING COMPOSABLES
-// ─────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun StatusBadge(status: RoomStatus) {
     val (bg, label) = when (status) {
         RoomStatus.BOOKED -> MaterialTheme.customColors.yellow100 to "Booked"
-        RoomStatus.AVAILABLE -> MaterialTheme.customColors.green100 to "Available"
-        RoomStatus.DISABLED -> MaterialTheme.customColors.neutral400 to "Disabled"
+        RoomStatus.AVAILABLE, RoomStatus.ACTIVE -> MaterialTheme.customColors.green100 to "Available"
+        RoomStatus.DISABLED, RoomStatus.INACTIVE -> MaterialTheme.customColors.neutral400 to "Disabled"
     }
 
     Box(

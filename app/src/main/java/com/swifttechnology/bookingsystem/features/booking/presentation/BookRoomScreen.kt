@@ -58,7 +58,7 @@ import com.swifttechnology.bookingsystem.shared.components.PrimaryButton
 import com.swifttechnology.bookingsystem.shared.layout.MainScaffold
 import com.swifttechnology.bookingsystem.shared.layout.BottomSheetView
 import kotlinx.coroutines.launch
-import com.swifttechnology.bookingsystem.core.model.defaultRooms
+import com.swifttechnology.bookingsystem.core.model.Room
 import com.swifttechnology.bookingsystem.shared.components.rooms.RoomCard
 import com.swifttechnology.bookingsystem.shared.components.rooms.RoomInfoCard
 import com.swifttechnology.bookingsystem.navigation.ScreenRoutes
@@ -98,7 +98,7 @@ fun BookRoomScreen(
     val participantsSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val meetingTypes = listOf("Team Meeting", "Client Call", "Workshop", "Interview", "Training")
-    val availableRooms = defaultRooms.map {it.name}
+    val availableRooms = uiState.availableRooms.map { it.name }
     val availableParticipants = listOf("Alice Johnson", "Bob Smith", "Carol White", "David Lee")
     val selectedInternalKeys = formState.participants
     val selectedExternalMembers = formState.externalMembers
@@ -156,13 +156,17 @@ fun BookRoomScreen(
                     expanded = showRoomDropdown,
                     options = availableRooms,
                     onExpandChange = { showRoomDropdown = it },
-                    onOptionSelected = {
-                        viewModel.onFormStateChanged(formState.copy(selectedRoom = it))
+                    onOptionSelected = { selected ->
+                        val selectedRoom = uiState.availableRooms.find { it.name == selected }
+                        viewModel.onFormStateChanged(formState.copy(
+                            selectedRoom = selected,
+                            selectedRoomId = selectedRoom?.id
+                        ))
                         showRoomDropdown = false
                     }
                 )
-                // Room cared specific to name
-                defaultRooms.find { it.name == formState.selectedRoom }?.let {
+                // Room card specific to name
+                uiState.availableRooms.find { it.name == formState.selectedRoom }?.let {
                     RoomInfoCard(
                         room = it,
                         onEditClick = onNavigateToEdit
@@ -269,11 +273,11 @@ fun BookRoomScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 PrimaryButton(
-                    text = "Book Meeting Room",
+                    text = if (uiState.isSubmitting) "Booking..." else "Book Meeting Room",
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = Spacing.md),
-                    onClick = { onSubmit(formState) }
+                    onClick = { viewModel.submitBooking() }
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))

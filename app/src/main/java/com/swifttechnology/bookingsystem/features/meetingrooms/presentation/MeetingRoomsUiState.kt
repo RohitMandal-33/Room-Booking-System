@@ -9,10 +9,11 @@ data class MeetingRoomsUiState(
     val selectedItem: SidebarItem = defaultSidebarItems.first { it.route == com.swifttechnology.bookingsystem.navigation.ScreenRoutes.MEETING_ROOMS }
         .copy(isActive = true),
     val rooms: List<Room> = emptyList(),
-    val searchQuery: String = ""
+    val searchQuery: String = "",
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null
 ) {
     val filteredRooms: List<Room>
         get() = if (searchQuery.isBlank()) rooms
         else rooms.filter { it.name.contains(searchQuery, ignoreCase = true) }
 }
-

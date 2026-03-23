@@ -15,6 +15,7 @@ val defaultAmenities = listOf(
 
 val defaultRooms = listOf(
     Room(
+        1L,
         "Conference Room A",
         RoomStatus.BOOKED,
         10,
@@ -22,6 +23,7 @@ val defaultRooms = listOf(
         defaultAmenities
     ),
     Room(
+        2L,
         "Board Room",
         RoomStatus.AVAILABLE,
         8,
@@ -29,6 +31,7 @@ val defaultRooms = listOf(
         defaultAmenities
     ),
     Room(
+        3L,
         "Training Room",
         RoomStatus.BOOKED,
         20,
@@ -36,6 +39,7 @@ val defaultRooms = listOf(
         defaultAmenities
     ),
     Room(
+        4L,
         "Focus Room 1",
         RoomStatus.DISABLED,
         4,
@@ -43,6 +47,7 @@ val defaultRooms = listOf(
         defaultAmenities
     ),
     Room(
+        5L,
         "Focus Room 2",
         RoomStatus.AVAILABLE,
         4,
@@ -50,6 +55,7 @@ val defaultRooms = listOf(
         defaultAmenities
     ),
     Room(
+        6L,
         "Meeting Room Alpha",
         RoomStatus.BOOKED,
         12,
@@ -57,6 +63,7 @@ val defaultRooms = listOf(
         defaultAmenities
     ),
     Room(
+        7L,
         "Meeting Room Beta",
         RoomStatus.AVAILABLE,
         6,
@@ -64,6 +71,7 @@ val defaultRooms = listOf(
         defaultAmenities
     ),
     Room(
+        8L,
         "Strategy Room",
         RoomStatus.AVAILABLE,
         10,
@@ -71,6 +79,7 @@ val defaultRooms = listOf(
         defaultAmenities
     ),
     Room(
+        9L,
         "Design Studio",
         RoomStatus.BOOKED,
         15,
@@ -78,6 +87,7 @@ val defaultRooms = listOf(
         defaultAmenities
     ),
     Room(
+        10L,
         "Innovation Lab",
         RoomStatus.DISABLED,
         12,

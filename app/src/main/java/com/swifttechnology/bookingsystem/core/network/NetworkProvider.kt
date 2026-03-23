@@ -3,6 +3,7 @@ package com.swifttechnology.bookingsystem.core.network
 import com.swifttechnology.bookingsystem.core.network.plugins.TokenAuthenticator
 import com.swifttechnology.bookingsystem.core.network.plugins.TokenPlugin
 import com.swifttechnology.bookingsystem.core.storage.TokenStorage
+import dagger.Lazy
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -20,7 +21,7 @@ object NetworkProvider {
     private const val READ_TIMEOUT_SECONDS = 30L
     private const val WRITE_TIMEOUT_SECONDS = 30L
 
-    fun buildOkHttpClient(tokenStorage: TokenStorage): OkHttpClient {
+    fun buildOkHttpClient(tokenStorage: Lazy<TokenStorage>): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }

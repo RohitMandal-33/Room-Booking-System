@@ -18,7 +18,7 @@ object Constants {
 
     // Pagination
     const val DEFAULT_PAGE_SIZE = 20
-    const val DEFAULT_PAGE = 1
+    const val DEFAULT_PAGE = 0
 
     // Booking statuses
     const val STATUS_PENDING = "pending"

@@ -106,6 +106,9 @@ fun MainAppScreen(
                     onNavigate = { currentRoute = it },
                     onOpenRoomEdit = { roomName ->
                         navController.navigate(ScreenRoutes.meetingRoomEdit(roomName))
+                    },
+                    onNavigateToAddRoom = {
+                        navController.navigate(ScreenRoutes.MEETING_ROOM_ADD)
                     }
                 )
             }

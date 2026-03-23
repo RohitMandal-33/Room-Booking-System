@@ -9,6 +9,7 @@ import androidx.navigation.navArgument
 import com.swifttechnology.bookingsystem.features.auth.presentation.login.LoginScreen
 import com.swifttechnology.bookingsystem.features.main.presentation.MainAppScreen
 import com.swifttechnology.bookingsystem.features.meetingrooms.presentation.MeetingRoomComponets.EditRoomCardScreen
+import com.swifttechnology.bookingsystem.features.meetingrooms.presentation.MeetingRoomComponets.AddRoomScreen
 
 @Composable
 fun AppNavGraph(
@@ -48,6 +49,14 @@ fun AppNavGraph(
             val roomName = entry.arguments?.getString(ScreenRoutes.MEETING_ROOM_NAME).orEmpty()
             EditRoomCardScreen(
                 roomName = roomName,
+                onBack = { navController.popBackStack() },
+                onLogout = onLogout,
+                onNavigate = { navController.navigate(ScreenRoutes.MAIN_APP) }
+            )
+        }
+
+        composable(ScreenRoutes.MEETING_ROOM_ADD) {
+            AddRoomScreen(
                 onBack = { navController.popBackStack() },
                 onLogout = onLogout,
                 onNavigate = { navController.navigate(ScreenRoutes.MAIN_APP) }

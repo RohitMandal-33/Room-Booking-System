@@ -10,6 +10,7 @@ object ScreenRoutes {
     const val MEETING_ROOMS = "meeting_rooms"
     const val MEETING_ROOMS_EDITABLE_QUERY = "editable"
     const val MEETING_ROOM_EDIT = "meeting_room_edit"
+    const val MEETING_ROOM_ADD = "meeting_room_add"
     const val MEETING_ROOM_NAME = "roomName"
     const val ANNOUNCEMENTS = "announcements"
     const val REPORT = "report"

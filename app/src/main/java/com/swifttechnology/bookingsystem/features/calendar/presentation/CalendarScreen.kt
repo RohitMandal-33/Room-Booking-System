@@ -70,7 +70,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.swifttechnology.bookingsystem.core.designsystem.Spacing
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
-import com.swifttechnology.bookingsystem.core.model.defaultRooms
+// rooms are now provided by CalendarViewModel
 import com.swifttechnology.bookingsystem.core.model.Room
 import com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents.DayColumnWithPicker
 import com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents.DayTimePickerViewModel
@@ -101,6 +101,7 @@ fun CalendarScreen(
     pickerViewModel: DayTimePickerViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val apiRooms by viewModel.rooms.collectAsStateWithLifecycle()
     val pickerUiState by pickerViewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(searchQuery) {
@@ -113,6 +114,7 @@ fun CalendarScreen(
 
     CalendarContent(
         uiState = uiState,
+        rooms = apiRooms,
         pickerUiState = pickerUiState,
         onViewChange = viewModel::onViewChange,
         onPrev = viewModel::onPrev,
@@ -137,6 +139,7 @@ fun CalendarScreen(
 @Composable
 private fun CalendarContent(
     uiState: CalendarUiState,
+    rooms: List<Room>,
     pickerUiState: DayPickerUiState,
     onViewChange: (CalendarView) -> Unit,
     onPrev: () -> Unit,
@@ -162,7 +165,7 @@ private fun CalendarContent(
             currentView = uiState.currentView,
             showRoomPicker = true,
             selectedRoom = uiState.selectedRoom,
-            rooms = defaultRooms,
+            rooms = rooms,
             onRoomSelected = onRoomSelected
         )
 

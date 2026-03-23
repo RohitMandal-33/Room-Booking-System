@@ -1,38 +1,178 @@
 package com.swifttechnology.bookingsystem.features.meetingrooms.presentation
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.swifttechnology.bookingsystem.core.model.Room
+import com.swifttechnology.bookingsystem.core.model.RoomStatus
+import com.swifttechnology.bookingsystem.core.model.RoomAmenity
 import com.swifttechnology.bookingsystem.core.model.defaultRooms
-import com.swifttechnology.bookingsystem.core.storage.TokenStorage
+import com.swifttechnology.bookingsystem.features.auth.domain.repository.AuthRepository
+import com.swifttechnology.bookingsystem.features.meetingrooms.domain.repository.RoomRepository
 import com.swifttechnology.bookingsystem.shared.components.SidebarItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.BorderColor
+import androidx.compose.material.icons.outlined.Slideshow
+import androidx.compose.material.icons.outlined.Videocam
+import androidx.compose.material.icons.outlined.Wifi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
+sealed class MeetingRoomsEvent {
+    data class ShowSnackbar(val message: String) : MeetingRoomsEvent()
+}
 
 @HiltViewModel
 class MeetingRoomsViewModel @Inject constructor(
-    private val tokenStorage: TokenStorage
+    private val authRepository: AuthRepository,
+    private val roomRepository: RoomRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(
-        MeetingRoomsUiState(rooms = defaultRooms)
-    )
+    private val _uiState = MutableStateFlow(MeetingRoomsUiState())
     val uiState: StateFlow<MeetingRoomsUiState> = _uiState.asStateFlow()
 
-    fun updateRoom(original: Room, updated: Room) {
-        _uiState.update { current ->
-            current.copy(
-                rooms = current.rooms.map { if (it == original) updated else it }
+    private val _uiEvent = MutableSharedFlow<MeetingRoomsEvent>()
+    val uiEvent: SharedFlow<MeetingRoomsEvent> = _uiEvent.asSharedFlow()
+
+    init {
+        loadRooms()
+    }
+
+    fun loadRooms() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            roomRepository.listAllRooms()
+                .onSuccess { page ->
+                    val rooms = page.data?.map { dto ->
+                        val mappedAmenities = (dto.resources ?: emptyList()).mapNotNull { res ->
+                            when(res) {
+                                "WIFI" -> RoomAmenity("WIFI", Icons.Outlined.Wifi)
+                                "TV" -> RoomAmenity("TV", Icons.Outlined.Videocam)
+                                "PROJECTOR" -> RoomAmenity("PROJECTOR", Icons.Outlined.Slideshow)
+                                "WHITEBOARD" -> RoomAmenity("WHITEBOARD", Icons.Outlined.BorderColor)
+                                else -> null
+                            }
+                        }
+                        Room(
+                            id = dto.id,
+                            name = dto.roomName,
+                            status = RoomStatus.fromApiString(dto.status),
+                            capacity = dto.capacity,
+                            amenities = mappedAmenities,
+                            resources = dto.resources ?: emptyList()
+                        )
+                    } ?: emptyList()
+                    _uiState.update { current -> 
+                        val fetchedNames = rooms.map { it.name }.toSet()
+                        val missingTempRooms = current.rooms.filter { it.id == 0L && it.name !in fetchedNames }
+                        
+                        current.copy(
+                            rooms = missingTempRooms + rooms,
+                            isLoading = false
+                        )
+                    }
+                }
+                .onFailure { error ->
+                    // Fallback to seed data on network failure
+                    _uiState.update {
+                        it.copy(
+                            rooms = defaultRooms,
+                            isLoading = false,
+                            errorMessage = error.message
+                        )
+                    }
+                }
+        }
+    }
+
+    fun addRoom(name: String, capacity: Int, amenities: List<RoomAmenity>) {
+        viewModelScope.launch {
+            val tempRoom = Room(
+                id = 0L,
+                name = name,
+                status = RoomStatus.ACTIVE,
+                capacity = capacity,
+                timeLabel = "New",
+                amenities = amenities,
+                resources = amenities.map { it.label }
             )
+            _uiState.update { current ->
+                current.copy(
+                    isLoading = true, 
+                    errorMessage = null,
+                    rooms = current.rooms + tempRoom
+                )
+            }
+            val resources = amenities.map { it.label }.ifEmpty { null }
+            roomRepository.addRoom(name, capacity, resources)
+                .onSuccess {
+                    loadRooms()
+                    _uiEvent.emit(MeetingRoomsEvent.ShowSnackbar("Room added successfully!"))
+                }
+                .onFailure { error ->
+                    _uiState.update { current ->
+                        current.copy(
+                            isLoading = false,
+                            errorMessage = error.message,
+                            rooms = current.rooms - tempRoom
+                        )
+                    }
+                    _uiEvent.emit(MeetingRoomsEvent.ShowSnackbar(error.message ?: "Failed to add room"))
+                }
+        }
+    }
+
+    fun updateRoom(original: Room, updated: Room) {
+        viewModelScope.launch {
+            // Optimistic UI update
+            _uiState.update { current ->
+                current.copy(
+                    rooms = current.rooms.map { if (it == original) updated else it }
+                )
+            }
+            // API call
+            if (updated.id > 0) {
+                roomRepository.updateRoom(
+                    id = updated.id,
+                    roomName = updated.name,
+                    capacity = updated.capacity,
+                    resources = updated.resources.ifEmpty { null }
+                ).onSuccess {
+                    _uiEvent.emit(MeetingRoomsEvent.ShowSnackbar("Room updated successfully!"))
+                }.onFailure {
+                    // Revert on failure
+                    _uiState.update { current ->
+                        current.copy(
+                            rooms = current.rooms.map { if (it == updated) original else it },
+                            errorMessage = it.message
+                        )
+                    }
+                }
+            }
         }
     }
 
     fun deleteRoom(room: Room) {
-        _uiState.update { current ->
-            current.copy(rooms = current.rooms.filterNot { it == room })
+        viewModelScope.launch {
+            // Optimistic removal
+            _uiState.update { current ->
+                current.copy(rooms = current.rooms.filterNot { it == room })
+            }
+            // Deactivate via API
+            if (room.id > 0) {
+                roomRepository.changeRoomStatus(room.id, "INACTIVE")
+                    .onFailure {
+                        // Revert on failure and reload
+                        loadRooms()
+                    }
+            }
         }
     }
 
@@ -50,7 +190,6 @@ class MeetingRoomsViewModel @Inject constructor(
     }
 
     suspend fun logout() {
-        tokenStorage.clear()
+        authRepository.logout()
     }
 }
-

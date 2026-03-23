@@ -49,10 +49,10 @@ import com.swifttechnology.bookingsystem.features.meetingrooms.presentation.Meet
 import com.swifttechnology.bookingsystem.shared.layout.MainScaffold
 
 private val editScreenAmenities = listOf(
-    RoomAmenity("Projector", Icons.Outlined.Slideshow),
-    RoomAmenity("Whiteboard", Icons.Outlined.BorderColor),
-    RoomAmenity("Video", Icons.Outlined.Videocam),
-    RoomAmenity("WiFi", Icons.Outlined.Wifi)
+    RoomAmenity("PROJECTOR", Icons.Outlined.Slideshow),
+    RoomAmenity("WHITEBOARD", Icons.Outlined.BorderColor),
+    RoomAmenity("TV", Icons.Outlined.Videocam),
+    RoomAmenity("WIFI", Icons.Outlined.Wifi)
 )
 
 @Composable

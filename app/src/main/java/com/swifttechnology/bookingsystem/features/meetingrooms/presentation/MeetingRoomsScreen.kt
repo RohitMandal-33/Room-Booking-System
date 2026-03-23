@@ -13,9 +13,13 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -36,40 +40,67 @@ fun MeetingRoomsScreen(
     searchQuery: String,
     onNavigate: (String) -> Unit,
     onOpenRoomEdit: (String) -> Unit,
+    onNavigateToAddRoom: () -> Unit,
     isEditable: Boolean = false,
     viewModel: MeetingRoomsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        viewModel.uiEvent.collect { event ->
+            when (event) {
+                is MeetingRoomsEvent.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(event.message)
+                }
+            }
+        }
+    }
 
     LaunchedEffect(searchQuery) {
         viewModel.onSearchQueryChanged(searchQuery)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 88.dp), // extra bottom pad so last card isn't hidden behind FAB
-            verticalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
-            items(uiState.filteredRooms) { room ->
-                RoomCard(
-                    room = room,
-                    isEditable = isEditable,
-                    onEditClick = { roomToEdit ->
-                        onOpenRoomEdit(roomToEdit.name)
-                    },
-                    onDeleteClick = { roomToDelete ->
-                        viewModel.deleteRoom(roomToDelete)
-                    }
-                )
+        if (uiState.isLoading && uiState.rooms.isEmpty()) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        } else if (uiState.filteredRooms.isEmpty()) {
+            androidx.compose.material3.Text(
+                text = "No meeting rooms found.",
+                modifier = Modifier.align(Alignment.Center),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 88.dp), // extra bottom pad so last card isn't hidden behind FAB
+                verticalArrangement = Arrangement.spacedBy(24.dp)
+            ) {
+                items(uiState.filteredRooms, key = { it.id }) { room ->
+                    RoomCard(
+                        room = room,
+                        isEditable = isEditable,
+                        onEditClick = { roomToEdit ->
+                            onOpenRoomEdit(roomToEdit.name)
+                        },
+                        onDeleteClick = { roomToDelete ->
+                            viewModel.deleteRoom(roomToDelete)
+                        }
+                    )
+                }
             }
         }
 
         AddFab(
-            onClick = { /* open booking/create dialog */ },
+            onClick = { onNavigateToAddRoom() },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(24.dp)
+        )
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
         )
     }
 }

@@ -5,32 +5,36 @@ import com.swifttechnology.bookingsystem.core.utils.Constants
 object APIEndpoint {
     const val BASE_URL = Constants.BASE_URL
 
-    // Auth
-    const val LOGIN = "auth/login"
-    const val LOGOUT = "auth/logout"
-    const val REGISTER = "auth/register"
-    const val REFRESH_TOKEN = "auth/refresh"
+    // Auth (public — no Bearer token required)
+    const val LOGIN = "api/v1/login"
+    const val LOGOUT = "api/v1/logout"
+    const val REFRESH_TOKEN = "api/v1/access/token"
+    const val FORGOT_PASSWORD = "api/v1/forgot/password"
+    const val VERIFY_OTP = "api/v1/verify/otp"
+    const val RESET_PASSWORD = "api/v1/reset/password"
+    const val CHANGE_PASSWORD = "api/v1/change/password"
+    const val RESEND_OTP = "api/v1/resend/otp"
 
-    // Dashboard
-    const val DASHBOARD_STATS = "dashboard/stats"
-    const val ANNOUNCEMENTS = "announcements"
+    // User Management
+    const val SIGNUP = "api/v1/signup"
+    const val USERS_GET_ALL = "api/v1/users/get-all"
+    const val USER_BY_ID = "api/v1/users/{id}"
+    const val USER_GET_ALL_SIMPLE = "api/v1/user/get-all"
+    const val USER_SEARCH = "api/v1/user/search"
 
-    // Rooms
-    const val ROOMS = "rooms"
-    const val ROOM_DETAIL = "rooms/{id}"
+    // Meeting Rooms
+    const val ROOM_ADD = "api/v1/room/add"
+    const val ROOM_LIST = "api/v1/room/list"
+    const val ROOM_ACTIVE_LIST = "api/v1/room/active-list"
+    const val ROOM_UPDATE = "api/v1/room/{id}/update"
+    const val ROOM_CHANGE_STATUS = "api/v1/room/{id}/change-status"
 
-    // Bookings
-    const val BOOKINGS = "bookings"
-    const val BOOKING_DETAIL = "bookings/{id}"
-    const val MY_BOOKINGS = "bookings/mine"
+    // Room Bookings
+    const val BOOK_ROOM = "api/v1/book-room"
+    const val UPDATE_BOOKING = "api/v1/update-booked-room/{bookingId}"
+    const val MY_BOOKINGS = "api/v1/get-booked-room"
+    const val ALL_BOOKINGS = "api/v1/get-all-booked-room"
 
-    // Calendar
-    const val CALENDAR_MEETINGS = "calendar/meetings"
-
-    // Reports
-    const val REPORTS = "reports"
-
-    // Profile
-    const val PROFILE = "profile"
-    const val PROFILE_UPDATE = "profile/update"
+    // Department
+    const val DEPARTMENT_ADD = "api/v1/department/add"
 }

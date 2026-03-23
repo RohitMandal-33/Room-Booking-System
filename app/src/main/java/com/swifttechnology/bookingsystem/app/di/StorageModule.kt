@@ -1,6 +1,7 @@
 package com.swifttechnology.bookingsystem.app.di
 
 import android.content.Context
+import com.swifttechnology.bookingsystem.core.network.RefreshTokenApi
 import com.swifttechnology.bookingsystem.core.storage.TokenDataStore
 import com.swifttechnology.bookingsystem.core.storage.TokenStorage
 import dagger.Module
@@ -15,7 +16,8 @@ import javax.inject.Singleton
 object StorageModule {
     @Provides
     @Singleton
-    fun provideTokenStorage(@ApplicationContext context: Context): TokenStorage =
-        TokenDataStore(context)
+    fun provideTokenStorage(
+        @ApplicationContext context: Context,
+        refreshTokenApi: RefreshTokenApi
+    ): TokenStorage = TokenDataStore(context, refreshTokenApi)
 }
-

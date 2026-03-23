@@ -1,7 +1,7 @@
 package com.swifttechnology.bookingsystem.features.dashboard.presentation
 
 import androidx.lifecycle.ViewModel
-import com.swifttechnology.bookingsystem.core.storage.TokenStorage
+import com.swifttechnology.bookingsystem.features.auth.domain.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,7 +12,7 @@ import com.swifttechnology.bookingsystem.shared.components.SidebarItem
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
-    private val tokenStorage: TokenStorage
+    private val authRepository: AuthRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
@@ -33,7 +33,7 @@ class DashboardViewModel @Inject constructor(
     }
 
     suspend fun logout() {
-        tokenStorage.clear()
+        authRepository.logout()
     }
 }
 
