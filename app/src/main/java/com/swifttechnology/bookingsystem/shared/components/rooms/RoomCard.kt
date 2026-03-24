@@ -75,7 +75,8 @@ fun RoomCard(
     room: Room,
     isEditable: Boolean = false,
     onEditClick: (Room) -> Unit = {},
-    onDeleteClick: (Room) -> Unit = {}
+    onDeleteClick: (Room) -> Unit = {},
+    onBookClick: (Room) -> Unit = {}
 ) {
     var isEditing by rememberSaveable(room.name) { mutableStateOf(false) }
     var editedName by rememberSaveable(room.name) { mutableStateOf(room.name) }
@@ -432,7 +433,7 @@ fun RoomCard(
                             MaterialTheme.customColors.neutral300,
                             RoundedCornerShape(8.dp)
                         )
-                        .clickable(enabled = room.status != RoomStatus.DISABLED) {},
+                        .clickable(enabled = room.status != RoomStatus.DISABLED) { onBookClick(room) },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(

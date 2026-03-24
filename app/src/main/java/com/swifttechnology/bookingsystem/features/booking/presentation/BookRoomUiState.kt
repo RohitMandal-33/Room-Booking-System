@@ -16,6 +16,7 @@ data class RoomBookingFormState(
     val startTime: String = "",
     val endTime: String = "",
     val meetingType: String = "",
+    val recurringType: String = "",
     val participants: List<String> = emptyList(),
     val externalMembers: List<ExternalMember> = emptyList(),
     val selectedRoom: String = "",

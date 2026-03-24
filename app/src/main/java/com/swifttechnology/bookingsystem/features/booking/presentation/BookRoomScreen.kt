@@ -9,15 +9,19 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
@@ -39,11 +43,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.swifttechnology.bookingsystem.R
 import com.swifttechnology.bookingsystem.core.designsystem.Neutral400
 import com.swifttechnology.bookingsystem.core.designsystem.Neutral700
 import com.swifttechnology.bookingsystem.core.designsystem.Spacing
@@ -53,8 +60,8 @@ import com.swifttechnology.bookingsystem.features.booking.presentation.component
 import com.swifttechnology.bookingsystem.features.booking.presentation.components.BookingTextField
 import com.swifttechnology.bookingsystem.features.booking.presentation.components.ParticipantsSheetContent
 import com.swifttechnology.bookingsystem.features.booking.presentation.components.SelectedParticipantChip
-import com.swifttechnology.bookingsystem.features.booking.presentation.components.TimePickerDialog
 import com.swifttechnology.bookingsystem.shared.components.PrimaryButton
+import com.swifttechnology.bookingsystem.features.main.presentation.PendingBookingDetails
 import com.swifttechnology.bookingsystem.shared.layout.MainScaffold
 import com.swifttechnology.bookingsystem.shared.layout.BottomSheetView
 import kotlinx.coroutines.launch
@@ -62,8 +69,6 @@ import com.swifttechnology.bookingsystem.core.model.Room
 import com.swifttechnology.bookingsystem.shared.components.rooms.RoomCard
 import com.swifttechnology.bookingsystem.shared.components.rooms.RoomInfoCard
 import com.swifttechnology.bookingsystem.navigation.ScreenRoutes
-
-import androidx.compose.runtime.LaunchedEffect
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -73,11 +78,29 @@ fun BookRoomScreen(
     onNavigate: (String) -> Unit,
     onSubmit: (RoomBookingFormState) -> Unit = {},
     onNavigateToEdit: () -> Unit = {},
+    initialRoomName: String? = null,
+    initialDetails: PendingBookingDetails? = null,
+    onNavigateToCalendar: (PendingBookingDetails) -> Unit = {},
     viewModel: BookRoomViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(uiState.availableRooms, initialRoomName, initialDetails) {
+        if (uiState.availableRooms.isNotEmpty()) {
+            if (initialDetails != null) {
+                viewModel.prefillBookingDetails(
+                    roomName = initialDetails.roomName,
+                    date = initialDetails.date,
+                    startTime = initialDetails.startTime,
+                    endTime = initialDetails.endTime
+                )
+            } else if (initialRoomName != null) {
+                viewModel.preSelectRoom(initialRoomName)
+            }
+        }
+    }
 
     LaunchedEffect(searchQuery) {
         viewModel.onSearchQueryChanged(searchQuery)
@@ -89,200 +112,287 @@ fun BookRoomScreen(
     val formState = uiState.formState
 
     var showDatePicker by remember { mutableStateOf(false) }
-    var showStartTimePicker by remember { mutableStateOf(false) }
-    var showEndTimePicker by remember { mutableStateOf(false) }
     var showMeetingTypeDropdown by remember { mutableStateOf(false) }
+    var showRecurringDropdown by remember { mutableStateOf(false) }
     var showParticipantsSheet by remember { mutableStateOf(false) }
     var showRoomDropdown by remember { mutableStateOf(false) }
 
     val participantsSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    val meetingTypes = listOf("Team Meeting", "Client Call", "Workshop", "Interview", "Training")
+    val meetingTypes = listOf("Internal", "Client", "Executive")
+    val meetingTypeIcons: Map<String, @Composable () -> Unit> = mapOf(
+        "Internal" to {
+            Box(
+                modifier = Modifier
+                    .size(14.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF2196F3)) // Blue
+            )
+        },
+        "Client" to {
+            Box(
+                modifier = Modifier
+                    .size(14.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFFF9800)) // Orange
+            )
+        },
+        "Executive" to {
+            Box(
+                modifier = Modifier
+                    .size(14.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF9C27B0)) // Purple
+            )
+        }
+    )
+
+    val recurringOptions = listOf(
+        "Does not repeat",
+        "Every weekday (Sun-Fri)",
+        "Daily",
+        "Weekly",
+        "Monthly",
+        "Custom"
+    )
+
     val availableRooms = uiState.availableRooms.map { it.name }
     val availableParticipants = listOf("Alice Johnson", "Bob Smith", "Carol White", "David Lee")
     val selectedInternalKeys = formState.participants
     val selectedExternalMembers = formState.externalMembers
     val hasAnySelected = selectedInternalKeys.isNotEmpty() || selectedExternalMembers.isNotEmpty()
-        AnimatedVisibility(
-            visible = isContentVisible,
-            enter = fadeIn(animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)) +
-                slideInVertically(
-                    initialOffsetY = { fullHeight -> (fullHeight * 0.15f).toInt() },
-                    animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
-                ),
-            exit = fadeOut(animationSpec = tween(durationMillis = 200)) +
-                slideOutVertically(targetOffsetY = { fullHeight -> (fullHeight * 0.1f).toInt() })
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(scrollState),
-                verticalArrangement = Arrangement.spacedBy(20.dp)
-            ) {
-                BookingTextField(
-                    label = "Meeting Title",
-                    value = formState.meetingTitle,
-                    placeholder = "Enter meeting title",
-                    isRequired = true,
-                    onValueChange = { viewModel.onFormStateChanged(formState.copy(meetingTitle = it)) }
-                )
-                BookingDropdownField(
-                    label = "Meeting Type",
-                    value = formState.meetingType,
-                    placeholder = "Select Meeting Type",
-                    isRequired = true,
-                    expanded = showMeetingTypeDropdown,
-                    options = meetingTypes,
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(android.R.drawable.ic_menu_manage),
-                            contentDescription = null,
-                            tint = Neutral700,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    },
 
-                    onExpandChange = { showMeetingTypeDropdown = it },
-                    onOptionSelected = {
-                        viewModel.onFormStateChanged(formState.copy(meetingType = it))
-                        showMeetingTypeDropdown = false
-                    }
+    AnimatedVisibility(
+        visible = isContentVisible,
+        enter = fadeIn(animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)) +
+            slideInVertically(
+                initialOffsetY = { fullHeight -> (fullHeight * 0.15f).toInt() },
+                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+            ),
+        exit = fadeOut(animationSpec = tween(durationMillis = 200)) +
+            slideOutVertically(targetOffsetY = { fullHeight -> (fullHeight * 0.1f).toInt() })
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(scrollState),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            // 1. Meeting Title
+            BookingTextField(
+                label = "Meeting Title",
+                value = formState.meetingTitle,
+                placeholder = "Enter meeting title",
+                isRequired = true,
+                onValueChange = { viewModel.onFormStateChanged(formState.copy(meetingTitle = it)) }
+            )
+
+            // 2. Select Room
+            BookingDropdownField(
+                label = "Select Room",
+                value = formState.selectedRoom,
+                placeholder = "Choose a meeting room",
+                isRequired = true,
+                expanded = showRoomDropdown,
+                options = availableRooms,
+                onExpandChange = { showRoomDropdown = it },
+                onOptionSelected = { selected ->
+                    val selectedRoom = uiState.availableRooms.find { it.name == selected }
+                    viewModel.onFormStateChanged(formState.copy(
+                        selectedRoom = selected,
+                        selectedRoomId = selectedRoom?.id
+                    ))
+                    showRoomDropdown = false
+                }
+            )
+
+            // Room info card when a room is selected
+            uiState.availableRooms.find { it.name == formState.selectedRoom }?.let {
+                RoomInfoCard(
+                    room = it,
+                    onEditClick = onNavigateToEdit
                 )
-                BookingDropdownField(
-                    label = "Select Room",
-                    value = formState.selectedRoom,
-                    placeholder = "Choose a meeting room",
-                    isRequired = true,
-                    expanded = showRoomDropdown,
-                    options = availableRooms,
-                    onExpandChange = { showRoomDropdown = it },
-                    onOptionSelected = { selected ->
-                        val selectedRoom = uiState.availableRooms.find { it.name == selected }
-                        viewModel.onFormStateChanged(formState.copy(
-                            selectedRoom = selected,
-                            selectedRoomId = selectedRoom?.id
-                        ))
-                        showRoomDropdown = false
-                    }
-                )
-                // Room card specific to name
-                uiState.availableRooms.find { it.name == formState.selectedRoom }?.let {
-                    RoomInfoCard(
-                        room = it,
-                        onEditClick = onNavigateToEdit
+            }
+
+            // 3. Date
+            BookingClickableField(
+                label = "Date",
+                value = formState.date,
+                placeholder = "Select date",
+                isRequired = true,
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.DateRange,
+                        contentDescription = "Date",
+                        tint = Neutral700,
+                        modifier = Modifier.size(22.dp)
+                    )
+                },
+                onClick = { showDatePicker = true }
+            )
+
+            // 4. Start Time & End Time - side by side
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(modifier = Modifier.weight(1f)) {
+                    BookingClickableField(
+                        label = "Start Time",
+                        value = formState.startTime,
+                        placeholder = "Select time",
+                        isRequired = true,
+                        trailingIcon = {
+                            Icon(
+                                painter = painterResource(android.R.drawable.ic_menu_recent_history),
+                                contentDescription = "Time",
+                                tint = Neutral400,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        },
+                        onClick = { 
+                            onNavigateToCalendar(
+                                PendingBookingDetails(
+                                    roomName = formState.selectedRoom,
+                                    date = formState.date,
+                                    startTime = formState.startTime,
+                                    endTime = formState.endTime
+                                )
+                            )
+                        }
                     )
                 }
+                Box(modifier = Modifier.weight(1f)) {
+                    BookingClickableField(
+                        label = "End Time",
+                        value = formState.endTime,
+                        placeholder = "Select time",
+                        isRequired = true,
+                        trailingIcon = {
+                            Icon(
+                                painter = painterResource(android.R.drawable.ic_menu_recent_history),
+                                contentDescription = "Time",
+                                tint = Neutral400,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        },
+                        onClick = { 
+                            onNavigateToCalendar(
+                                PendingBookingDetails(
+                                    roomName = formState.selectedRoom,
+                                    date = formState.date,
+                                    startTime = formState.startTime,
+                                    endTime = formState.endTime
+                                )
+                            )
+                        }
+                    )
+                }
+            }
 
-                BookingClickableField(
-                    label = "Date",
-                    value = formState.date,
-                    placeholder = "Select date",
-                    isRequired = true,
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.DateRange,
-                            contentDescription = "Date",
-                            tint = Neutral700,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    },
-                    onClick = { showDatePicker = true }
-                )
+            // 5. Meeting Type with colored dot indicators
+            BookingDropdownField(
+                label = "Meeting Type",
+                value = formState.meetingType,
+                placeholder = "Select meeting type",
+                isRequired = true,
+                expanded = showMeetingTypeDropdown,
+                options = meetingTypes,
+                optionLeadingIcons = meetingTypeIcons,
+                onExpandChange = { showMeetingTypeDropdown = it },
+                onOptionSelected = {
+                    viewModel.onFormStateChanged(formState.copy(meetingType = it))
+                    showMeetingTypeDropdown = false
+                }
+            )
 
-                BookingClickableField(
-                    label = "Start Time",
-                    value = formState.startTime,
-                    placeholder = "Select start time",
-                    isRequired = true,
-                    trailingIcon = {
-                        Icon(
-                            painter = painterResource(android.R.drawable.ic_menu_recent_history),
-                            contentDescription = "Time",
-                            tint = Neutral400,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    },
-                    onClick = { showStartTimePicker = true }
-                )
+            // 6. Recurring
+            BookingDropdownField(
+                label = "Recurring",
+                value = formState.recurringType,
+                placeholder = "Does not repeat",
+                isRequired = false,
+                expanded = showRecurringDropdown,
+                options = recurringOptions,
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_repeat),
+                        contentDescription = "Recurring",
+                        tint = Neutral700,
+                        modifier = Modifier.size(20.dp)
+                    )
+                },
+                onExpandChange = { showRecurringDropdown = it },
+                onOptionSelected = {
+                    viewModel.onFormStateChanged(formState.copy(recurringType = it))
+                    showRecurringDropdown = false
+                }
+            )
 
-                BookingClickableField(
-                    label = "End Time",
-                    value = formState.endTime,
-                    placeholder = "Select end time",
-                    isRequired = true,
-                    trailingIcon = {
-                        Icon(
-                            painter = painterResource(android.R.drawable.ic_menu_recent_history),
-                            contentDescription = "Time",
-                            tint = Neutral400,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    },
-                    onClick = { showEndTimePicker = true }
-                )
-
-                BookingClickableField(
-                    label = "Participants",
-                    value = buildParticipantsSummary(formState),
-                    placeholder = "Add Participants",
-                    isRequired = false,
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(android.R.drawable.ic_menu_myplaces),
-                            contentDescription = null,
-                            tint = Neutral700,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    },
-                    contentBelowLabel = {
-                        if (hasAnySelected) {
-                            FlowRow(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = Spacing.md, vertical = Spacing.xs),
-                                horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
-                                verticalArrangement = Arrangement.spacedBy(Spacing.xs)
-                            ) {
-                                selectedInternalKeys.forEach { key ->
-                                    val name = key.substringBefore("|")
-                                    SelectedParticipantChip(
-                                        name = name,
-                                        onRemove = {
-                                            viewModel.onFormStateChanged(
-                                                formState.copy(participants = formState.participants - key)
-                                            )
-                                        }
-                                    )
-                                }
-                                selectedExternalMembers.forEach { member ->
-                                    SelectedParticipantChip(
-                                        name = member.name,
-                                        onRemove = {
-                                            viewModel.onFormStateChanged(
-                                                formState.copy(externalMembers = formState.externalMembers - member)
-                                            )
-                                        }
-                                    )
-                                }
+            // 7. Participants
+            BookingClickableField(
+                label = "Participants",
+                value = buildParticipantsSummary(formState),
+                placeholder = "Add Participants",
+                isRequired = false,
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(android.R.drawable.ic_menu_myplaces),
+                        contentDescription = null,
+                        tint = Neutral700,
+                        modifier = Modifier.size(20.dp)
+                    )
+                },
+                contentBelowLabel = {
+                    if (hasAnySelected) {
+                        FlowRow(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = Spacing.md, vertical = Spacing.xs),
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+                        ) {
+                            selectedInternalKeys.forEach { key ->
+                                val name = key.substringBefore("|")
+                                SelectedParticipantChip(
+                                    name = name,
+                                    onRemove = {
+                                        viewModel.onFormStateChanged(
+                                            formState.copy(participants = formState.participants - key)
+                                        )
+                                    }
+                                )
+                            }
+                            selectedExternalMembers.forEach { member ->
+                                SelectedParticipantChip(
+                                    name = member.name,
+                                    onRemove = {
+                                        viewModel.onFormStateChanged(
+                                            formState.copy(externalMembers = formState.externalMembers - member)
+                                        )
+                                    }
+                                )
                             }
                         }
-                    },
-                    onClick = { showParticipantsSheet = true }
-                )
+                    }
+                },
+                onClick = { showParticipantsSheet = true }
+            )
 
-                Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-                PrimaryButton(
-                    text = if (uiState.isSubmitting) "Booking..." else "Book Meeting Room",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = Spacing.md),
-                    onClick = { viewModel.submitBooking() }
-                )
+            // 8. Book button
+            PrimaryButton(
+                text = if (uiState.isSubmitting) "Booking..." else "Book Meeting Room",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.md),
+                onClick = { viewModel.submitBooking() }
+            )
 
-                Spacer(modifier = Modifier.height(16.dp))
-            }
+            Spacer(modifier = Modifier.height(16.dp))
         }
+    }
 
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState()
@@ -309,26 +419,6 @@ fun BookRoomScreen(
         }
     }
 
-    if (showStartTimePicker) {
-        TimePickerDialog(
-            onDismiss = { showStartTimePicker = false },
-            onConfirm = { hour, minute ->
-                viewModel.onFormStateChanged(formState.copy(startTime = "%02d:%02d".format(hour, minute)))
-                showStartTimePicker = false
-            }
-        )
-    }
-
-    if (showEndTimePicker) {
-        TimePickerDialog(
-            onDismiss = { showEndTimePicker = false },
-            onConfirm = { hour, minute ->
-                viewModel.onFormStateChanged(formState.copy(endTime = "%02d:%02d".format(hour, minute)))
-                showEndTimePicker = false
-            }
-        )
-    }
-
     if (showParticipantsSheet) {
         BottomSheetView(
             onDismiss = { showParticipantsSheet = false },
@@ -350,3 +440,4 @@ private fun buildParticipantsSummary(formState: RoomBookingFormState): String {
     val external = formState.externalMembers.map { "${it.name} (${it.email})" }
     return (internalNames + external).joinToString(", ").takeIf { it.isNotEmpty() } ?: ""
 }
+

@@ -1,6 +1,6 @@
 package com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents
 
-internal fun formatHourLabel(hour: Int): String =
+fun formatHourLabel(hour: Int): String =
     when (hour) {
         0 -> "12:00 am"
         in 1..11 -> "$hour:00 am"

@@ -76,6 +76,7 @@ import com.swifttechnology.bookingsystem.features.calendar.presentation.calander
 import com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents.DayTimePickerViewModel
 import com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents.DayPickerUiState
 import com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents.TimeRange
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents.DayStrip
 import com.swifttechnology.bookingsystem.shared.layout.MainScaffold
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -677,51 +678,6 @@ private fun WeekView(
             }
         }
     }
-}
-
-//Day Strip
-
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-private fun DayStrip(
-    selectedDate: LocalDate,
-
-    onDateClick: (LocalDate) -> Unit
-) {
-    val weekStart = selectedDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-    val weekDays = (0..6).map { weekStart.plusDays(it.toLong()) }
-
-    HorizontalDivider(color = Color(0xFFEEEEEE))
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.White)
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        weekDays.forEach { day ->
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .clickable { onDateClick(day) }
-                    .padding(horizontal = 6.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    text = day.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH),
-                    fontSize = 10.sp,
-                    color = Color(0xFF888888)
-                )
-                Text(
-                    text = day.dayOfMonth.toString(),
-                    fontSize = 13.sp,
-                    fontWeight = if (day == selectedDate) FontWeight.Bold else FontWeight.Normal,
-                    color = if (day == selectedDate) PurplePrimary else Color.Black
-                )
-            }
-        }
-    }
-    HorizontalDivider(color = Color(0xFFEEEEEE))
 }
 
 // Meeting Detail Dialog

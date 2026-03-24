@@ -34,6 +34,7 @@ import com.swifttechnology.bookingsystem.shared.layout.MainScaffold
 import kotlinx.coroutines.launch
 
 import androidx.compose.runtime.LaunchedEffect
+import com.swifttechnology.bookingsystem.core.model.Room
 
 @Composable
 fun MeetingRoomsScreen(
@@ -41,6 +42,7 @@ fun MeetingRoomsScreen(
     onNavigate: (String) -> Unit,
     onOpenRoomEdit: (String) -> Unit,
     onNavigateToAddRoom: () -> Unit,
+    onBookClick: (Room) -> Unit,
     isEditable: Boolean = false,
     viewModel: MeetingRoomsViewModel = hiltViewModel()
 ) {
@@ -85,7 +87,8 @@ fun MeetingRoomsScreen(
                         },
                         onDeleteClick = { roomToDelete ->
                             viewModel.deleteRoom(roomToDelete)
-                        }
+                        },
+                        onBookClick = onBookClick
                     )
                 }
             }

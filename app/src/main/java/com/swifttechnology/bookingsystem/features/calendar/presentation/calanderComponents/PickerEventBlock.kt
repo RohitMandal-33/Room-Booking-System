@@ -60,7 +60,7 @@ private val PickerBorderAdjusted = Color(0xFFFF9800)
 private val PickerDot = Color(0xFF5C6BC0)
 
 @Composable
-internal fun PickerEventBlock(
+fun PickerEventBlock(
     event: DraggableEvent,
     minutePx: Float,
     scrollState: ScrollState,

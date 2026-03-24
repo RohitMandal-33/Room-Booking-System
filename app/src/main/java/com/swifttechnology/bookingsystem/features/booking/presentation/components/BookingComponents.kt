@@ -214,6 +214,7 @@ fun BookingDropdownField(
     expanded: Boolean,
     options: List<String>,
     leadingIcon: (@Composable () -> Unit)? = null,
+    optionLeadingIcons: Map<String, @Composable () -> Unit>? = null,
     onExpandChange: (Boolean) -> Unit,
     onOptionSelected: (String) -> Unit
 ) {
@@ -301,12 +302,18 @@ fun BookingDropdownField(
                 options.forEachIndexed { index, option ->
                     DropdownMenuItem(
                         text = {
-                            Text(
-                                text = option,
-                                fontSize = 14.sp,
-                                color = if (option == value) primaryColor else TextPrimary,
-                                fontWeight = if (option == value) FontWeight.SemiBold else FontWeight.Normal
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                optionLeadingIcons?.get(option)?.invoke()
+                                Text(
+                                    text = option,
+                                    fontSize = 14.sp,
+                                    color = if (option == value) primaryColor else TextPrimary,
+                                    fontWeight = if (option == value) FontWeight.SemiBold else FontWeight.Normal
+                                )
+                            }
                         },
                         modifier = Modifier.background(
                             if (option == value) primaryColor.copy(alpha = 0.08f)

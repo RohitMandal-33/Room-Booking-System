@@ -6,6 +6,7 @@ object ScreenRoutes {
 
     const val DASHBOARD = "dashboard"
     const val CALENDAR = "calendar"
+    const val ROOM_CALENDAR = "room_calendar"
     const val BOOK_ROOM = "book_room"
     const val MEETING_ROOMS = "meeting_rooms"
     const val MEETING_ROOMS_EDITABLE_QUERY = "editable"

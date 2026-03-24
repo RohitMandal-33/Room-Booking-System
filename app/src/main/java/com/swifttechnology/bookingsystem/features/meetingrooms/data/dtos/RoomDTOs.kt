@@ -15,7 +15,7 @@ data class PaginatedDataRequestDTO(
     val pageNo: Int? = 0,
     val pageSize: Int? = 10,
     val sortBy: String? = "id",
-    val sortDir: String? = "dec"
+    val sortDir: String? = "asc"
 )
 
 

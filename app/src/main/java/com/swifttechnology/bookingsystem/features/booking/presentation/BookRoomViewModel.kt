@@ -77,6 +77,38 @@ class BookRoomViewModel @Inject constructor(
         _uiState.update { it.copy(formState = formState) }
     }
 
+    fun preSelectRoom(roomName: String) {
+        val currentDate = java.text.SimpleDateFormat(
+            "dd MMM yyyy", java.util.Locale.getDefault()
+        ).format(java.util.Date())
+
+        _uiState.update { current ->
+            val room = current.availableRooms.find { it.name == roomName }
+            current.copy(
+                formState = current.formState.copy(
+                    selectedRoom = roomName,
+                    selectedRoomId = room?.id,
+                    date = currentDate
+                )
+            )
+        }
+    }
+
+    fun prefillBookingDetails(roomName: String, date: String, startTime: String, endTime: String) {
+        _uiState.update { current ->
+            val room = current.availableRooms.find { it.name == roomName }
+            current.copy(
+                formState = current.formState.copy(
+                    selectedRoom = roomName,
+                    selectedRoomId = room?.id,
+                    date = date,
+                    startTime = startTime,
+                    endTime = endTime
+                )
+            )
+        }
+    }
+
     fun submitBooking() {
         val state = _uiState.value.formState
         viewModelScope.launch {
