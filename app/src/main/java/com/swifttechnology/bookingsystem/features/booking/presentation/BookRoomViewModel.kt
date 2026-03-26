@@ -3,14 +3,13 @@ package com.swifttechnology.bookingsystem.features.booking.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.swifttechnology.bookingsystem.core.model.Room
+import com.swifttechnology.bookingsystem.core.model.RoomAmenity
 import com.swifttechnology.bookingsystem.core.model.RoomStatus
 import com.swifttechnology.bookingsystem.features.auth.domain.repository.AuthRepository
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.ExternalParticipantDTO
-import com.swifttechnology.bookingsystem.features.booking.data.dtos.LocalTimeDTO
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.RoomBookingRequestDTO
 import com.swifttechnology.bookingsystem.features.booking.domain.repository.BookingRepository
 import com.swifttechnology.bookingsystem.features.meetingrooms.domain.repository.RoomRepository
-import com.swifttechnology.bookingsystem.shared.components.SidebarItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,6 +43,9 @@ class BookRoomViewModel @Inject constructor(
                             name = dto.roomName,
                             status = RoomStatus.fromApiString(dto.status),
                             capacity = dto.capacity,
+                            amenities = (dto.resources ?: emptyList()).mapNotNull { res ->
+                                RoomAmenity.fromResourceString(res)
+                            },
                             resources = dto.resources ?: emptyList()
                         )
                     } ?: emptyList()
@@ -60,14 +62,6 @@ class BookRoomViewModel @Inject constructor(
         }
     }
 
-    fun onSidebarItemSelected(item: SidebarItem) {
-        _uiState.update { current ->
-            current.copy(
-                sidebarItems = current.sidebarItems.map { it.copy(isActive = it.route == item.route) },
-                selectedItem = item.copy(isActive = true)
-            )
-        }
-    }
 
     fun onSearchQueryChanged(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
@@ -111,6 +105,14 @@ class BookRoomViewModel @Inject constructor(
 
     fun submitBooking() {
         val state = _uiState.value.formState
+
+        // Validate required fields before submitting
+        val validationError = validateForm(state)
+        if (validationError != null) {
+            _uiState.update { it.copy(errorMessage = validationError) }
+            return
+        }
+
         viewModelScope.launch {
             _uiState.update { it.copy(isSubmitting = true, errorMessage = null) }
 
@@ -120,7 +122,17 @@ class BookRoomViewModel @Inject constructor(
                 startTime = parseTimeString(state.startTime),
                 endTime = parseTimeString(state.endTime),
                 meetingType = mapMeetingType(state.meetingType),
+                description = state.description.ifBlank { null },
                 roomId = state.selectedRoomId,
+                internalParticipantIds = state.participants
+                    .takeIf { it.isNotEmpty() }
+                    ?.mapNotNull { key ->
+                        // Participants are stored as "name|email" — IDs are not
+                        // available from the current sample data. When participants
+                        // come from the user search API with IDs, map them here.
+                        null
+                    }
+                    ?.takeIf { it.isNotEmpty() },
                 externalParticipants = state.externalMembers
                     .takeIf { it.isNotEmpty() }
                     ?.map { ExternalParticipantDTO(name = it.name, email = it.email) }
@@ -140,7 +152,7 @@ class BookRoomViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isSubmitting = false,
-                            errorMessage = error.message
+                            errorMessage = error.message ?: "Booking failed. Please try again."
                         )
                     }
                 }
@@ -175,15 +187,30 @@ class BookRoomViewModel @Inject constructor(
     }
 
     /**
-     * Parses "HH:mm" time string to LocalTimeDTO.
+     * Parses "HH:mm" time string to API format "HH:mm:ss".
      */
-    private fun parseTimeString(time: String): LocalTimeDTO? {
+    private fun parseTimeString(time: String): String? {
         if (time.isBlank()) return null
         return try {
             val parts = time.split(":")
-            LocalTimeDTO(hour = parts[0].toInt(), minute = parts[1].toInt())
+            String.format(java.util.Locale.US, "%02d:%02d:00", parts[0].toInt(), parts[1].toInt())
         } catch (e: Exception) {
             null
+        }
+    }
+
+    /**
+     * Validates that all required booking fields are filled.
+     */
+    private fun validateForm(state: RoomBookingFormState): String? {
+        return when {
+            state.meetingTitle.isBlank() -> "Meeting title is required"
+            state.selectedRoomId == null -> "Please select a room"
+            state.date.isBlank() -> "Please select a date"
+            state.startTime.isBlank() -> "Please select a start time"
+            state.endTime.isBlank() -> "Please select an end time"
+            state.meetingType.isBlank() -> "Please select a meeting type"
+            else -> null
         }
     }
 
@@ -191,10 +218,9 @@ class BookRoomViewModel @Inject constructor(
      * Maps display meeting type to API enum value.
      */
     private fun mapMeetingType(displayType: String): String? = when (displayType) {
-        "Team Meeting" -> "INTERNAL"
-        "Client Call" -> "CLIENT"
-        "Workshop", "Training" -> "INTERNAL"
-        "Interview" -> "EXECUTIVE"
+        "Internal" -> "INTERNAL"
+        "Client" -> "CLIENT"
+        "Executive" -> "EXECUTIVE"
         else -> if (displayType.isBlank()) null else "INTERNAL"
     }
 }

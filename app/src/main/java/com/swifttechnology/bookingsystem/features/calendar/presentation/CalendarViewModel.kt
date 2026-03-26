@@ -79,10 +79,10 @@ class CalendarViewModel @Inject constructor(
                         try {
                             val date = LocalDate.parse(dto.date ?: return@mapIndexedNotNull null)
                             val startTime = dto.startTime?.let {
-                                LocalTime.of(it.hour, it.minute)
+                                try { LocalTime.parse(it) } catch (e: Exception) { null }
                             } ?: return@mapIndexedNotNull null
                             val endTime = dto.endTime?.let {
-                                LocalTime.of(it.hour, it.minute)
+                                try { LocalTime.parse(it) } catch (e: Exception) { null }
                             } ?: return@mapIndexedNotNull null
 
                             val color = when (dto.meetingType) {

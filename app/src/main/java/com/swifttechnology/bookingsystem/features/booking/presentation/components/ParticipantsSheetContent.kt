@@ -65,13 +65,13 @@ import com.swifttechnology.bookingsystem.features.booking.presentation.RoomBooki
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.shared.components.PrimaryButton
 
-private data class InternalParticipant(
+data class InternalParticipant(
     val name: String,
     val email: String,
     val department: String
 )
 
-private val sampleInternalParticipants = listOf(
+public val sampleInternalParticipants = listOf(
     InternalParticipant("John Carter", "john.carter@fintech.com", "Engineering"),
     InternalParticipant("Emily Davis", "emily.davis@fintech.com", "Product"),
     InternalParticipant("Michael Brown", "michael.brown@fintech.com", "Design"),

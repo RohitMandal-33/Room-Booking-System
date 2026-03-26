@@ -30,6 +30,10 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
@@ -42,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -86,6 +91,29 @@ fun BookRoomScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Show success Snackbar
+    LaunchedEffect(uiState.submitSuccess) {
+        if (uiState.submitSuccess) {
+            snackbarHostState.showSnackbar(
+                message = "Room booked successfully!",
+                duration = SnackbarDuration.Short
+            )
+            viewModel.clearSubmitSuccess()
+        }
+    }
+
+    // Show error Snackbar
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let { error ->
+            snackbarHostState.showSnackbar(
+                message = error,
+                duration = SnackbarDuration.Short
+            )
+            viewModel.clearError()
+        }
+    }
 
     LaunchedEffect(uiState.availableRooms, initialRoomName, initialDetails) {
         if (uiState.availableRooms.isNotEmpty()) {
@@ -157,11 +185,11 @@ fun BookRoomScreen(
     )
 
     val availableRooms = uiState.availableRooms.map { it.name }
-    val availableParticipants = listOf("Alice Johnson", "Bob Smith", "Carol White", "David Lee")
     val selectedInternalKeys = formState.participants
     val selectedExternalMembers = formState.externalMembers
     val hasAnySelected = selectedInternalKeys.isNotEmpty() || selectedExternalMembers.isNotEmpty()
 
+    Box(modifier = Modifier.fillMaxWidth()) {
     AnimatedVisibility(
         visible = isContentVisible,
         enter = fadeIn(animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)) +
@@ -210,11 +238,10 @@ fun BookRoomScreen(
             uiState.availableRooms.find { it.name == formState.selectedRoom }?.let {
                 RoomInfoCard(
                     room = it,
-                    onEditClick = onNavigateToEdit
                 )
             }
 
-            // 3. Date
+            // Date
             BookingClickableField(
                 label = "Date",
                 value = formState.date,
@@ -231,7 +258,6 @@ fun BookRoomScreen(
                 onClick = { showDatePicker = true }
             )
 
-            // 4. Start Time & End Time - side by side
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -290,7 +316,6 @@ fun BookRoomScreen(
                 }
             }
 
-            // 5. Meeting Type with colored dot indicators
             BookingDropdownField(
                 label = "Meeting Type",
                 value = formState.meetingType,
@@ -306,7 +331,7 @@ fun BookRoomScreen(
                 }
             )
 
-            // 6. Recurring
+            //  Recurring
             BookingDropdownField(
                 label = "Recurring",
                 value = formState.recurringType,
@@ -329,7 +354,16 @@ fun BookRoomScreen(
                 }
             )
 
-            // 7. Participants
+            // Description
+            BookingTextField(
+                label = "Description",
+                value = formState.description,
+                placeholder = "Add meeting description (optional)",
+                isRequired = false,
+                onValueChange = { viewModel.onFormStateChanged(formState.copy(description = it)) }
+            )
+
+            // Participants
             BookingClickableField(
                 label = "Participants",
                 value = buildParticipantsSummary(formState),
@@ -381,18 +415,26 @@ fun BookRoomScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 8. Book button
+            // Book button
             PrimaryButton(
                 text = if (uiState.isSubmitting) "Booking..." else "Book Meeting Room",
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = Spacing.md),
+                enabled = !uiState.isSubmitting,
                 onClick = { viewModel.submitBooking() }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
+
+    // Snackbar host overlaid at the bottom
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier = Modifier.align(Alignment.BottomCenter)
+    )
+    } // end Box
 
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState()

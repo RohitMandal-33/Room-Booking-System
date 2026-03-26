@@ -476,7 +476,7 @@ private fun StatusBadge(status: RoomStatus) {
 
 /** Read-only amenity chip (normal view). */
 @Composable
-private fun AmenityChip(amenity: RoomAmenity) {
+fun AmenityChip(amenity: RoomAmenity) {
     Row(
         modifier = Modifier
             .height(24.dp)

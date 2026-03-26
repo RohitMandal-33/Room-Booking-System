@@ -1,21 +1,42 @@
 package com.swifttechnology.bookingsystem.features.participants.presentation
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.swifttechnology.bookingsystem.features.auth.domain.repository.AuthRepository
+import com.swifttechnology.bookingsystem.features.participants.domain.repository.ParticipantRepository
 import com.swifttechnology.bookingsystem.shared.components.SidebarItem
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 
+@OptIn(FlowPreview::class)
 @HiltViewModel
 class ParticipantsViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val participantRepository: ParticipantRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ParticipantsUiState())
     val uiState: StateFlow<ParticipantsUiState> = _uiState.asStateFlow()
+
+    init {
+        // Observe search query to fetch participants automatically
+        _uiState
+            .map { it.searchQuery }
+            .distinctUntilChanged()
+            .debounce(300L)
+            .flatMapLatest { query ->
+                participantRepository.searchParticipants(query)
+                    .catch { e ->
+                        _uiState.update { it.copy(isLoading = false, error = e.message ?: "Unknown error") }
+                    }
+            }
+            .onEach { participants ->
+                _uiState.update { it.copy(participants = participants, isLoading = false, error = null) }
+            }
+            .launchIn(viewModelScope)
+    }
 
     fun onSidebarItemSelected(item: SidebarItem) {
         _uiState.update { current ->
@@ -30,8 +51,21 @@ class ParticipantsViewModel @Inject constructor(
         _uiState.update { it.copy(searchQuery = query) }
     }
 
-    suspend fun logout() {
-        authRepository.logout()
+    fun onTabSelected(tab: ParticipantsTab) {
+        _uiState.update { it.copy(selectedTab = tab) }
+    }
+
+    fun toggleEditMode() {
+        _uiState.update { it.copy(isEditMode = !it.isEditMode) }
+    }
+
+    fun onAddParticipantClicked() {
+        // Handle FAB click
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            authRepository.logout()
+        }
     }
 }
-

@@ -6,8 +6,8 @@ package com.swifttechnology.bookingsystem.features.booking.data.dtos
 data class RoomBookingRequestDTO(
     val meetingTitle: String? = null,
     val date: String? = null,              // yyyy-MM-dd
-    val startTime: LocalTimeDTO? = null,
-    val endTime: LocalTimeDTO? = null,
+    val startTime: String? = null,
+    val endTime: String? = null,
     val meetingType: String? = null,        // INTERNAL, CLIENT, EXECUTIVE
     val description: String? = null,
     val roomId: Long? = null,
@@ -15,15 +15,6 @@ data class RoomBookingRequestDTO(
     val externalParticipants: List<ExternalParticipantDTO>? = null
 )
 
-/**
- * Time representation matching the API spec.
- */
-data class LocalTimeDTO(
-    val hour: Int,
-    val minute: Int,
-    val second: Int = 0,
-    val nano: Int = 0
-)
 
 /**
  * External participant details.
@@ -40,8 +31,8 @@ data class BookingResponseDTO(
     val id: Long? = null,
     val meetingTitle: String? = null,
     val date: String? = null,
-    val startTime: LocalTimeDTO? = null,
-    val endTime: LocalTimeDTO? = null,
+    val startTime: String? = null,
+    val endTime: String? = null,
     val meetingType: String? = null,
     val description: String? = null,
     val roomId: Long? = null,

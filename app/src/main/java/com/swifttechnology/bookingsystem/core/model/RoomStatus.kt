@@ -1,10 +1,5 @@
 package com.swifttechnology.bookingsystem.core.model
 
-/**
- * Room status values.
- * ACTIVE / INACTIVE are the API values.
- * BOOKED / AVAILABLE / DISABLED are kept for legacy UI display purposes.
- */
 enum class RoomStatus {
     ACTIVE, INACTIVE,
     BOOKED, AVAILABLE, DISABLED;

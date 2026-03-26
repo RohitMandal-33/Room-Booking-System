@@ -11,11 +11,6 @@ import com.swifttechnology.bookingsystem.features.meetingrooms.domain.repository
 import com.swifttechnology.bookingsystem.shared.components.SidebarItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.BorderColor
-import androidx.compose.material.icons.outlined.Slideshow
-import androidx.compose.material.icons.outlined.Videocam
-import androidx.compose.material.icons.outlined.Wifi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -52,13 +47,7 @@ class MeetingRoomsViewModel @Inject constructor(
                 .onSuccess { page ->
                     val rooms = page.data?.map { dto ->
                         val mappedAmenities = (dto.resources ?: emptyList()).mapNotNull { res ->
-                            when(res) {
-                                "WIFI" -> RoomAmenity("WIFI", Icons.Outlined.Wifi)
-                                "TV" -> RoomAmenity("TV", Icons.Outlined.Videocam)
-                                "PROJECTOR" -> RoomAmenity("PROJECTOR", Icons.Outlined.Slideshow)
-                                "WHITEBOARD" -> RoomAmenity("WHITEBOARD", Icons.Outlined.BorderColor)
-                                else -> null
-                            }
+                            RoomAmenity.fromResourceString(res)
                         }
                         Room(
                             id = dto.id,
