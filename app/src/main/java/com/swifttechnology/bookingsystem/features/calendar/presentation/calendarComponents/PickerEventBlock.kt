@@ -1,4 +1,4 @@
-package com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents
+package com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween

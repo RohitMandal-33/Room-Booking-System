@@ -1,7 +1,9 @@
 package com.swifttechnology.bookingsystem.features.main.presentation
 
 import android.app.Activity
+import android.os.Build
 import androidx.activity.compose.BackHandler
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,6 +37,7 @@ data class PendingBookingDetails(
     val endTime: String
 )
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MainAppScreen(
     navController: NavHostController,

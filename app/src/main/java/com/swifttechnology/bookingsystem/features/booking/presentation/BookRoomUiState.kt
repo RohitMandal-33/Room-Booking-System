@@ -6,7 +6,7 @@ import com.swifttechnology.bookingsystem.shared.components.SidebarItem
 import com.swifttechnology.bookingsystem.shared.components.defaultSidebarItems
 
 data class InternalMember(
-    val id: Int,
+    val id: Long,
     val name: String,
     val email: String,
     val department: String

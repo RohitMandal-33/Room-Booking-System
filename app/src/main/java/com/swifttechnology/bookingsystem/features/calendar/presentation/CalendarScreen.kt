@@ -7,7 +7,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.ui.draw.shadow
-import com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents.IntervalUtils
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.IntervalUtils
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -69,14 +69,16 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.swifttechnology.bookingsystem.core.designsystem.Spacing
+import com.swifttechnology.bookingsystem.core.designsystem.CornerRadius
+import com.swifttechnology.bookingsystem.core.designsystem.Elevation
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
 // rooms are now provided by CalendarViewModel
 import com.swifttechnology.bookingsystem.core.model.Room
-import com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents.DayColumnWithPicker
-import com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents.DayTimePickerViewModel
-import com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents.DayPickerUiState
-import com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents.TimeRange
-import com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents.DayStrip
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.DayColumnWithPicker
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.DayTimePickerViewModel
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.DayPickerUiState
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.TimeRange
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.DayStrip
 import com.swifttechnology.bookingsystem.shared.layout.MainScaffold
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -271,8 +273,8 @@ private fun TopBar(
             Box {
                 Row(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .border(1.dp, Color(0xFFE6E6E6), RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(CornerRadius.md))
+                        .border(1.dp, MaterialTheme.customColors.divider, RoundedCornerShape(CornerRadius.md))
                         .clickable { expanded = true }
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -280,8 +282,8 @@ private fun TopBar(
                 ) {
                     Text(
                         text = selectedRoom?.name ?: "Choose a Meeting Room",
-                        color = if (selectedRoom == null) Color(0xFFAAAAAA) else Color.Black,
-                        fontSize = 14.sp,
+                        color = if (selectedRoom == null) MaterialTheme.customColors.textHint else MaterialTheme.customColors.textPrimary,
+                        style = MaterialTheme.typography.bodyMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -338,17 +340,16 @@ private fun ViewToggleBar(currentView: CalendarView, onViewChange: (CalendarView
             val selected = currentView == view
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(if (selected) PurplePrimary else Color.Transparent)
+                    .clip(RoundedCornerShape(CornerRadius.full))
+                    .background(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent)
                     .clickable { onViewChange(view) }
                     .padding(horizontal = 20.dp, vertical = 8.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = label,
-                    color = if (selected) Color.White else Color.Black,
-                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                    fontSize = 15.sp
+                    color = if (selected) Color.White else MaterialTheme.customColors.textPrimary,
+                    style = if (selected) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Normal)
                 )
             }
         }
@@ -386,15 +387,15 @@ private fun NavigationHeader(
             Icon(
                 imageVector = Icons.Filled.ChevronLeft,
                 contentDescription = "Previous",
-                tint = Color.Black
+                tint = MaterialTheme.customColors.textPrimary
             )
         }
-        Text(text = title, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+        Text(text = title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.customColors.textPrimary)
         IconButton(onClick = onNext) {
             Icon(
                 imageVector = Icons.Filled.ChevronRight,
                 contentDescription = "Next",
-                tint = Color.Black
+                tint = MaterialTheme.customColors.textPrimary
             )
         }
     }
@@ -408,7 +409,7 @@ private fun DayOfWeekHeader(withTimeColumn: Boolean) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFFF5F5F5))
+            .background(MaterialTheme.customColors.surfaceLight)
             .padding(vertical = 6.dp)
     ) {
         if (withTimeColumn) Spacer(Modifier.width(56.dp))
@@ -417,9 +418,8 @@ private fun DayOfWeekHeader(withTimeColumn: Boolean) {
                 text = day,
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center,
-                fontSize = 12.sp,
-                color = Color(0xFF888888),
-                fontWeight = FontWeight.Medium
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.customColors.textSecondary
             )
         }
     }
@@ -482,7 +482,7 @@ private fun MonthView(
                     )
                 }
             }
-            HorizontalDivider(color = Color(0xFFEEEEEE), thickness = 0.5.dp)
+            HorizontalDivider(color = MaterialTheme.customColors.divider, thickness = 0.5.dp)
         }
     }
 }
@@ -499,7 +499,7 @@ private fun MonthCell(
     onClick: () -> Unit,
     onEventClick: (MeetingEvent) -> Unit
 ) {
-    val cellShape = RoundedCornerShape(10.dp)
+    val cellShape = RoundedCornerShape(CornerRadius.md)
     Column(
         modifier = modifier
             .defaultMinSize(minHeight = 80.dp)
@@ -507,9 +507,9 @@ private fun MonthCell(
             .border(
                 width = if (isSelected) 1.5.dp else 0.5.dp,
                 color = when {
-                    isSelected -> PurplePrimary
-                    isToday -> PurplePrimary.copy(alpha = 0.45f)
-                    else -> Color(0xFFEEEEEE)
+                    isSelected -> MaterialTheme.colorScheme.primary
+                    isToday -> MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
+                    else -> MaterialTheme.customColors.divider
                 },
                 shape = cellShape
             )
@@ -521,16 +521,16 @@ private fun MonthCell(
                 .padding(start = 4.dp, top = 4.dp)
                 .size(26.dp)
                 .clip(CircleShape)
-                .background(if (isSelected) PurplePrimary else Color.Transparent),
+                .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = date.dayOfMonth.toString(),
-                fontSize = 13.sp,
+                style = MaterialTheme.typography.bodySmall,
                 color = when {
                     isSelected -> Color.White
-                    !inMonth -> Color(0xFFCCCCCC)
-                    else -> Color.Black
+                    !inMonth -> MaterialTheme.customColors.textHint
+                    else -> MaterialTheme.customColors.textPrimary
                 },
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
             )
@@ -548,7 +548,7 @@ private fun MonthCell(
             ) {
                 Text(
                     text = event.title,
-                    fontSize = 9.sp,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                     color = Color.White,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -559,8 +559,8 @@ private fun MonthCell(
         if (remaining > 0) {
             Text(
                 text = "+$remaining more",
-                fontSize = 9.sp,
-                color = Color(0xFF888888),
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                color = MaterialTheme.customColors.textSecondary,
                 modifier = Modifier.padding(start = 6.dp, top = 2.dp)
             )
         }
@@ -584,7 +584,7 @@ private fun WeekView(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFFF5F5F5))
+                .background(MaterialTheme.customColors.surfaceLight)
         ) {
             Spacer(Modifier.width(56.dp))
             weekDays.forEach { day ->
@@ -594,19 +594,18 @@ private fun WeekView(
                 ) {
                     Text(
                         text = day.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH),
-                        fontSize = 11.sp,
-                        color = Color(0xFF888888)
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.customColors.textSecondary
                     )
                     Text(
                         text = day.dayOfMonth.toString(),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.Black
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.customColors.textPrimary
                     )
                 }
             }
         }
-        HorizontalDivider(color = Color(0xFFEEEEEE))
+        HorizontalDivider(color = MaterialTheme.customColors.divider)
 
         val scrollState = rememberScrollState()
         Column(
@@ -628,8 +627,8 @@ private fun WeekView(
                     ) {
                         Text(
                             text = formatHour(hour),
-                            fontSize = 11.sp,
-                            color = Color(0xFFAAAAAA),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.customColors.textHint,
                             textAlign = TextAlign.End,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -641,7 +640,7 @@ private fun WeekView(
                                 .fillMaxHeight()
                                 .border(
                                     width = 0.5.dp,
-                                    color = Color(0xFFEEEEEE)
+                                    color = MaterialTheme.customColors.divider
                                 )
                         ) {
                             val dayEvents = events.filter {
@@ -664,7 +663,7 @@ private fun WeekView(
                                 ) {
                                     Text(
                                         text = event.title,
-                                        fontSize = 9.sp,
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                                         color = Color.White,
                                         maxLines = 2,
                                         overflow = TextOverflow.Ellipsis
@@ -674,7 +673,7 @@ private fun WeekView(
                         }
                     }
                 }
-                HorizontalDivider(color = Color(0xFFF0F0F0), thickness = 0.5.dp)
+                HorizontalDivider(color = MaterialTheme.customColors.dividerLight, thickness = 0.5.dp)
             }
         }
     }
@@ -687,11 +686,11 @@ private fun WeekView(
 private fun MeetingDetailDialog(event: MeetingEvent, onDismiss: () -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(CornerRadius.lg),
             color = Color.White,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(Spacing.md)
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Row(
@@ -701,15 +700,14 @@ private fun MeetingDetailDialog(event: MeetingEvent, onDismiss: () -> Unit) {
                 ) {
                     Text(
                         text = event.title,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
+                        style = MaterialTheme.typography.headlineSmall,
                         modifier = Modifier.weight(1f)
                     )
                     IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
                         Icon(
                             imageVector = Icons.Filled.Close,
                             contentDescription = "Close",
-                            tint = Color.Black,
+                            tint = MaterialTheme.customColors.textPrimary,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -721,7 +719,7 @@ private fun MeetingDetailDialog(event: MeetingEvent, onDismiss: () -> Unit) {
                     Icon(
                         imageVector = Icons.Outlined.Schedule,
                         contentDescription = null,
-                        tint = Color(0xFF555555),
+                        tint = MaterialTheme.customColors.textSecondary,
                         modifier = Modifier.size(20.dp)
                     )
                 }) {
@@ -734,13 +732,12 @@ private fun MeetingDetailDialog(event: MeetingEvent, onDismiss: () -> Unit) {
                             }"
                         Text(
                             "$dateStr    $timeStr",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium
+                            style = MaterialTheme.typography.bodyMedium
                         )
                         Text(
                             "${event.timeZone} . ${if (event.repeats) "Repeats" else "Doesn't repeat"}",
-                            fontSize = 12.sp,
-                            color = Color.Gray
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.customColors.textSecondary
                         )
                     }
                 }
@@ -751,11 +748,11 @@ private fun MeetingDetailDialog(event: MeetingEvent, onDismiss: () -> Unit) {
                     Icon(
                         imageVector = Icons.Outlined.Group,
                         contentDescription = null,
-                        tint = Color(0xFF555555),
+                        tint = MaterialTheme.customColors.textSecondary,
                         modifier = Modifier.size(20.dp)
                     )
                 }) {
-                    Text("Participants", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Text("Participants", style = MaterialTheme.typography.bodyMedium)
                 }
 
                 Spacer(Modifier.height(12.dp))
@@ -764,14 +761,14 @@ private fun MeetingDetailDialog(event: MeetingEvent, onDismiss: () -> Unit) {
                     Icon(
                         imageVector = Icons.Outlined.Menu,
                         contentDescription = null,
-                        tint = Color(0xFF555555),
+                        tint = MaterialTheme.customColors.textSecondary,
                         modifier = Modifier.size(20.dp)
                     )
                 }) {
                     Column {
-                        Text("Description", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        Text("Description", style = MaterialTheme.typography.bodyMedium)
                         if (event.description.isNotBlank()) {
-                            Text(event.description, fontSize = 12.sp, color = Color.Gray)
+                            Text(event.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.customColors.textSecondary)
                         }
                     }
                 }
@@ -782,11 +779,11 @@ private fun MeetingDetailDialog(event: MeetingEvent, onDismiss: () -> Unit) {
                     Icon(
                         imageVector = Icons.Outlined.Place,
                         contentDescription = null,
-                        tint = Color(0xFF555555),
+                        tint = MaterialTheme.customColors.textSecondary,
                         modifier = Modifier.size(20.dp)
                     )
                 }) {
-                    Text("Meeting room", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Text("Meeting room", style = MaterialTheme.typography.bodyMedium)
                 }
 
                 Spacer(Modifier.height(12.dp))
@@ -795,11 +792,11 @@ private fun MeetingDetailDialog(event: MeetingEvent, onDismiss: () -> Unit) {
                     Icon(
                         imageVector = Icons.Outlined.AccountCircle,
                         contentDescription = null,
-                        tint = Color(0xFF555555),
+                        tint = MaterialTheme.customColors.textSecondary,
                         modifier = Modifier.size(20.dp)
                     )
                 }) {
-                    Text("Created By", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Text("Created By", style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }
@@ -812,7 +809,7 @@ private fun MeetingDetailDialog(event: MeetingEvent, onDismiss: () -> Unit) {
 private fun DialogRow(icon: @Composable () -> Unit, content: @Composable () -> Unit) {
     Row(
         verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(Spacing.ms)
     ) {
         Box(modifier = Modifier.padding(top = 2.dp)) { icon() }
         Box(modifier = Modifier.weight(1f)) { content() }
@@ -855,46 +852,43 @@ private fun DayBookingBottomBar(
         modifier = Modifier
             .fillMaxWidth()
             .shadow(
-                elevation = 16.dp,
-                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                elevation = Elevation.xl,
+                shape = RoundedCornerShape(topStart = CornerRadius.xl, topEnd = CornerRadius.xl),
                 spotColor = Color.Black.copy(alpha = 0.1f)
             )
-            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+            .clip(RoundedCornerShape(topStart = CornerRadius.xl, topEnd = CornerRadius.xl))
             .background(Color.White)
-            .padding(20.dp)
+            .padding(Spacing.ml)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFFF3E8FF), RoundedCornerShape(12.dp))
-                .padding(16.dp),
+                .background(MaterialTheme.customColors.primaryLight, RoundedCornerShape(CornerRadius.md))
+                .padding(Spacing.md),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
                 Text(
                     text = "Selected Time",
-                    fontSize = 12.sp,
-                    color = Color.Gray,
-                    fontWeight = FontWeight.Medium
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.customColors.textSecondary
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = "$startTimeStr - $endTimeStr",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = PurplePrimary
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
             Text(
                 text = IntervalUtils.formatDuration(event.timeRange.durationMinutes),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.Black
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.customColors.textPrimary
             )
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(Spacing.ml))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -905,10 +899,10 @@ private fun DayBookingBottomBar(
                 modifier = Modifier
                     .weight(1f)
                     .height(52.dp),
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, Color(0xFFE0E0E0))
+                shape = RoundedCornerShape(CornerRadius.md),
+                border = BorderStroke(1.dp, MaterialTheme.customColors.divider)
             ) {
-                Text("Cancel", color = Color.Black, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                Text("Cancel", color = MaterialTheme.customColors.textPrimary, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold))
             }
 
             Button(
@@ -916,11 +910,11 @@ private fun DayBookingBottomBar(
                 modifier = Modifier
                     .weight(1f)
                     .height(52.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PurplePrimary)
+                shape = RoundedCornerShape(CornerRadius.md),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
-                Text("Proceed to booking", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-                Spacer(Modifier.width(8.dp))
+                Text("Proceed to booking", color = Color.White, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold))
+                Spacer(Modifier.width(Spacing.sm))
                 Icon(
                     imageVector = Icons.Filled.ChevronRight,
                     contentDescription = null,

@@ -27,21 +27,42 @@ class TokenDataStore(
         val REFRESH_TOKEN_KEY: Preferences.Key<String> = stringPreferencesKey("refresh_token")
     }
 
+    @Volatile private var cachedAccessToken: String? = null
+    @Volatile private var cachedRefreshToken: String? = null
+    @Volatile private var isInitialized = false
+
+    private suspend fun ensureInitialized() {
+        if (!isInitialized) {
+            val prefs = context.tokenDataStore.data.first()
+            cachedAccessToken = prefs[ACCESS_TOKEN_KEY]
+            cachedRefreshToken = prefs[REFRESH_TOKEN_KEY]
+            isInitialized = true
+        }
+    }
+
     override suspend fun saveAccessToken(token: String) {
+        cachedAccessToken = token
         context.tokenDataStore.edit { it[ACCESS_TOKEN_KEY] = token }
     }
 
     override suspend fun saveRefreshToken(token: String) {
+        cachedRefreshToken = token
         context.tokenDataStore.edit { it[REFRESH_TOKEN_KEY] = token }
     }
 
-    override suspend fun getAccessToken(): String? =
-        context.tokenDataStore.data.first()[ACCESS_TOKEN_KEY]
+    override suspend fun getAccessToken(): String? {
+        ensureInitialized()
+        return cachedAccessToken
+    }
 
-    override suspend fun getRefreshToken(): String? =
-        context.tokenDataStore.data.first()[REFRESH_TOKEN_KEY]
+    override suspend fun getRefreshToken(): String? {
+        ensureInitialized()
+        return cachedRefreshToken
+    }
 
     override suspend fun clear() {
+        cachedAccessToken = null
+        cachedRefreshToken = null
         context.tokenDataStore.edit { it.clear() }
     }
 

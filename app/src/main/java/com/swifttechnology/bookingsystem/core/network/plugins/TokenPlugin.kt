@@ -36,7 +36,7 @@ class TokenPlugin(
             return chain.proceed(originalRequest)
         }
 
-        val token = runBlocking { tokenStorage.get().getAccessToken() }
+        val token = runBlocking(kotlinx.coroutines.Dispatchers.IO) { tokenStorage.get().getAccessToken() }
 
         val request = if (!token.isNullOrBlank()) {
             originalRequest.newBuilder()

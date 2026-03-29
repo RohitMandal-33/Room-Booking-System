@@ -6,6 +6,8 @@ import androidx.compose.ui.graphics.Color
 val Primary = Color(0xFF472A8C)
 val PrimaryVariant = Color(0xFF0050CC)
 val OnPrimary = Color(0xFFFFFFFF)
+val PrimaryLight = Color(0xFFF3E8FF)
+val PrimaryLightDark = Color(0xFF2D243D)
 
 val Secondary = Color(0xFF00C4A7)
 val OnSecondary = Color(0xFFFFFFFF)
@@ -16,6 +18,9 @@ val Surface = Color(0xFFFFFFFF)
 val SurfaceVariant = Color(0xFFEAEEF6)
 val OnBackground = Color(0xFF111827)
 val OnSurface = Color(0xFF1F2937)
+
+val SurfaceLight = Color(0xFFF9FAFB)
+val SurfaceLightDark = Color(0xFF1F2937)
 
 //  Status
 val Success = Color(0xFF16A34A)
@@ -34,8 +39,10 @@ val OnSurfaceDark = Color(0xFFCDD5DF)
 val TextPrimary = Color(0xFF111827)
 val TextSecondary = Color(0xFF6B7280)
 val TextDisabled = Color(0xFF9CA3AF)
+val TextHint = Color(0xFF9CA3AF)
 val TextPrimaryDark = Color(0xFFE6EDF3)
 val TextSecondaryDark = Color(0xFF8B949E)
+val TextHintDark = Color(0xFF6B7280)
 
 // Supplemental UI Colors (used in Dashboard/Badges)
 val Neutral100 = Color(0xFFFFFFFF)
@@ -49,6 +56,11 @@ val Neutral200Dark = Color(0xFF2D2D2D)
 val Neutral300Dark = Color(0xFF3D3D3D)
 val Neutral400Dark = Color(0xFF4D4D4D)
 val Neutral700Dark = Color(0xFFAFAFAF)
+
+val Divider = Color(0xFFE5E7EB)
+val DividerDark = Color(0xFF30363D)
+val DividerLight = Color(0xFFF3F4F6)
+val DividerLightDark = Color(0xFF21262D)
 
 val DeepBlack = Color(0xFF0A0A0A)
 val WhitePure = Color(0xFFFFFFFF)

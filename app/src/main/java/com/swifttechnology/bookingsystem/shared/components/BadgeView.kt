@@ -13,8 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.swifttechnology.bookingsystem.core.designsystem.Spacing
 
 
 @Composable
@@ -23,7 +22,7 @@ fun BadgeView(
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colorScheme.error,
     contentColor: Color = Color.White,
-    size: Dp = 20.dp
+    size: Dp = Spacing.ml
 ) {
     if (count <= 0) return
 
@@ -36,7 +35,6 @@ fun BadgeView(
         Text(
             text = if (count > 99) "99+" else count.toString(),
             color = contentColor,
-            fontSize = 10.sp,
             style = MaterialTheme.typography.labelSmall
         )
     }

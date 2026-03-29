@@ -9,8 +9,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import com.swifttechnology.bookingsystem.core.designsystem.CornerRadius
+import com.swifttechnology.bookingsystem.core.designsystem.Spacing
 import com.swifttechnology.bookingsystem.core.designsystem.Elevation
 
 
@@ -36,6 +36,6 @@ fun CardView(
 private fun CardViewPreview() {
     androidx.compose.material3.Text(
         text = "Card Content",
-        modifier = Modifier.padding(16.dp)
+        modifier = Modifier.padding(Spacing.md)
     )
 }

@@ -10,6 +10,7 @@ import com.swifttechnology.bookingsystem.features.booking.data.dtos.ExternalPart
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.RoomBookingRequestDTO
 import com.swifttechnology.bookingsystem.features.booking.domain.repository.BookingRepository
 import com.swifttechnology.bookingsystem.features.meetingrooms.domain.repository.RoomRepository
+import com.swifttechnology.bookingsystem.features.participants.domain.repository.ParticipantRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +23,8 @@ import kotlinx.coroutines.launch
 class BookRoomViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val bookingRepository: BookingRepository,
-    private val roomRepository: RoomRepository
+    private val roomRepository: RoomRepository,
+    private val participantRepository: ParticipantRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BookRoomUiState())
@@ -30,6 +32,23 @@ class BookRoomViewModel @Inject constructor(
 
     init {
         loadActiveRooms()
+        loadParticipants()
+    }
+
+    private fun loadParticipants() {
+        viewModelScope.launch {
+            participantRepository.getParticipants().collect { participants ->
+                val internalMembers = participants.map { 
+                    InternalMember(
+                        id = it.id,
+                        name = it.name,
+                        email = it.email,
+                        department = it.department
+                    )
+                }
+                _uiState.update { it.copy(availableParticipants = internalMembers) }
+            }
+        }
     }
 
     private fun loadActiveRooms() {
@@ -126,12 +145,7 @@ class BookRoomViewModel @Inject constructor(
                 roomId = state.selectedRoomId,
                 internalParticipantIds = state.participants
                     .takeIf { it.isNotEmpty() }
-                    ?.mapNotNull { key ->
-                        // Participants are stored as "name|email" — IDs are not
-                        // available from the current sample data. When participants
-                        // come from the user search API with IDs, map them here.
-                        null
-                    }
+                    ?.map { it.id }
                     ?.takeIf { it.isNotEmpty() },
                 externalParticipants = state.externalMembers
                     .takeIf { it.isNotEmpty() }

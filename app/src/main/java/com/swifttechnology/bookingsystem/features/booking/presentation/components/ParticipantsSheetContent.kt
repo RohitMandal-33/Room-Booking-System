@@ -60,36 +60,18 @@ import com.swifttechnology.bookingsystem.core.designsystem.Neutral400
 import com.swifttechnology.bookingsystem.core.designsystem.Neutral700
 import com.swifttechnology.bookingsystem.core.designsystem.Spacing
 import com.swifttechnology.bookingsystem.core.designsystem.Warning
+import com.swifttechnology.bookingsystem.features.booking.presentation.InternalMember
 import com.swifttechnology.bookingsystem.features.booking.presentation.ExternalMember
 import com.swifttechnology.bookingsystem.features.booking.presentation.RoomBookingFormState
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.shared.components.PrimaryButton
 
-data class InternalParticipant(
-    val name: String,
-    val email: String,
-    val department: String
-)
-
-public val sampleInternalParticipants = listOf(
-    InternalParticipant("John Carter", "john.carter@fintech.com", "Engineering"),
-    InternalParticipant("Emily Davis", "emily.davis@fintech.com", "Product"),
-    InternalParticipant("Michael Brown", "michael.brown@fintech.com", "Design"),
-    InternalParticipant("Sophia Wilson", "sophia.wilson@fintech.com", "Engineering"),
-    InternalParticipant("Daniel Taylor", "daniel.taylor@fintech.com", "Product"),
-    InternalParticipant("Olivia Martinez", "olivia.martinez@fintech.com", "Design"),
-    InternalParticipant("James Anderson", "james.anderson@fintech.com", "Engineering"),
-    InternalParticipant("Isabella Thomas", "isabella.thomas@fintech.com", "Product"),
-    InternalParticipant("William Jackson", "william.jackson@fintech.com", "Design"),
-    InternalParticipant("Ava Harris", "ava.harris@fintech.com", "Engineering"),
-    InternalParticipant("Benjamin Clark", "benjamin.clark@fintech.com", "Product"),
-    InternalParticipant("Mia Rodriguez", "mia.rodriguez@fintech.com", "Design")
-)
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ParticipantsSheetContent(
     formState: RoomBookingFormState,
+    availableParticipants: List<InternalMember>,
     onFormStateChanged: (RoomBookingFormState) -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier
@@ -170,13 +152,13 @@ fun ParticipantsSheetContent(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
                 verticalArrangement = Arrangement.spacedBy(Spacing.xs)
             ) {
-                selectedInternalKeys.forEach { key ->
-                    val name = key.substringBefore("|")
+                selectedInternalKeys.forEach { member ->
+                    val name = member.name
                     SelectedParticipantChip(
                         name = name,
                         onRemove = {
                             onFormStateChanged(
-                                formState.copy(participants = formState.participants - key)
+                                formState.copy(participants = formState.participants - member)
                             )
                         }
                     )
@@ -231,7 +213,7 @@ fun ParticipantsSheetContent(
                     onGroupByChange = { groupBy = it },
                     searchQuery = internalSearchQuery,
                     onSearchQueryChange = { internalSearchQuery = it },
-                    filteredParticipants = sampleInternalParticipants
+                    filteredParticipants = availableParticipants
                         .filter { p ->
                             internalSearchQuery.isEmpty() ||
                                     p.name.contains(internalSearchQuery, ignoreCase = true) ||
@@ -360,7 +342,7 @@ private fun InternalParticipantsContent(
     onGroupByChange: (GroupBy) -> Unit,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
-    filteredParticipants: List<InternalParticipant>,
+    filteredParticipants: List<InternalMember>,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -451,25 +433,22 @@ private fun InternalParticipantsContent(
 
         Spacer(modifier = Modifier.height(Spacing.md))
 
-        // Participant list (store "name|email" for unique selection when names duplicate)
-        val selectedKeys = formState.participants.toSet()
-        fun key(p: InternalParticipant) = "${p.name}|${p.email}"
+        // Participant list
         LazyColumn(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(Spacing.xs)
         ) {
             items(filteredParticipants) { participant ->
-                val participantKey = key(participant)
-                val isSelected = selectedKeys.contains(participantKey)
+                val isSelected = formState.participants.any { it.id == participant.id }
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
                             val current = formState.participants.toMutableList()
                             if (isSelected) {
-                                current.remove(participantKey)
+                                current.removeAll { it.id == participant.id }
                             } else {
-                                current.add(participantKey)
+                                current.add(participant)
                             }
                             onFormStateChanged(formState.copy(participants = current.distinct()))
                         }
@@ -481,9 +460,9 @@ private fun InternalParticipantsContent(
                         onCheckedChange = { checked ->
                             val current = formState.participants.toMutableList()
                             if (checked) {
-                                if (!current.contains(participantKey)) current.add(participantKey)
+                                if (current.none { it.id == participant.id }) current.add(participant)
                             } else {
-                                current.remove(participantKey)
+                                current.removeAll { it.id == participant.id }
                             }
                             onFormStateChanged(formState.copy(participants = current.distinct()))
                         },
@@ -761,10 +740,17 @@ fun ParticipantsSheetContentPreview() {
     MeetingRoomBookingTheme {
         ParticipantsSheetContent(
             formState = RoomBookingFormState(
-                participants = listOf("John Carter|john.carter@fintech.com", "Emily Davis|emily.davis@fintech.com"),
+                participants = listOf(
+                    InternalMember(1L, "John Carter", "john.carter@fintech.com", "Engineering"),
+                    InternalMember(2L, "Emily Davis", "emily.davis@fintech.com", "Product")
+                ),
                 externalMembers = listOf(
                     ExternalMember("Alice Smith", "alice.smith@example.com")
                 )
+            ),
+            availableParticipants = listOf(
+                InternalMember(1L, "John Carter", "john.carter@fintech.com", "Engineering"),
+                InternalMember(2L, "Emily Davis", "emily.davis@fintech.com", "Product")
             ),
             onFormStateChanged = {},
             onClose = {}

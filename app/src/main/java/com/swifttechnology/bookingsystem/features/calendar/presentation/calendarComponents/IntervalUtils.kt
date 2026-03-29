@@ -1,4 +1,4 @@
-package com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents
+package com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents
 
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -29,11 +29,6 @@ object IntervalUtils {
         else -> "${minutes / 60}h ${minutes % 60}min"
     }
 
-    /**
-     * Find the nearest valid start position for a block-move drag.
-     * Scans both before and after every conflicting slot to find the
-     * closest gap. Falls back to [previousStart] if no safe slot exists.
-     */
     fun resolveMove(
         proposedStart: Int,
         duration: Int,

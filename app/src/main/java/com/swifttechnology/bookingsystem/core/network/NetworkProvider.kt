@@ -23,7 +23,11 @@ object NetworkProvider {
 
     fun buildOkHttpClient(tokenStorage: Lazy<TokenStorage>): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = if (com.swifttechnology.bookingsystem.BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.BODY
+            } else {
+                HttpLoggingInterceptor.Level.NONE
+            }
         }
 
         return OkHttpClient.Builder()

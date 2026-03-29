@@ -26,13 +26,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents.DayColumnWithPicker
-import com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents.DayStrip
-import com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents.DayTimePickerViewModel
+import com.swifttechnology.bookingsystem.core.designsystem.Spacing
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.DayColumnWithPicker
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.DayStrip
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.DayTimePickerViewModel
+import com.swifttechnology.bookingsystem.features.calendar.presentation.CalendarViewModel
 import com.swifttechnology.bookingsystem.features.main.presentation.PendingBookingDetails
 import com.swifttechnology.bookingsystem.shared.components.PrimaryButton
 import java.time.LocalDate
@@ -45,9 +45,11 @@ fun RoomCalendarScreen(
     initialDetails: PendingBookingDetails?,
     onNavigateBack: () -> Unit,
     onProceed: (PendingBookingDetails) -> Unit,
-    pickerViewModel: DayTimePickerViewModel = hiltViewModel(key = "room_calendar_picker")
+    pickerViewModel: DayTimePickerViewModel = hiltViewModel(key = "room_calendar_picker"),
+    calendarViewModel: CalendarViewModel = hiltViewModel()
 ) {
     val pickerUiState by pickerViewModel.uiState.collectAsStateWithLifecycle()
+    val calendarUiState by calendarViewModel.uiState.collectAsStateWithLifecycle()
 
     var selectedDate by remember {
         mutableStateOf(
@@ -77,13 +79,21 @@ fun RoomCalendarScreen(
         }
     }
 
-    Surface(modifier = Modifier.fillMaxSize(), color = Color.White) {
+    LaunchedEffect(calendarUiState.events, selectedDate, roomName) {
+        if (roomName != null) {
+            pickerViewModel.setBlockedSlots(
+                calendarViewModel.getBlockedSlotsForRoomAndDate(roomName, selectedDate)
+            )
+        }
+    }
+
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Top Bar
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(Spacing.md),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onNavigateBack) {
@@ -91,9 +101,8 @@ fun RoomCalendarScreen(
                 }
                 Text(
                     text = roomName ?: "Select Time",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(start = 8.dp)
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(start = Spacing.sm)
                 )
             }
 
@@ -107,7 +116,9 @@ fun RoomCalendarScreen(
             Column(modifier = Modifier.weight(1f)) {
                 DayColumnWithPicker(
                     selectedDate = selectedDate,
-                    regularEvents = emptyList(), // TODO: Pass any known events for this room
+                    regularEvents = roomName?.let {
+                        calendarViewModel.getEventsForRoomAndDate(it, selectedDate)
+                    } ?: emptyList(),
                     pickerState = pickerUiState,
                     onGridLongPress = pickerViewModel::onTimeSlotLongPressed,
                     onDragStarted = pickerViewModel::onDragStarted,
@@ -124,8 +135,8 @@ fun RoomCalendarScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color.White)
-                            .padding(16.dp),
+                            .background(MaterialTheme.colorScheme.surface)
+                            .padding(Spacing.md),
                         horizontalArrangement = Arrangement.Center
                     ) {
                         PrimaryButton(

@@ -204,7 +204,7 @@ fun BookRoomScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(Spacing.ml)
         ) {
             // 1. Meeting Title
             BookingTextField(
@@ -252,7 +252,7 @@ fun BookRoomScreen(
                         imageVector = Icons.Default.DateRange,
                         contentDescription = "Date",
                         tint = Neutral700,
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(Spacing.lg)
                     )
                 },
                 onClick = { showDatePicker = true }
@@ -260,7 +260,7 @@ fun BookRoomScreen(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(Spacing.ms)
             ) {
                 Box(modifier = Modifier.weight(1f)) {
                     BookingClickableField(
@@ -273,7 +273,7 @@ fun BookRoomScreen(
                                 painter = painterResource(android.R.drawable.ic_menu_recent_history),
                                 contentDescription = "Time",
                                 tint = Neutral400,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(Spacing.ml)
                             )
                         },
                         onClick = { 
@@ -299,7 +299,7 @@ fun BookRoomScreen(
                                 painter = painterResource(android.R.drawable.ic_menu_recent_history),
                                 contentDescription = "Time",
                                 tint = Neutral400,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(Spacing.ml)
                             )
                         },
                         onClick = { 
@@ -344,7 +344,7 @@ fun BookRoomScreen(
                         painter = painterResource(R.drawable.ic_repeat),
                         contentDescription = "Recurring",
                         tint = Neutral700,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(Spacing.ml)
                     )
                 },
                 onExpandChange = { showRecurringDropdown = it },
@@ -374,7 +374,7 @@ fun BookRoomScreen(
                         painter = painterResource(android.R.drawable.ic_menu_myplaces),
                         contentDescription = null,
                         tint = Neutral700,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(Spacing.ml)
                     )
                 },
                 contentBelowLabel = {
@@ -386,13 +386,13 @@ fun BookRoomScreen(
                             horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
                             verticalArrangement = Arrangement.spacedBy(Spacing.xs)
                         ) {
-                            selectedInternalKeys.forEach { key ->
-                                val name = key.substringBefore("|")
+                            selectedInternalKeys.forEach { member ->
+                                val name = member.name
                                 SelectedParticipantChip(
                                     name = name,
                                     onRemove = {
                                         viewModel.onFormStateChanged(
-                                            formState.copy(participants = formState.participants - key)
+                                            formState.copy(participants = formState.participants - member)
                                         )
                                     }
                                 )
@@ -413,7 +413,7 @@ fun BookRoomScreen(
                 onClick = { showParticipantsSheet = true }
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(Spacing.sm))
 
             // Book button
             PrimaryButton(
@@ -425,7 +425,7 @@ fun BookRoomScreen(
                 onClick = { viewModel.submitBooking() }
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Spacing.md))
         }
     }
 
@@ -469,6 +469,7 @@ fun BookRoomScreen(
         ) {
             ParticipantsSheetContent(
                 formState = formState,
+                availableParticipants = uiState.availableParticipants,
                 onFormStateChanged = viewModel::onFormStateChanged,
                 onClose = { showParticipantsSheet = false }
 
@@ -478,7 +479,7 @@ fun BookRoomScreen(
 }
 
 private fun buildParticipantsSummary(formState: RoomBookingFormState): String {
-    val internalNames = formState.participants.map { it.substringBefore("|").ifEmpty { it } }
+    val internalNames = formState.participants.map { it.name.ifEmpty { "Unknown" } }
     val external = formState.externalMembers.map { "${it.name} (${it.email})" }
     return (internalNames + external).joinToString(", ").takeIf { it.isNotEmpty() } ?: ""
 }

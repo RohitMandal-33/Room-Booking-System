@@ -1,4 +1,4 @@
-package com.swifttechnology.bookingsystem.features.meetingrooms.presentation.MeetingRoomComponets
+package com.swifttechnology.bookingsystem.features.meetingrooms.presentation.MeetingRoomComponents
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

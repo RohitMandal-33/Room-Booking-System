@@ -48,18 +48,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.swifttechnology.bookingsystem.core.designsystem.CornerRadius
 import com.swifttechnology.bookingsystem.core.designsystem.MeetingRoomBookingTheme
+import com.swifttechnology.bookingsystem.core.designsystem.Spacing
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.core.model.Room
 import com.swifttechnology.bookingsystem.core.model.RoomAmenity
 import com.swifttechnology.bookingsystem.core.model.RoomStatus
-import com.swifttechnology.bookingsystem.core.model.defaultAmenities
 import com.swifttechnology.bookingsystem.core.model.defaultRooms
 
 private val allAvailableAmenities = listOf(
@@ -118,31 +117,30 @@ fun RoomCard(
             title = {
                 Text(
                     "Add Amenity",
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp
+                    style = MaterialTheme.typography.titleMedium
                 )
             },
             text = {
                 if (available.isEmpty()) {
                     Text(
                         "All amenities have been added.",
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.customColors.textBody
                     )
                 } else {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                         available.forEach { amenity ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clip(RoundedCornerShape(8.dp))
+                                    .clip(RoundedCornerShape(CornerRadius.md))
                                     .background(MaterialTheme.customColors.neutral200)
                                     .clickable {
                                         editedAmenities.add(amenity)
                                         showAddAmenityDialog = false
                                     }
-                                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    .padding(horizontal = Spacing.md, vertical = Spacing.ms),
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.ms),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
@@ -153,7 +151,7 @@ fun RoomCard(
                                 )
                                 Text(
                                     text = amenity.label,
-                                    fontSize = 14.sp,
+                                    style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.customColors.deepBlack
                                 )
                             }
@@ -176,19 +174,19 @@ fun RoomCard(
                 if (isEditable && isEditing) Modifier.wrapContentHeight()
                 else Modifier.height(216.dp)
             )
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(CornerRadius.md))
             .background(MaterialTheme.customColors.neutral100)
-            .border(0.8.dp, MaterialTheme.customColors.neutral300, RoundedCornerShape(8.dp))
-            .padding(vertical = 16.dp),
+            .border(0.8.dp, MaterialTheme.customColors.neutral300, RoundedCornerShape(CornerRadius.md))
+            .padding(vertical = Spacing.md),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
 
             //  Room name + status badge
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 8.dp),
+                    .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -198,10 +196,7 @@ fun RoomCard(
                         onValueChange = { editedName = it },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
-                        textStyle = TextStyle(
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            letterSpacing = 0.1.sp,
+                        textStyle = MaterialTheme.typography.titleSmall.copy(
                             color = MaterialTheme.customColors.deepBlack
                         ),
                         colors = OutlinedTextFieldDefaults.colors(
@@ -213,13 +208,11 @@ fun RoomCard(
                         ),
                         shape = RoundedCornerShape(6.dp)
                     )
-                    Spacer(Modifier.width(12.dp))
+                    Spacer(Modifier.width(Spacing.ms))
                 } else {
                     Text(
                         text = room.name,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = 0.1.sp,
+                        style = MaterialTheme.typography.titleSmall,
                         color = if (room.status == RoomStatus.DISABLED)
                             MaterialTheme.customColors.neutral700
                         else MaterialTheme.customColors.deepBlack,
@@ -232,7 +225,7 @@ fun RoomCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
+                    .padding(horizontal = Spacing.lg),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -240,9 +233,8 @@ fun RoomCard(
                 if (room.timeLabel.isNotEmpty()) {
                     Text(
                         text = room.timeLabel,
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.customColors.textBody,
-                        letterSpacing = 0.4.sp,
                         maxLines = 1
                     )
                 } else {
@@ -256,8 +248,7 @@ fun RoomCard(
                         onValueChange = { editedCapacity = it.filter { ch -> ch.isDigit() } },
                         singleLine = true,
                         modifier = Modifier.width(140.dp),
-                        textStyle = TextStyle(
-                            fontSize = 12.sp,
+                        textStyle = MaterialTheme.typography.bodySmall.copy(
                             color = MaterialTheme.customColors.deepBlack
                         ),
                         leadingIcon = {
@@ -279,7 +270,7 @@ fun RoomCard(
                         label = {
                             Text(
                                 "Capacity",
-                                fontSize = 10.sp,
+                                style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.customColors.textBody
                             )
                         }
@@ -297,9 +288,8 @@ fun RoomCard(
                         )
                         Text(
                             text = "Capacity : ${room.capacity}",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.customColors.textBody,
-                            letterSpacing = 0.4.sp
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.customColors.textBody
                         )
                     }
                 }
@@ -310,9 +300,9 @@ fun RoomCard(
                 FlowRow(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                        .padding(horizontal = Spacing.lg),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.sm)
                 ) {
                     editedAmenities.forEach { amenity ->
                         EditableAmenityChip(
@@ -326,9 +316,9 @@ fun RoomCard(
                 FlowRow(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                        .padding(horizontal = Spacing.lg),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.sm)
                 ) {
                     room.amenities.forEach { amenity ->
                         AmenityChip(amenity = amenity)
@@ -343,7 +333,7 @@ fun RoomCard(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp)
+                .padding(horizontal = Spacing.lg)
         ) {
             if (isEditable) {
                 Row(
@@ -355,12 +345,12 @@ fun RoomCard(
                         modifier = Modifier
                             .weight(1f)
                             .height(32.dp)
-                            .clip(RoundedCornerShape(8.dp))
+                            .clip(RoundedCornerShape(CornerRadius.sm))
                             .background(MaterialTheme.customColors.neutral200)
                             .border(
                                 1.dp,
                                 MaterialTheme.customColors.neutral300,
-                                RoundedCornerShape(8.dp)
+                                RoundedCornerShape(CornerRadius.sm)
                             )
                             .clickable { onEditClick(room) },
                         contentAlignment = Alignment.Center
@@ -378,7 +368,7 @@ fun RoomCard(
                         modifier = Modifier
                             .weight(1f)
                             .height(32.dp)
-                            .clip(RoundedCornerShape(8.dp))
+                            .clip(RoundedCornerShape(CornerRadius.md))
                             .background(Color(0xFFFF9EA6))
                             .clickable {
                                 if (isEditing) {
@@ -440,7 +430,8 @@ fun RoomCard(
                         text = btnText,
                         fontSize = 14.sp,
                         color = btnTextColor,
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.labelLarge
                     )
                 }
             }
@@ -466,9 +457,7 @@ private fun StatusBadge(status: RoomStatus) {
     ) {
         Text(
             text = label,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Medium,
-            letterSpacing = 0.5.sp,
+            style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.customColors.deepBlack
         )
     }
@@ -494,9 +483,8 @@ fun AmenityChip(amenity: RoomAmenity) {
         )
         Text(
             text = amenity.label,
-            fontSize = 12.sp,
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.customColors.textBody,
-            letterSpacing = 0.4.sp,
             maxLines = 1
         )
     }
@@ -574,9 +562,8 @@ private fun AddAmenityChip(onClick: () -> Unit) {
         )
         Text(
             text = "Add",
-            fontSize = 12.sp,
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.customColors.textBody,
-            letterSpacing = 0.4.sp,
             maxLines = 1
         )
     }

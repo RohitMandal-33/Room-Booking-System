@@ -20,16 +20,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.swifttechnology.bookingsystem.core.designsystem.CornerRadius
 import com.swifttechnology.bookingsystem.core.designsystem.MeetingRoomBookingTheme
+import com.swifttechnology.bookingsystem.core.designsystem.Spacing
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.core.model.Room
-import com.swifttechnology.bookingsystem.core.model.RoomAmenity
-import com.swifttechnology.bookingsystem.core.model.defaultRooms
 
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -41,10 +38,10 @@ fun RoomInfoCard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(CornerRadius.xl))
             .background(MaterialTheme.customColors.bookRoomInputBackground)
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+            .padding(Spacing.lg),
+        verticalArrangement = Arrangement.spacedBy(Spacing.ml)
     ) {
         // Capacity row
         Row(
@@ -59,25 +56,23 @@ fun RoomInfoCard(
                 Icon(
                     imageVector = Icons.Outlined.People,
                     contentDescription = null,
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(Spacing.lg),
                     tint = MaterialTheme.customColors.textBody
                 )
                 Text(
                     text = "Capacity",
-                    fontSize = 14.sp,
-                    color = MaterialTheme.customColors.textBody,
-                    fontWeight = FontWeight.Medium
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.customColors.textBody
                 )
             }
             
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(Spacing.ms)
             ) {
                 Text(
                     text = "${room.capacity} people",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -85,8 +80,8 @@ fun RoomInfoCard(
 
         // FlowRow for amenities
         FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm)
         ) {
             room.amenities.forEach { amenity ->
                 AmenityChip(amenity = amenity)
@@ -100,8 +95,7 @@ fun RoomInfoCard(
 @Composable
 fun RoomInfoCardPreview() {
     MeetingRoomBookingTheme {
-        Box(modifier = Modifier.padding(16.dp)) {
-            RoomInfoCard(room = defaultRooms[1])
+        Box(modifier = Modifier.padding(Spacing.md)) {
         }
     }
 }

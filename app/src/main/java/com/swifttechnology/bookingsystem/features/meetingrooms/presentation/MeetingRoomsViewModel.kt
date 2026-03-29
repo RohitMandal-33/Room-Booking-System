@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.swifttechnology.bookingsystem.core.model.Room
 import com.swifttechnology.bookingsystem.core.model.RoomStatus
 import com.swifttechnology.bookingsystem.core.model.RoomAmenity
-import com.swifttechnology.bookingsystem.core.model.defaultRooms
 import com.swifttechnology.bookingsystem.features.auth.domain.repository.AuthRepository
 import com.swifttechnology.bookingsystem.features.meetingrooms.domain.repository.RoomRepository
 import com.swifttechnology.bookingsystem.shared.components.SidebarItem
@@ -69,14 +68,7 @@ class MeetingRoomsViewModel @Inject constructor(
                     }
                 }
                 .onFailure { error ->
-                    // Fallback to seed data on network failure
-                    _uiState.update {
-                        it.copy(
-                            rooms = defaultRooms,
-                            isLoading = false,
-                            errorMessage = error.message
-                        )
-                    }
+                    _uiState.update { it.copy(isLoading = false, errorMessage = error.message) }
                 }
         }
     }

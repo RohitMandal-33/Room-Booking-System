@@ -12,13 +12,20 @@ import java.util.TimeZone
  */
 object DateFormatterManager {
 
-    private val formatters = mutableMapOf<String, SimpleDateFormat>()
+    private val formatters = java.util.concurrent.ConcurrentHashMap<String, ThreadLocal<SimpleDateFormat>>()
 
     private fun getFormatter(pattern: String, timeZone: TimeZone = TimeZone.getDefault()): SimpleDateFormat {
-        return formatters.getOrPut(pattern) {
-            SimpleDateFormat(pattern, Locale.getDefault()).apply {
-                this.timeZone = timeZone
+        val threadLocal = formatters.getOrPut(pattern) {
+            object : ThreadLocal<SimpleDateFormat>() {
+                override fun initialValue(): SimpleDateFormat {
+                    return SimpleDateFormat(pattern, Locale.getDefault()).apply {
+                        this.timeZone = timeZone
+                    }
+                }
             }
+        }
+        return threadLocal.get()!!.apply {
+            this.timeZone = timeZone
         }
     }
 

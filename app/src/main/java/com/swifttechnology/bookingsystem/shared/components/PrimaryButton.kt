@@ -12,8 +12,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
+import com.swifttechnology.bookingsystem.core.designsystem.ButtonTokens
 import com.swifttechnology.bookingsystem.core.designsystem.CornerRadius
+import com.swifttechnology.bookingsystem.core.designsystem.Spacing
 
 @Composable
 fun PrimaryButton(
@@ -28,7 +29,7 @@ fun PrimaryButton(
         enabled = enabled && !isLoading,
         modifier = modifier
             .fillMaxWidth()
-            .height(52.dp),
+            .height(ButtonTokens.height),
         shape = RoundedCornerShape(CornerRadius.lg),
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
@@ -37,9 +38,9 @@ fun PrimaryButton(
     ) {
         if (isLoading) {
             CircularProgressIndicator(
-                modifier = Modifier.size(22.dp),
+                modifier = Modifier.size(Spacing.lg),
                 color = MaterialTheme.colorScheme.onPrimary,
-                strokeWidth = 2.dp
+                strokeWidth = Spacing.xxs
             )
         } else {
             Text(

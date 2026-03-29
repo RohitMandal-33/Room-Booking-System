@@ -1,9 +1,9 @@
 package com.swifttechnology.bookingsystem.core.network
 
-import com.swifttechnology.bookingsystem.core.utils.Constants
+import com.swifttechnology.bookingsystem.BuildConfig
 
 object APIEndpoint {
-    const val BASE_URL = Constants.BASE_URL
+    const val BASE_URL = BuildConfig.BASE_URL
 
     // Auth (public — no Bearer token required)
     const val LOGIN = "api/v1/login"

@@ -8,8 +8,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.swifttechnology.bookingsystem.features.auth.presentation.login.LoginScreen
 import com.swifttechnology.bookingsystem.features.main.presentation.MainAppScreen
-import com.swifttechnology.bookingsystem.features.meetingrooms.presentation.MeetingRoomComponets.EditRoomCardScreen
-import com.swifttechnology.bookingsystem.features.meetingrooms.presentation.MeetingRoomComponets.AddRoomScreen
+import com.swifttechnology.bookingsystem.features.meetingrooms.presentation.MeetingRoomComponents.EditRoomCardScreen
+import com.swifttechnology.bookingsystem.features.meetingrooms.presentation.MeetingRoomComponents.AddRoomScreen
 
 @Composable
 fun AppNavGraph(

@@ -60,7 +60,7 @@ fun SidebarView(
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet(modifier = Modifier.width(280.dp)) {
+            ModalDrawerSheet(modifier = Modifier.width(300.dp)) {
                 Text(
                     text = "Meeting Room Booking",
                     style = MaterialTheme.typography.titleLarge,

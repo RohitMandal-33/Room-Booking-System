@@ -16,7 +16,7 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun login(email: String, password: String): AuthResult<Unit> {
         return try {
             // Dev bypass — kept intentionally for local testing
-            if (email == "admin@example.com" && password == "admin123") {
+            if (com.swifttechnology.bookingsystem.BuildConfig.DEBUG && email == "admin@example.com" && password == "admin123") {
                 tokenStorage.saveAccessToken("dummy_access_token")
                 tokenStorage.saveRefreshToken("dummy_refresh_token")
                 return AuthResult.Success(Unit)

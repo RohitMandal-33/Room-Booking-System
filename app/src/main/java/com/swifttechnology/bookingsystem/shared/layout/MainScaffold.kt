@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
+import com.swifttechnology.bookingsystem.core.designsystem.Spacing
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
@@ -75,7 +76,7 @@ fun MainScaffold(
                     },
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(12.dp)
+                        .padding(Spacing.ms)
                 )
             }
         }
@@ -100,7 +101,7 @@ fun MainScaffold(
             Column(
                 modifier = modifier
                     .padding(innerPadding)
-                    .padding(16.dp)
+                    .padding(Spacing.md)
                     .fillMaxSize()
             ) {
                 TopBar(
@@ -111,7 +112,7 @@ fun MainScaffold(
                     showEditIcon = showEditIcon,
                     onEditClick = onEditClick
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(Spacing.md))
                 content()
             }
         }

@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.swifttechnology.bookingsystem.core.designsystem.ButtonTokens
 import com.swifttechnology.bookingsystem.core.designsystem.CornerRadius
 
 
@@ -25,7 +26,7 @@ fun SecondaryButton(
         enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
-            .height(52.dp),
+            .height(ButtonTokens.height),
         shape = RoundedCornerShape(CornerRadius.lg)
     ) {
         Text(

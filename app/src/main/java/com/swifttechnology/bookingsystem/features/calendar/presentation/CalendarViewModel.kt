@@ -8,7 +8,7 @@ import com.swifttechnology.bookingsystem.core.model.Room
 import com.swifttechnology.bookingsystem.core.model.RoomStatus
 import com.swifttechnology.bookingsystem.features.auth.domain.repository.AuthRepository
 import com.swifttechnology.bookingsystem.features.booking.domain.repository.BookingRepository
-import com.swifttechnology.bookingsystem.features.calendar.presentation.calanderComponents.TimeRange
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.TimeRange
 import com.swifttechnology.bookingsystem.features.meetingrooms.domain.repository.RoomRepository
 import com.swifttechnology.bookingsystem.shared.components.SidebarItem
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -198,6 +198,24 @@ class CalendarViewModel @Inject constructor(
                 val endMin = event.endTime.hour * 60 + event.endTime.minute
                 TimeRange(startMin, endMin)
             }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun getBlockedSlotsForRoomAndDate(roomName: String, date: LocalDate): List<TimeRange> {
+        return _uiState.value.events
+            .filter { it.date == date && it.meetingRoom.equals(roomName, ignoreCase = true) }
+            .map { event ->
+                val startMin = event.startTime.hour * 60 + event.startTime.minute
+                val endMin = event.endTime.hour * 60 + event.endTime.minute
+                TimeRange(startMin, endMin)
+            }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun getEventsForRoomAndDate(roomName: String, date: LocalDate): List<MeetingEvent> {
+        return _uiState.value.events.filter { 
+            it.meetingRoom.equals(roomName, ignoreCase = true) && it.date == date 
+        }
     }
 }
 

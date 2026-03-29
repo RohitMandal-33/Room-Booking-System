@@ -29,7 +29,7 @@ class TokenAuthenticator(
             ?.removePrefix("Bearer ")
 
         // Use a Mutex to ensure that only one thread refreshes the token at a time
-        val newToken = runBlocking { 
+        val newToken = runBlocking(kotlinx.coroutines.Dispatchers.IO) { 
             mutex.withLock {
                 val currentToken = tokenStorage.get().getAccessToken()
                 // If token was already refreshed by another thread waiting before us, reuse it

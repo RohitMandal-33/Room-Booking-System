@@ -2,8 +2,7 @@ package com.swifttechnology.bookingsystem.core.utils
 
 object Constants {
     // Api
-    const val BASE_URL = "http://10.7.1.198:8081/"
-    const val CONNECT_TIMEOUT = 30L
+    // BASE_URL is now provided via BuildConfig.BASE_URL
     const val READ_TIMEOUT = 30L
 
     // DataStore

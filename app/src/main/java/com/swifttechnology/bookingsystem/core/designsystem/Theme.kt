@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.Color
 
 private val LightColorScheme = lightColorScheme(
     primary = Primary,
@@ -39,44 +40,58 @@ private val DarkColorScheme = darkColorScheme(
 
 @Immutable
 data class CustomColors(
-    val dashboardBg: androidx.compose.ui.graphics.Color,
-    val loginBtnBg: androidx.compose.ui.graphics.Color,
-    val loginBtnBorder: androidx.compose.ui.graphics.Color,
-    val neutral100: androidx.compose.ui.graphics.Color,
-    val neutral200: androidx.compose.ui.graphics.Color,
-    val neutral300: androidx.compose.ui.graphics.Color,
-    val neutral400: androidx.compose.ui.graphics.Color,
-    val neutral700: androidx.compose.ui.graphics.Color,
-    val deepBlack: androidx.compose.ui.graphics.Color,
-    val whitePure: androidx.compose.ui.graphics.Color,
-    val yellow100: androidx.compose.ui.graphics.Color,
-    val green100: androidx.compose.ui.graphics.Color,
-    val purple100: androidx.compose.ui.graphics.Color,
-    val textBody: androidx.compose.ui.graphics.Color,
-    val bookRoomInputBackground: androidx.compose.ui.graphics.Color,
-    val bookRoomPlaceholder: androidx.compose.ui.graphics.Color,
-    val bookRoomLabel: androidx.compose.ui.graphics.Color,
+    val dashboardBg: Color,
+    val loginBtnBg: Color,
+    val loginBtnBorder: Color,
+    val neutral100: Color,
+    val neutral200: Color,
+    val neutral300: Color,
+    val neutral400: Color,
+    val neutral700: Color,
+    val deepBlack: Color,
+    val whitePure: Color,
+    val yellow100: Color,
+    val green100: Color,
+    val purple100: Color,
+    val textBody: Color,
+    val bookRoomInputBackground: Color,
+    val bookRoomPlaceholder: Color,
+    val bookRoomLabel: Color,
+    val divider: Color,
+    val dividerLight: Color,
+    val surfaceLight: Color,
+    val textHint: Color,
+    val textPrimary: Color,
+    val textSecondary: Color,
+    val primaryLight: Color,
 )
 
 val LocalCustomColors = staticCompositionLocalOf {
     CustomColors(
-        dashboardBg = androidx.compose.ui.graphics.Color.Unspecified,
-        loginBtnBg = androidx.compose.ui.graphics.Color.Unspecified,
-        loginBtnBorder = androidx.compose.ui.graphics.Color.Unspecified,
-        neutral100 = androidx.compose.ui.graphics.Color.Unspecified,
-        neutral200 = androidx.compose.ui.graphics.Color.Unspecified,
-        neutral300 = androidx.compose.ui.graphics.Color.Unspecified,
-        neutral400 = androidx.compose.ui.graphics.Color.Unspecified,
-        neutral700 = androidx.compose.ui.graphics.Color.Unspecified,
-        deepBlack = androidx.compose.ui.graphics.Color.Unspecified,
-        whitePure = androidx.compose.ui.graphics.Color.Unspecified,
-        yellow100 = androidx.compose.ui.graphics.Color.Unspecified,
-        green100 = androidx.compose.ui.graphics.Color.Unspecified,
-        purple100 = androidx.compose.ui.graphics.Color.Unspecified,
-        textBody = androidx.compose.ui.graphics.Color.Unspecified,
-        bookRoomInputBackground = androidx.compose.ui.graphics.Color.Unspecified,
-        bookRoomPlaceholder = androidx.compose.ui.graphics.Color.Unspecified,
-        bookRoomLabel = androidx.compose.ui.graphics.Color.Unspecified,
+        dashboardBg = Color.Unspecified,
+        loginBtnBg = Color.Unspecified,
+        loginBtnBorder = Color.Unspecified,
+        neutral100 = Color.Unspecified,
+        neutral200 = Color.Unspecified,
+        neutral300 = Color.Unspecified,
+        neutral400 = Color.Unspecified,
+        neutral700 = Color.Unspecified,
+        deepBlack = Color.Unspecified,
+        whitePure = Color.Unspecified,
+        yellow100 = Color.Unspecified,
+        green100 = Color.Unspecified,
+        purple100 = Color.Unspecified,
+        textBody = Color.Unspecified,
+        bookRoomInputBackground = Color.Unspecified,
+        bookRoomPlaceholder = Color.Unspecified,
+        bookRoomLabel = Color.Unspecified,
+        divider = Color.Unspecified,
+        dividerLight = Color.Unspecified,
+        surfaceLight = Color.Unspecified,
+        textHint = Color.Unspecified,
+        textPrimary = Color.Unspecified,
+        textSecondary = Color.Unspecified,
+        primaryLight = Color.Unspecified,
     )
 }
 
@@ -98,6 +113,13 @@ private val LightCustomColors = CustomColors(
     bookRoomInputBackground = BookRoomInputBackground,
     bookRoomPlaceholder = BookRoomPlaceholder,
     bookRoomLabel = BookRoomLabel,
+    divider = Divider,
+    dividerLight = DividerLight,
+    surfaceLight = SurfaceLight,
+    textHint = TextHint,
+    textPrimary = TextPrimary,
+    textSecondary = TextSecondary,
+    primaryLight = PrimaryLight,
 )
 
 private val DarkCustomColors = CustomColors(
@@ -118,6 +140,13 @@ private val DarkCustomColors = CustomColors(
     bookRoomInputBackground = BookRoomInputBackgroundDark,
     bookRoomPlaceholder = BookRoomPlaceholderDark,
     bookRoomLabel = BookRoomLabelDark,
+    divider = DividerDark,
+    dividerLight = DividerLightDark,
+    surfaceLight = SurfaceLightDark,
+    textHint = TextHintDark,
+    textPrimary = TextPrimaryDark,
+    textSecondary = TextSecondaryDark,
+    primaryLight = PrimaryLightDark,
 )
 
 /**
