@@ -178,6 +178,22 @@ fun DayColumnWithPicker(
                     }
                 }
 
+                // Past time overlay
+                val isToday = selectedDate == LocalDate.now()
+                val isPastDate = selectedDate.isBefore(LocalDate.now())
+                
+                if (isToday || isPastDate) {
+                    val overlayEndMinutes = if (isPastDate) 24 * 60 else currentTimeMinutes
+                    val overlayHeightY = with(density) { (overlayEndMinutes * minutePx).toDp() }
+                    Box(
+                        modifier = Modifier
+                            .padding(start = TIME_LABEL_WIDTH_DP.dp)
+                            .fillMaxWidth()
+                            .height(overlayHeightY)
+                            .background(Color.Gray.copy(alpha = 0.15f))
+                    )
+                }
+
                 // Current time indicator
                 if (selectedDate == LocalDate.now()) {
                     val currentTimePx = currentTimeMinutes * minutePx

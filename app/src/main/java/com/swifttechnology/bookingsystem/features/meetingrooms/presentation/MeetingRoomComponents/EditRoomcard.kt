@@ -95,8 +95,7 @@ fun EditRoomCardScreen(
     MainScaffold(
         sidebarItems = uiState.sidebarItems,
         selectedItem = uiState.selectedItem,
-        searchQuery = uiState.searchQuery,
-        onSearchQueryChanged = viewModel::onSearchQueryChanged,
+        title = "Edit Mode",
         onSidebarItemSelected = { item ->
             viewModel.onSidebarItemSelected(item)
             onNavigate(item.route)

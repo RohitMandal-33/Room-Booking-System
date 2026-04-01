@@ -2,12 +2,6 @@ package com.swifttechnology.bookingsystem.features.calendar.presentation
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.ui.draw.shadow
-import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.IntervalUtils
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -15,19 +9,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,25 +19,9 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.outlined.AccountCircle
-import androidx.compose.material.icons.outlined.GridView
-import androidx.compose.material.icons.outlined.Group
-import androidx.compose.material.icons.outlined.Menu
-import androidx.compose.material.icons.outlined.Place
-import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -68,32 +34,20 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.swifttechnology.bookingsystem.core.designsystem.Spacing
-import com.swifttechnology.bookingsystem.core.designsystem.CornerRadius
-import com.swifttechnology.bookingsystem.core.designsystem.Elevation
-import com.swifttechnology.bookingsystem.core.designsystem.customColors
-// rooms are now provided by CalendarViewModel
+import com.swifttechnology.bookingsystem.core.designsystem.*
 import com.swifttechnology.bookingsystem.core.model.Room
-import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.DayColumnWithPicker
-import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.DayTimePickerViewModel
-import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.DayPickerUiState
-import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.TimeRange
-import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.DayStrip
-import com.swifttechnology.bookingsystem.shared.layout.MainScaffold
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.*
+import com.swifttechnology.bookingsystem.navigation.ScreenRoutes
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle
-import java.util.Locale
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import java.time.YearMonth
+import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
-import com.swifttechnology.bookingsystem.navigation.ScreenRoutes
+import java.util.Locale
 
-import androidx.compose.runtime.LaunchedEffect
+private val PurplePrimary = Color(0xFF6C3EE8)
+private val PurpleLight = Color(0xFFEDE9FF)
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -132,11 +86,12 @@ fun CalendarScreen(
         onPickerResizeTopCommitted = pickerViewModel::onResizeTopCommitted,
         onPickerResizeBottomCommitted = pickerViewModel::onResizeBottomCommitted,
         onPickerDragCancelled = pickerViewModel::onDragCancelled,
-        onPickerCancelBooking = pickerViewModel::onCancelBooking
+        onPickerCancelBooking = pickerViewModel::onCancelBooking,
+        onProceed = {
+            onNavigate(ScreenRoutes.BOOK_ROOM)
+        }
     )
 }
-
-//Calendar Content Root
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -157,7 +112,8 @@ private fun CalendarContent(
     onPickerResizeTopCommitted: (Int) -> Unit,
     onPickerResizeBottomCommitted: (Int) -> Unit,
     onPickerDragCancelled: () -> Unit,
-    onPickerCancelBooking: () -> Unit
+    onPickerCancelBooking: () -> Unit,
+    onProceed: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -165,7 +121,6 @@ private fun CalendarContent(
             .background(MaterialTheme.customColors.whitePure)
     ) {
         TopBar(
-            currentView = uiState.currentView,
             showRoomPicker = true,
             selectedRoom = uiState.selectedRoom,
             rooms = rooms,
@@ -181,7 +136,6 @@ private fun CalendarContent(
             onPrev = onPrev,
             onNext = onNext
         )
-
 
         if (uiState.currentView == CalendarView.DAY) {
             DayStrip(
@@ -229,12 +183,15 @@ private fun CalendarContent(
                         modifier = Modifier.weight(1f)
                     )
                     
+                    CalendarLegendRow()
+
                     if (pickerUiState.draggableEvent != null) {
-                        DayBookingBottomBar(
+                        CalendarBottomBar(
                             pickerState = pickerUiState,
-                            selectedDate = uiState.selectedDate,
                             onCancel = onPickerCancelBooking,
-                            onProceed = { /* Handle navigate to booking screen later */ }
+                            onProceed = onProceed,
+                            purplePrimary = PurplePrimary,
+                            purpleLight = PurpleLight
                         )
                     }
                 }
@@ -242,18 +199,13 @@ private fun CalendarContent(
         }
     }
 
-    // Dialog is kept outside the Column so it renders as a proper overlay.
     uiState.selectedEvent?.let { event ->
         MeetingDetailDialog(event = event, onDismiss = { onEventSelected(null) })
     }
 }
 
-
-private val PurplePrimary = Color(0xFF9B6DFF)
-
 @Composable
 private fun TopBar(
-    currentView: CalendarView,
     showRoomPicker: Boolean,
     selectedRoom: Room?,
     rooms: List<Room>,
@@ -283,15 +235,12 @@ private fun TopBar(
                     Text(
                         text = selectedRoom?.name ?: "Choose a Meeting Room",
                         color = if (selectedRoom == null) MaterialTheme.customColors.textHint else MaterialTheme.customColors.textPrimary,
-                        style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        style = MaterialTheme.typography.bodyMedium
                     )
                     Icon(
-                        imageVector = Icons.Filled.ArrowDropDown,
+                        imageVector = Icons.Default.ArrowDropDown,
                         contentDescription = null,
-                        tint = Color(0xFF777777),
-                        modifier = Modifier.size(20.dp)
+                        tint = MaterialTheme.customColors.textSecondary
                     )
                 }
 
@@ -301,13 +250,7 @@ private fun TopBar(
                 ) {
                     rooms.forEach { room ->
                         DropdownMenuItem(
-                            text = {
-                                Text(
-                                    room.name,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            },
+                            text = { Text(room.name) },
                             onClick = {
                                 onRoomSelected(room)
                                 expanded = false
@@ -316,47 +259,42 @@ private fun TopBar(
                     }
                 }
             }
-
-            Spacer(Modifier.weight(1f))
         }
     }
 }
 
-//View Toggle
-
 @Composable
-private fun ViewToggleBar(currentView: CalendarView, onViewChange: (CalendarView) -> Unit) {
+private fun ViewToggleBar(
+    currentView: CalendarView,
+    onViewChange: (CalendarView) -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = Spacing.md, vertical = Spacing.xs),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+            .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
     ) {
-        listOf(
-            CalendarView.MONTH to "Month",
-            CalendarView.WEEK to "Week",
-            CalendarView.DAY to "Day"
-        ).forEach { (view, label) ->
-            val selected = currentView == view
-            Box(
+        CalendarView.values().forEach { view ->
+            val isSelected = currentView == view
+            Surface(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(CornerRadius.full))
-                    .background(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent)
-                    .clickable { onViewChange(view) }
-                    .padding(horizontal = 20.dp, vertical = 8.dp),
-                contentAlignment = Alignment.Center
+                    .weight(1f)
+                    .clickable { onViewChange(view) },
+                shape = RoundedCornerShape(CornerRadius.sm),
+                color = if (isSelected) PurplePrimary else MaterialTheme.colorScheme.surfaceVariant,
+                tonalElevation = if (isSelected) Elevation.sm else 0.dp
             ) {
                 Text(
-                    text = label,
-                    color = if (selected) Color.White else MaterialTheme.customColors.textPrimary,
-                    style = if (selected) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Normal)
+                    text = view.name.lowercase().capitalize(Locale.ROOT),
+                    modifier = Modifier.padding(vertical = Spacing.xs),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (isSelected) Color.White else MaterialTheme.customColors.textSecondary
                 )
             }
         }
     }
 }
-
-// Navigation Header
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -368,51 +306,54 @@ private fun NavigationHeader(
     onNext: () -> Unit
 ) {
     val title = when (currentView) {
-        CalendarView.MONTH -> currentMonth.format(DateTimeFormatter.ofPattern("MMM yyyy"))
-        CalendarView.WEEK, CalendarView.DAY -> {
-            val weekStart =
-                selectedDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-            weekStart.format(DateTimeFormatter.ofPattern("MMM yyyy"))
+        CalendarView.MONTH -> currentMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy"))
+        CalendarView.WEEK -> {
+            val start = selectedDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
+            val end = start.plusDays(6)
+            if (start.month == end.month) {
+                "${start.format(DateTimeFormatter.ofPattern("MMM"))} ${start.dayOfMonth} - ${end.dayOfMonth}, ${start.year}"
+            } else {
+                "${start.format(DateTimeFormatter.ofPattern("MMM d"))} - ${end.format(DateTimeFormatter.ofPattern("MMM d, yyyy"))}"
+            }
         }
+        CalendarView.DAY -> selectedDate.format(DateTimeFormatter.ofPattern("MMMM d, yyyy"))
     }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = Spacing.sm, vertical = Spacing.sm),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+            .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onPrev) {
-            Icon(
-                imageVector = Icons.Filled.ChevronLeft,
-                contentDescription = "Previous",
-                tint = MaterialTheme.customColors.textPrimary
-            )
-        }
-        Text(text = title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.customColors.textPrimary)
-        IconButton(onClick = onNext) {
-            Icon(
-                imageVector = Icons.Filled.ChevronRight,
-                contentDescription = "Next",
-                tint = MaterialTheme.customColors.textPrimary
-            )
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.customColors.textPrimary
+        )
+        Row {
+            IconButton(onClick = onPrev) {
+                Icon(Icons.Default.ChevronLeft, contentDescription = "Previous")
+            }
+            IconButton(onClick = onNext) {
+                Icon(Icons.Default.ChevronRight, contentDescription = "Next")
+            }
         }
     }
 }
 
-// Day of Week Header 
-
 @Composable
-private fun DayOfWeekHeader(withTimeColumn: Boolean) {
-    val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+fun DayOfWeekHeader(withTimeColumn: Boolean = false) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.customColors.surfaceLight)
-            .padding(vertical = 6.dp)
+            .padding(vertical = Spacing.xs)
     ) {
-        if (withTimeColumn) Spacer(Modifier.width(56.dp))
+        if (withTimeColumn) {
+            Spacer(modifier = Modifier.width(50.dp))
+        }
+        val days = listOf("SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT")
         days.forEach { day ->
             Text(
                 text = day,
@@ -425,8 +366,6 @@ private fun DayOfWeekHeader(withTimeColumn: Boolean) {
     }
 }
 
-// Month View
-
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun MonthView(
@@ -436,138 +375,71 @@ private fun MonthView(
     onDateClick: (LocalDate) -> Unit,
     onEventClick: (MeetingEvent) -> Unit
 ) {
-    val firstDay = yearMonth.atDay(1)
-    val firstDayOfWeek = DayOfWeek.MONDAY
-    val startOffset = (firstDay.dayOfWeek.value - firstDayOfWeek.value + 7) % 7
+    val firstDayOfMonth = yearMonth.atDay(1)
+    val firstDayOfWeek = firstDayOfMonth.dayOfWeek.value % 7 // Sunday = 0
     val daysInMonth = yearMonth.lengthOfMonth()
-    val prevMonth = yearMonth.minusMonths(1)
-    val prevMonthDays = prevMonth.lengthOfMonth()
-    val totalCells = 42 // 6 rows × 7 cols
-    val today = LocalDate.now()
-    val eventsByDate = remember(events) { events.groupBy { it.date } }
-
-    Column(modifier = Modifier.fillMaxWidth()) {
-        val cells = (0 until totalCells).map { idx ->
-            when {
-                idx < startOffset ->
-                    prevMonth.atDay(prevMonthDays - startOffset + idx + 1) to false
-
-                idx < startOffset + daysInMonth ->
-                    yearMonth.atDay(idx - startOffset + 1) to true
-
-                else ->
-                    yearMonth.plusMonths(1).atDay(idx - startOffset - daysInMonth + 1) to false
-            }
-        }
-
-        cells.chunked(7).forEach { week ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .defaultMinSize(minHeight = 80.dp)
-            ) {
-                week.forEach { (date, inMonth) ->
-                    val dayEvents = eventsByDate[date].orEmpty()
-                    val isSelected = date == selectedDate
-                    val isToday = date == today
-                    MonthCell(
-                        date = date,
-                        inMonth = inMonth,
-                        events = dayEvents,
-                        isSelected = isSelected,
-                        isToday = isToday,
-                        modifier = Modifier.weight(1f),
-                        onClick = { onDateClick(date) },
-                        onEventClick = onEventClick
-                    )
+    
+    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        for (row in 0 until 6) {
+            Row(modifier = Modifier.fillMaxWidth().height(100.dp)) {
+                for (col in 0 until 7) {
+                    val dayIndex = row * 7 + col - firstDayOfWeek + 1
+                    if (dayIndex in 1..daysInMonth) {
+                        val date = yearMonth.atDay(dayIndex)
+                        val isSelected = date == selectedDate
+                        val dayEvents = events.filter { it.date == date }
+                        
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .border(0.5.dp, MaterialTheme.customColors.divider)
+                                .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f) else Color.Transparent)
+                                .clickable { onDateClick(date) }
+                                .padding(2.dp)
+                        ) {
+                            Column {
+                                Text(
+                                    text = dayIndex.toString(),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isSelected) PurplePrimary else MaterialTheme.customColors.textPrimary
+                                )
+                                dayEvents.take(3).forEach { event ->
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 1.dp)
+                                            .background(PurplePrimary.copy(alpha = 0.2f), RoundedCornerShape(2.dp))
+                                            .padding(horizontal = 2.dp)
+                                            .clickable { onEventClick(event) }
+                                    ) {
+                                        Text(
+                                            text = event.title,
+                                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            color = PurplePrimary
+                                        )
+                                    }
+                                }
+                                if (dayEvents.size > 3) {
+                                    Text(
+                                        text = "+${dayEvents.size - 3} more",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                                        color = MaterialTheme.customColors.textSecondary
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        Box(modifier = Modifier.weight(1f).fillMaxHeight().border(0.5.dp, MaterialTheme.customColors.divider))
+                    }
                 }
             }
-            HorizontalDivider(color = MaterialTheme.customColors.divider, thickness = 0.5.dp)
         }
     }
 }
-
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-private fun MonthCell(
-    date: LocalDate,
-    inMonth: Boolean,
-    events: List<MeetingEvent>,
-    isSelected: Boolean,
-    isToday: Boolean,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-    onEventClick: (MeetingEvent) -> Unit
-) {
-    val cellShape = RoundedCornerShape(CornerRadius.md)
-    Column(
-        modifier = modifier
-            .defaultMinSize(minHeight = 80.dp)
-            .clip(cellShape)
-            .border(
-                width = if (isSelected) 1.5.dp else 0.5.dp,
-                color = when {
-                    isSelected -> MaterialTheme.colorScheme.primary
-                    isToday -> MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
-                    else -> MaterialTheme.customColors.divider
-                },
-                shape = cellShape
-            )
-            .clickable(onClick = onClick)
-            .padding(2.dp),
-    ) {
-        Box(
-            modifier = Modifier
-                .padding(start = 4.dp, top = 4.dp)
-                .size(26.dp)
-                .clip(CircleShape)
-                .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = date.dayOfMonth.toString(),
-                style = MaterialTheme.typography.bodySmall,
-                color = when {
-                    isSelected -> Color.White
-                    !inMonth -> MaterialTheme.customColors.textHint
-                    else -> MaterialTheme.customColors.textPrimary
-                },
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-            )
-        }
-        Spacer(Modifier.height(2.dp))
-        events.take(2).forEach { event ->
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 2.dp, vertical = 1.dp)
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(event.color)
-                    .clickable { onEventClick(event) }
-                    .padding(horizontal = 3.dp, vertical = 2.dp)
-            ) {
-                Text(
-                    text = event.title,
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                    color = Color.White,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
-        val remaining = events.size - 2
-        if (remaining > 0) {
-            Text(
-                text = "+$remaining more",
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                color = MaterialTheme.customColors.textSecondary,
-                modifier = Modifier.padding(start = 6.dp, top = 2.dp)
-            )
-        }
-    }
-}
-
-// Week View 
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -576,121 +448,78 @@ private fun WeekView(
     events: List<MeetingEvent>,
     onEventClick: (MeetingEvent) -> Unit
 ) {
-    val weekStart = selectedDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-    val weekDays = (0..6).map { weekStart.plusDays(it.toLong()) }
-    val hours = 0..23
-
+    val startOfWeek = selectedDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
+    
     Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.customColors.surfaceLight)
-        ) {
-            Spacer(Modifier.width(56.dp))
-            weekDays.forEach { day ->
-                Column(
-                    modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = day.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.customColors.textSecondary
-                    )
-                    Text(
-                        text = day.dayOfMonth.toString(),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.customColors.textPrimary
-                    )
-                }
-            }
-        }
-        HorizontalDivider(color = MaterialTheme.customColors.divider)
-
-        val scrollState = rememberScrollState()
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-        ) {
-            hours.forEach { hour ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(60.dp),
-                    verticalAlignment = Alignment.Top
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .width(56.dp)
-                            .padding(end = 8.dp, top = 2.dp)
-                    ) {
+        DayOfWeekHeader(withTimeColumn = true)
+        
+        Row(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            Column(modifier = Modifier.width(50.dp)) {
+                for (hour in 0..23) {
+                    Box(modifier = Modifier.height(60.dp).padding(start = 8.dp)) {
                         Text(
-                            text = formatHour(hour),
+                            text = String.format("%02d:00", hour),
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.customColors.textHint,
-                            textAlign = TextAlign.End,
-                            modifier = Modifier.fillMaxWidth()
+                            color = MaterialTheme.customColors.textSecondary
                         )
                     }
-                    weekDays.forEach { day ->
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .border(
-                                    width = 0.5.dp,
-                                    color = MaterialTheme.customColors.divider
-                                )
-                        ) {
-                            val dayEvents = events.filter {
-                                it.date == day && it.startTime.hour == hour
+                }
+            }
+            
+            for (i in 0..6) {
+                val date = startOfWeek.plusDays(i.toLong())
+                val dayEvents = events.filter { it.date == date }
+                
+                Column(modifier = Modifier.weight(1f).border(0.5.dp, MaterialTheme.customColors.divider)) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Column {
+                            for (hour in 0..23) {
+                                Box(modifier = Modifier.fillMaxWidth().height(60.dp).border(0.2.dp, MaterialTheme.customColors.divider.copy(alpha = 0.5f)))
                             }
-                            dayEvents.forEach { event ->
-                                val durationMins =
-                                    java.time.Duration.between(event.startTime, event.endTime)
-                                        .toMinutes()
-                                val heightFraction = (durationMins / 60f).coerceAtMost(1f)
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .fillMaxHeight(heightFraction)
-                                        .padding(1.dp)
-                                        .clip(RoundedCornerShape(4.dp))
-                                        .background(event.color)
-                                        .clickable { onEventClick(event) }
-                                        .padding(3.dp)
-                                ) {
-                                    Text(
-                                        text = event.title,
-                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                                        color = Color.White,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
+                        }
+                        
+                        dayEvents.forEach { event ->
+                            val startMinutes = event.startTime.hour * 60 + event.startTime.minute
+                            val endMinutes = event.endTime.hour * 60 + event.endTime.minute
+                            val duration = endMinutes - startMinutes
+                            
+                            Box(
+                                modifier = Modifier
+                                    .padding(horizontal = 1.dp)
+                                    .fillMaxWidth()
+                                    .height((duration * 1.0).dp)
+                                    .offset(y = (startMinutes * 1.0).dp)
+                                    .background(PurplePrimary.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                                    .border(1.dp, PurplePrimary, RoundedCornerShape(4.dp))
+                                    .clickable { onEventClick(event) }
+                                    .padding(4.dp)
+                            ) {
+                                Text(
+                                    text = event.title,
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
                             }
                         }
                     }
                 }
-                HorizontalDivider(color = MaterialTheme.customColors.dividerLight, thickness = 0.5.dp)
             }
         }
     }
 }
 
-// Meeting Detail Dialog
-
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-private fun MeetingDetailDialog(event: MeetingEvent, onDismiss: () -> Unit) {
+private fun MeetingDetailDialog(
+    event: MeetingEvent,
+    onDismiss: () -> Unit
+) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(CornerRadius.lg),
+            shape = RoundedCornerShape(16.dp),
             color = Color.White,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(Spacing.md)
+            modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Row(
@@ -699,229 +528,82 @@ private fun MeetingDetailDialog(event: MeetingEvent, onDismiss: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = event.title,
-                        style = MaterialTheme.typography.headlineSmall,
-                        modifier = Modifier.weight(1f)
+                        text = "Meeting details",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
                     )
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
-                        Icon(
-                            imageVector = Icons.Filled.Close,
-                            contentDescription = "Close",
-                            tint = MaterialTheme.customColors.textPrimary,
-                            modifier = Modifier.size(20.dp)
-                        )
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Close")
                     }
                 }
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                DialogRow(icon = {
-                    Icon(
-                        imageVector = Icons.Outlined.Schedule,
-                        contentDescription = null,
-                        tint = MaterialTheme.customColors.textSecondary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(12.dp).clip(CircleShape).background(PurplePrimary))
+                    Spacer(modifier = Modifier.width(12.dp))
                     Column {
-                        val dateStr =
-                            event.date.format(DateTimeFormatter.ofPattern("EEEE, dd MMMM"))
-                        val timeStr =
-                            "${event.startTime.format(DateTimeFormatter.ofPattern("h:mma"))} - ${
-                                event.endTime.format(DateTimeFormatter.ofPattern("h:mma"))
-                            }"
-                        Text(
-                            "$dateStr    $timeStr",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Text(
-                            "${event.timeZone} . ${if (event.repeats) "Repeats" else "Doesn't repeat"}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.customColors.textSecondary
-                        )
+                        Text(text = event.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(text = "Reserved", style = MaterialTheme.typography.bodySmall, color = Color(0xFF4CAF50))
                     }
                 }
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
-                DialogRow(icon = {
-                    Icon(
-                        imageVector = Icons.Outlined.Group,
-                        contentDescription = null,
-                        tint = MaterialTheme.customColors.textSecondary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }) {
-                    Text("Participants", style = MaterialTheme.typography.bodyMedium)
-                }
+                DetailItem(
+                    icon = Icons.Outlined.Schedule,
+                    title = event.date.format(DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy")),
+                    subtitle = "${event.startTime.format(DateTimeFormatter.ofPattern("hh:mm a"))} - ${event.endTime.format(DateTimeFormatter.ofPattern("hh:mm a"))}"
+                )
 
-                Spacer(Modifier.height(12.dp))
+                DetailItem(
+                    icon = Icons.Outlined.Place,
+                    title = if(event.meetingRoom.isNotEmpty()) event.meetingRoom else "Unassigned",
+                    subtitle = "Meeting Room"
+                )
 
-                DialogRow(icon = {
-                    Icon(
-                        imageVector = Icons.Outlined.Menu,
-                        contentDescription = null,
-                        tint = MaterialTheme.customColors.textSecondary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }) {
-                    Column {
-                        Text("Description", style = MaterialTheme.typography.bodyMedium)
-                        if (event.description.isNotBlank()) {
-                            Text(event.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.customColors.textSecondary)
-                        }
-                    }
-                }
+                DetailItem(
+                    icon = Icons.Outlined.AccountCircle,
+                    title = "Organized by",
+                    subtitle = if(event.createdBy.isNotEmpty()) event.createdBy else "Unknown"
+                )
 
-                Spacer(Modifier.height(12.dp))
+                DetailItem(
+                    icon = Icons.Outlined.Group,
+                    title = "Attendees",
+                    subtitle = "${event.participants.size} people"
+                )
 
-                DialogRow(icon = {
-                    Icon(
-                        imageVector = Icons.Outlined.Place,
-                        contentDescription = null,
-                        tint = MaterialTheme.customColors.textSecondary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }) {
-                    Text("Meeting room", style = MaterialTheme.typography.bodyMedium)
-                }
+                Spacer(modifier = Modifier.height(24.dp))
 
-                Spacer(Modifier.height(12.dp))
-
-                DialogRow(icon = {
-                    Icon(
-                        imageVector = Icons.Outlined.AccountCircle,
-                        contentDescription = null,
-                        tint = MaterialTheme.customColors.textSecondary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }) {
-                    Text("Created By", style = MaterialTheme.typography.bodyMedium)
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = PurplePrimary),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Done")
                 }
             }
         }
     }
 }
 
-//Dialog Row
-
 @Composable
-private fun DialogRow(icon: @Composable () -> Unit, content: @Composable () -> Unit) {
-    Row(
-        verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.ms)
-    ) {
-        Box(modifier = Modifier.padding(top = 2.dp)) { icon() }
-        Box(modifier = Modifier.weight(1f)) { content() }
-    }
-}
-
-// Utils
-
-private fun formatHour(hour: Int): String {
-    return when (hour) {
-        0 -> "12:00 am"
-        in 1..11 -> "$hour:00 am"
-        12 -> "12:00 pm"
-        else -> "${hour - 12}:00 pm"
-    }
-}
-
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-private fun DayBookingBottomBar(
-    pickerState: DayPickerUiState,
-    selectedDate: LocalDate,
-    onCancel: () -> Unit,
-    onProceed: () -> Unit
+private fun DetailItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String
 ) {
-    if (pickerState.draggableEvent == null) return
-
-    val event = pickerState.draggableEvent
-    val startMin = event.timeRange.startMinutes
-    val endMin = event.timeRange.endMinutes
-
-    val startTime = LocalTime.of(startMin / 60, startMin % 60)
-    val endTime = LocalTime.of(endMin / 60, endMin % 60)
-
-    val timeFormatter = DateTimeFormatter.ofPattern("hh:mm a")
-    val startTimeStr = startTime.format(timeFormatter)
-    val endTimeStr = endTime.format(timeFormatter)
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .shadow(
-                elevation = Elevation.xl,
-                shape = RoundedCornerShape(topStart = CornerRadius.xl, topEnd = CornerRadius.xl),
-                spotColor = Color.Black.copy(alpha = 0.1f)
-            )
-            .clip(RoundedCornerShape(topStart = CornerRadius.xl, topEnd = CornerRadius.xl))
-            .background(Color.White)
-            .padding(Spacing.ml)
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        verticalAlignment = Alignment.Top
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.customColors.primaryLight, RoundedCornerShape(CornerRadius.md))
-                .padding(Spacing.md),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                Text(
-                    text = "Selected Time",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.customColors.textSecondary
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = "$startTimeStr - $endTimeStr",
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-            Text(
-                text = IntervalUtils.formatDuration(event.timeRange.durationMinutes),
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.customColors.textPrimary
-            )
-        }
-
-        Spacer(modifier = Modifier.height(Spacing.ml))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            OutlinedButton(
-                onClick = onCancel,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(52.dp),
-                shape = RoundedCornerShape(CornerRadius.md),
-                border = BorderStroke(1.dp, MaterialTheme.customColors.divider)
-            ) {
-                Text("Cancel", color = MaterialTheme.customColors.textPrimary, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold))
-            }
-
-            Button(
-                onClick = onProceed,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(52.dp),
-                shape = RoundedCornerShape(CornerRadius.md),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-            ) {
-                Text("Proceed to booking", color = Color.White, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold))
-                Spacer(Modifier.width(Spacing.sm))
-                Icon(
-                    imageVector = Icons.Filled.ChevronRight,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
+        Icon(imageVector = icon, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(20.dp))
+        Spacer(modifier = Modifier.width(12.dp))
+        Column {
+            Text(text = title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+            Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
         }
     }
 }

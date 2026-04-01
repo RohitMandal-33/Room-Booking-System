@@ -26,8 +26,18 @@ class RoomRepositoryImpl @Inject constructor(
         response.data
     }
 
-    override suspend fun listActiveRooms(pageNo: Int, pageSize: Int): Result<RoomPageDTO> = runCatching {
-        val response = api.listActiveRooms(PaginatedDataRequestDTO(pageNo = pageNo, pageSize = pageSize))
+    override suspend fun listActiveRooms(
+        pageNo: Int,
+        pageSize: Int,
+        roomName: String?
+    ): Result<RoomPageDTO> = runCatching {
+        val response = api.listActiveRooms(
+            RoomDataRequestDTO(
+                pageNo = pageNo,
+                pageSize = pageSize,
+                roomName = roomName
+            )
+        )
         if (!response.success || response.data == null) throw Exception(response.message)
         response.data
     }

@@ -18,6 +18,17 @@ data class PaginatedDataRequestDTO(
     val sortDir: String? = "asc"
 )
 
+/**
+ * Filtered room request body for active rooms.
+ */
+data class RoomDataRequestDTO(
+    val pageNo: Int? = 0,
+    val pageSize: Int? = 10,
+    val sortBy: String? = "id",
+    val sortDir: String? = "asc",
+    val roomName: String? = null
+)
+
 
 data class StatusChangeRequestDTO(
     val status: String
@@ -35,7 +46,7 @@ data class RoomResponseDTO(
  * Paginated room list response.
  */
 data class RoomPageDTO(
-    val data: List<RoomResponseDTO>? = null,
+    val content: List<RoomResponseDTO>? = null,
     val totalElements: Long? = null,
     val totalPages: Int? = null,
     val pageNo: Int? = null,

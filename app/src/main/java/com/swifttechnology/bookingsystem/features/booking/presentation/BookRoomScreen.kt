@@ -471,8 +471,10 @@ fun BookRoomScreen(
                 formState = formState,
                 availableParticipants = uiState.availableParticipants,
                 onFormStateChanged = viewModel::onFormStateChanged,
-                onClose = { showParticipantsSheet = false }
-
+                onClose = { showParticipantsSheet = false },
+                searchQuery = uiState.participantSearchQuery,
+                onSearchQueryChange = viewModel::onParticipantSearchQueryChanged,
+                isSearching = uiState.isSearchingParticipants
             )
         }
     }

@@ -7,5 +7,7 @@ data class Participant(
     val email: String,
     val phone: String,
     val meetingCount: Int,
-    val department: String
+    val department: String,
+    val status: String,
+    val position: String
 )

@@ -9,7 +9,7 @@ import com.swifttechnology.bookingsystem.features.meetingrooms.data.dtos.RoomRes
 interface RoomRepository {
     suspend fun addRoom(roomName: String, capacity: Int, resources: List<String>?): Result<Unit>
     suspend fun listAllRooms(pageNo: Int = 0, pageSize: Int = 10): Result<RoomPageDTO>
-    suspend fun listActiveRooms(pageNo: Int = 0, pageSize: Int = 10): Result<RoomPageDTO>
+    suspend fun listActiveRooms(pageNo: Int = 0, pageSize: Int = 10, roomName: String? = null): Result<RoomPageDTO>
     suspend fun updateRoom(id: Long, roomName: String, capacity: Int, resources: List<String>?): Result<Unit>
     suspend fun changeRoomStatus(id: Long, status: String): Result<Unit>
 }

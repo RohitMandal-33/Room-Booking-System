@@ -16,6 +16,7 @@ object ScreenRoutes {
     const val ANNOUNCEMENTS = "announcements"
     const val REPORT = "report"
     const val PARTICIPANTS = "participants"
+    const val PARTICIPANT_ADD = "participant_add"
     const val SETTINGS = "settings"
 
     fun meetingRooms(editable: Boolean = false): String {

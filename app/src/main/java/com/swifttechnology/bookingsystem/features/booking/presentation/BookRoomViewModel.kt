@@ -18,6 +18,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 
 @HiltViewModel
 class BookRoomViewModel @Inject constructor(
@@ -36,8 +38,23 @@ class BookRoomViewModel @Inject constructor(
     }
 
     private fun loadParticipants() {
-        viewModelScope.launch {
-            participantRepository.getParticipants().collect { participants ->
+        searchParticipants("")
+    }
+
+    private var searchJob: Job? = null
+    fun onParticipantSearchQueryChanged(query: String) {
+        _uiState.update { it.copy(participantSearchQuery = query) }
+        searchParticipants(query)
+    }
+
+    private fun searchParticipants(query: String) {
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            if (query.isNotEmpty()) {
+                delay(300) // Debounce search
+            }
+            _uiState.update { it.copy(isSearchingParticipants = true) }
+            participantRepository.searchParticipants(query).collect { participants ->
                 val internalMembers = participants.map { 
                     InternalMember(
                         id = it.id,
@@ -46,7 +63,12 @@ class BookRoomViewModel @Inject constructor(
                         department = it.department
                     )
                 }
-                _uiState.update { it.copy(availableParticipants = internalMembers) }
+                _uiState.update { 
+                    it.copy(
+                        availableParticipants = internalMembers,
+                        isSearchingParticipants = false
+                    ) 
+                }
             }
         }
     }
@@ -56,7 +78,7 @@ class BookRoomViewModel @Inject constructor(
             _uiState.update { it.copy(isLoadingRooms = true) }
             roomRepository.listActiveRooms()
                 .onSuccess { page ->
-                    val rooms = page.data?.map { dto ->
+                    val rooms = page.content?.map { dto ->
                         Room(
                             id = dto.id,
                             name = dto.roomName,

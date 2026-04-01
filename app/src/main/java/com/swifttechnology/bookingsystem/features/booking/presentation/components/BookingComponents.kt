@@ -59,6 +59,8 @@ import com.swifttechnology.bookingsystem.core.designsystem.Neutral700
 import com.swifttechnology.bookingsystem.core.designsystem.Spacing
 import com.swifttechnology.bookingsystem.core.designsystem.TextPrimary
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.foundation.text.KeyboardOptions
 
 // Reusable label for form fields. Uses Book Room label color when in theme.
 @Composable
@@ -88,7 +90,10 @@ fun BookingTextField(
     value: String,
     placeholder: String,
     isRequired: Boolean,
-    onValueChange: (String) -> Unit
+    onValueChange: (String) -> Unit,
+    trailingIcon: (@Composable () -> Unit)? = null,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default
 ) {
     var isFocused by remember { mutableStateOf(false) }
     val primaryColor = MaterialTheme.colorScheme.primary
@@ -126,7 +131,10 @@ fun BookingTextField(
                 unfocusedTextColor = MaterialTheme.customColors.bookRoomLabel,
                 cursorColor = MaterialTheme.colorScheme.primary
             ),
-            singleLine = true
+            singleLine = true,
+            trailingIcon = trailingIcon,
+            visualTransformation = visualTransformation,
+            keyboardOptions = keyboardOptions
         )
     }
 }

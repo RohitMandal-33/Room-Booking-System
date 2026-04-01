@@ -77,8 +77,7 @@ fun AddRoomScreen(
     MainScaffold(
         sidebarItems = uiState.sidebarItems,
         selectedItem = uiState.selectedItem,
-        searchQuery = uiState.searchQuery,
-        onSearchQueryChanged = viewModel::onSearchQueryChanged,
+        title = "Add Room",
         onSidebarItemSelected = { item ->
             viewModel.onSidebarItemSelected(item)
             onNavigate(item.route)

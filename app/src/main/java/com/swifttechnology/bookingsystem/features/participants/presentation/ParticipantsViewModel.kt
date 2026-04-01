@@ -27,6 +27,7 @@ class ParticipantsViewModel @Inject constructor(
             .distinctUntilChanged()
             .debounce(300L)
             .flatMapLatest { query ->
+                _uiState.update { it.copy(isLoading = true, error = null) }
                 participantRepository.searchParticipants(query)
                     .catch { e ->
                         _uiState.update { it.copy(isLoading = false, error = e.message ?: "Unknown error") }

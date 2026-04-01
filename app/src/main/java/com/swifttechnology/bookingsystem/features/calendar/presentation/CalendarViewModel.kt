@@ -52,7 +52,7 @@ class CalendarViewModel @Inject constructor(
         viewModelScope.launch {
             roomRepository.listActiveRooms()
                 .onSuccess { page ->
-                    val roomList = page.data?.map { dto ->
+                    val roomList = page.content?.map { dto ->
                         Room(
                             id = dto.id,
                             name = dto.roomName,

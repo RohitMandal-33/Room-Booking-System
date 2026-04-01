@@ -36,15 +36,15 @@ import kotlinx.coroutines.launch
 fun MainScaffold(
     sidebarItems: List<SidebarItem>,
     selectedItem: SidebarItem,
-    searchQuery: String,
-    onSearchQueryChanged: (String) -> Unit,
+    title: String,
     onSidebarItemSelected: (SidebarItem) -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier,
-    searchPlaceholder: String = "Search...",
     containerColor: androidx.compose.ui.graphics.Color = MaterialTheme.customColors.dashboardBg,
     showEditIcon: Boolean = false,
+    showTopBar: Boolean = true,
     onEditClick: () -> Unit = {},
+    onBackClick: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -101,18 +101,19 @@ fun MainScaffold(
             Column(
                 modifier = modifier
                     .padding(innerPadding)
-                    .padding(Spacing.md)
+                    .padding(if(showTopBar) Spacing.md else 0.dp)
                     .fillMaxSize()
             ) {
-                TopBar(
-                    searchQuery = searchQuery,
-                    onSearchQueryChanged = onSearchQueryChanged,
-                    onMenuClick = { scope.launch { drawerState.open() } },
-                    searchPlaceholder = searchPlaceholder,
-                    showEditIcon = showEditIcon,
-                    onEditClick = onEditClick
-                )
-                Spacer(modifier = Modifier.height(Spacing.md))
+                if (showTopBar) {
+                    TopBar(
+                        title = title,
+                        onMenuClick = { scope.launch { drawerState.open() } },
+                        showEditIcon = showEditIcon,
+                        onEditClick = onEditClick,
+                        onBackClick = onBackClick
+                    )
+                    Spacer(modifier = Modifier.height(Spacing.md))
+                }
                 content()
             }
         }

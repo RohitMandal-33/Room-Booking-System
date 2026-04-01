@@ -27,11 +27,14 @@ data class UserDataRequestDTO(
  */
 data class UserDetailsDTO(
     val id: Long,
+    val firstname: String? = null,
+    val lastname: String? = null,
     val email: String,
-    val roleId: Long? = null,
-    val roleName: String? = null,
-    val departmentId: Long? = null,
-    val departmentName: String? = null
+    val position: String? = null,
+    val phoneNumber: String? = null,
+    val role: String? = null,
+    val department: String? = null,
+    val status: String? = null
 )
 
 /**

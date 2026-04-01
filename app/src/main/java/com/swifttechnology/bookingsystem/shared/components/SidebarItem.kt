@@ -24,7 +24,7 @@ val defaultSidebarItems = listOf(
     SidebarItem("Meeting Rooms", Icons.Outlined.MeetingRoom, isActive = true, route = ScreenRoutes.MEETING_ROOMS),
     SidebarItem("Announcements", Icons.Outlined.NotificationsNone, route = ScreenRoutes.ANNOUNCEMENTS),
     SidebarItem("Report", Icons.Outlined.ContentPasteSearch, route = ScreenRoutes.REPORT),
-    SidebarItem("Participants", Icons.Outlined.AccountCircle, route = ScreenRoutes.PARTICIPANTS),
+    SidebarItem("Members", Icons.Outlined.AccountCircle, route = ScreenRoutes.PARTICIPANTS),
     SidebarItem("Settings", Icons.Outlined.Settings, route = ScreenRoutes.SETTINGS)
 )
 

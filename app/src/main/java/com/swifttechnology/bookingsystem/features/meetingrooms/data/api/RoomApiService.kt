@@ -14,7 +14,7 @@ interface RoomApiService {
     suspend fun listAllRooms(@Body request: PaginatedDataRequestDTO): GlobalResponse<RoomPageDTO>
 
     @POST(APIEndpoint.ROOM_ACTIVE_LIST)
-    suspend fun listActiveRooms(@Body request: PaginatedDataRequestDTO): GlobalResponse<RoomPageDTO>
+    suspend fun listActiveRooms(@Body request: RoomDataRequestDTO): GlobalResponse<RoomPageDTO>
 
     @PUT(APIEndpoint.ROOM_UPDATE)
     suspend fun updateRoom(

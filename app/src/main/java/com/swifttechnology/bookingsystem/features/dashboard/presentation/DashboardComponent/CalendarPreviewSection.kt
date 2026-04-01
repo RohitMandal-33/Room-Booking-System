@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -98,11 +99,11 @@ private val OrangeAccent = Color(0xFFF97316)
 private val BlueAccent   = Color(0xFF3B82F6)
 
  
-//  Sample data  (today = Feb 8 2026 for demo)
+//  Sample data  (using current local date)
  
 
 @RequiresApi(Build.VERSION_CODES.O)
-private val today = LocalDate.of(2026, 2, 8)
+private val today = LocalDate.now()
 
 @RequiresApi(Build.VERSION_CODES.O)
 private val sampleEvents = listOf(
@@ -119,24 +120,25 @@ private val sampleEvents = listOf(
 )
 
 private val weekDays = listOf(
-    WeekDay("Sat, Feb 8",  3, isToday = true),
-    WeekDay("Sun, Feb 9",  0),
-    WeekDay("Mon, Feb 10", 1),
-    WeekDay("Tue, Feb 11", 0),
-    WeekDay("Wed, Feb 12", 1),
-    WeekDay("Thu, Feb 13", 0),
-    WeekDay("Fri, Feb 14", 0)
+    WeekDay("Today",  3, isToday = true),
+    WeekDay("Tomorrow",  0),
+    WeekDay("In 2 days", 1),
+    WeekDay("In 3 days", 0),
+    WeekDay("In 4 days", 1),
+    WeekDay("In 5 days", 0),
+    WeekDay("In 6 days", 0)
 )
 
  
 //  Public composable
  
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CalendarPreviewSection(
     onOpenFullCalendar: () -> Unit = {}
 ) {
-    var selectedTab by remember { mutableStateOf("Day") }
+    var selectedTab by remember { mutableStateOf("Month") }
 
     Card(
         modifier  = Modifier
@@ -173,7 +175,7 @@ fun CalendarPreviewSection(
                 }
 
                 TabPills(
-                    tabs          = listOf("Day", "Week", "Month"),
+                    tabs          = listOf(/*"Day", "Week",*/ "Month"),
                     selectedTab   = selectedTab,
                     onTabSelected = { selectedTab = it }
                 )
@@ -183,8 +185,8 @@ fun CalendarPreviewSection(
 
             //    Tab content                              
             when (selectedTab) {
-                "Day"   -> DayView()
-                "Week"  -> WeekView()
+                // "Day"   -> DayView()
+                // "Week"  -> WeekView()
                 "Month" -> MonthView()
             }
 
@@ -261,7 +263,7 @@ private fun NavigationRow(
     onNext: () -> Unit
 ) {
     Row(
-        modifier              = Modifier
+        modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(AppCornerRadius.md))
             .background(MaterialTheme.customColors.dashboardBg)
@@ -288,6 +290,8 @@ private fun NavigationRow(
 //  Day view
  
 
+/*
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun DayView() {
     var dayOffset by remember { mutableIntStateOf(0) }
@@ -319,11 +323,13 @@ private fun DayView() {
         }
     }
 }
+*/
 
  
 //  Week view
  
 
+/*
 @Composable
 private fun WeekView() {
     var weekOffset by remember { mutableIntStateOf(0) }
@@ -367,11 +373,13 @@ private fun WeekView() {
         }
     }
 }
+*/
 
  
 //  Month view
  
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun MonthView() {
     var monthOffset by remember { mutableIntStateOf(0) }
@@ -439,6 +447,7 @@ private fun MonthView() {
 //  Build month cells helper
  
 
+@RequiresApi(Build.VERSION_CODES.O)
 private fun buildMonthCells(yearMonth: YearMonth): List<CalendarDayCell> {
     val firstOfMonth = yearMonth.atDay(1)
     val firstDow     = firstOfMonth.dayOfWeek          // e.g. SUNDAY
@@ -477,6 +486,7 @@ private fun buildMonthCells(yearMonth: YearMonth): List<CalendarDayCell> {
 //  Month day cell
  
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun MonthDayCell(
     cell: CalendarDayCell,
@@ -495,22 +505,16 @@ private fun MonthDayCell(
         else                -> MaterialTheme.colorScheme.onSurface
     }
 
-    val borderStroke = when {
-        isSelected && !cell.isToday -> BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
-        else                        -> null
-    }
+    val shape = if (cell.isToday) CircleShape else RoundedCornerShape(AppCornerRadius.sm)
 
     Column(
         modifier = Modifier
             .aspectRatio(1f)
-            .clip(RoundedCornerShape(AppCornerRadius.sm))
+            .clip(shape)
             .background(bgColor)
             .then(
-                if (borderStroke != null)
-                    Modifier.background(
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                        RoundedCornerShape(AppCornerRadius.sm)
-                    )
+                if (isSelected && !cell.isToday)
+                    Modifier.border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f), shape)
                 else Modifier
             )
             .clickable(enabled = cell.isCurrentMonth) { onDaySelected(cell.date) }
@@ -552,6 +556,7 @@ private fun MonthDayCell(
 //  Day detail panel  (used in Month view)
  
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun DayDetailPanel(selectedDate: LocalDate) {
     val dayEvents = sampleEvents.filter { it.date == selectedDate }
@@ -660,6 +665,7 @@ private fun EventCard(event: CalendarEvent) {
 //  Week day row
  
 
+/*
 @Composable
 private fun WeekDayRow(day: WeekDay) {
     val bgColor = if (day.isToday)
@@ -717,11 +723,13 @@ private fun WeekDayRow(day: WeekDay) {
         }
     }
 }
+*/
 
  
 //  Week meeting row  (today's meetings in week view)
  
 
+/*
 @Composable
 private fun WeekMeetingRow(event: CalendarEvent) {
     Card(
@@ -760,6 +768,7 @@ private fun WeekMeetingRow(event: CalendarEvent) {
         }
     }
 }
+*/
 
  
 //  Empty state

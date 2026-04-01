@@ -33,10 +33,12 @@ data class RoomBookingFormState(
 
 data class BookRoomUiState(
     val searchQuery: String = "",
+    val participantSearchQuery: String = "",
     val formState: RoomBookingFormState = RoomBookingFormState(),
     val availableRooms: List<Room> = emptyList(),
     val availableParticipants: List<InternalMember> = emptyList(),
     val isLoadingRooms: Boolean = false,
+    val isSearchingParticipants: Boolean = false,
     val isSubmitting: Boolean = false,
     val submitSuccess: Boolean = false,
     val errorMessage: String? = null

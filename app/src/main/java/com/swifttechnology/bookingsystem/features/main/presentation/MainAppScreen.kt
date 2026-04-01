@@ -4,6 +4,8 @@ import android.app.Activity
 import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -20,6 +22,7 @@ import com.swifttechnology.bookingsystem.features.calendar.presentation.Calendar
 import com.swifttechnology.bookingsystem.features.dashboard.presentation.DashboardScreen
 import com.swifttechnology.bookingsystem.features.meetingrooms.presentation.MeetingRoomsScreen
 import com.swifttechnology.bookingsystem.features.participants.presentation.ParticipantsScreen
+import com.swifttechnology.bookingsystem.features.participants.presentation.AddParticipantScreen
 import com.swifttechnology.bookingsystem.features.report.presentation.ReportScreen
 import com.swifttechnology.bookingsystem.features.settings.presentation.SettingsScreen
 import com.swifttechnology.bookingsystem.navigation.ScreenRoutes
@@ -29,6 +32,7 @@ import com.swifttechnology.bookingsystem.shared.components.DialogStyle
 import com.swifttechnology.bookingsystem.shared.components.ReusableAlertDialog
 import com.swifttechnology.bookingsystem.features.booking.presentation.RoomCalendarScreen
 import com.swifttechnology.bookingsystem.core.model.Room
+import com.swifttechnology.bookingsystem.shared.layout.BottomSheetView
 
 data class PendingBookingDetails(
     val roomName: String,
@@ -37,6 +41,7 @@ data class PendingBookingDetails(
     val endTime: String
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MainAppScreen(
@@ -44,7 +49,22 @@ fun MainAppScreen(
     onLogout: () -> Unit,
     startRoute: String = ScreenRoutes.DASHBOARD
 ) {
-    var currentRoute by rememberSaveable { mutableStateOf(startRoute) }
+    var navigationStack by rememberSaveable { mutableStateOf(listOf(startRoute)) }
+    val currentRoute = navigationStack.last()
+
+    val navigateTo: (String) -> Unit = { route ->
+        if (navigationStack.last() != route) {
+            navigationStack = navigationStack + route
+        }
+    }
+
+    val navigateBack: () -> Unit = {
+        if (navigationStack.size > 1) {
+            navigationStack = navigationStack.dropLast(1)
+        }
+    }
+
+    var showRoomCalendarBottomSheet by rememberSaveable { mutableStateOf(false) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var isMeetingRoomsEditable by rememberSaveable { mutableStateOf(false) }
     var pendingRoomName by rememberSaveable { mutableStateOf<String?>(null) }
@@ -60,8 +80,12 @@ fun MainAppScreen(
     val activity = LocalContext.current as? Activity
 
     BackHandler {
-        if (currentRoute != ScreenRoutes.DASHBOARD) {
-            currentRoute = ScreenRoutes.DASHBOARD
+        if (showRoomCalendarBottomSheet) {
+            showRoomCalendarBottomSheet = false
+        } else if (navigationStack.size > 1) {
+            navigateBack()
+        } else if (currentRoute != ScreenRoutes.DASHBOARD) {
+            navigationStack = listOf(ScreenRoutes.DASHBOARD)
             searchQuery = ""
         } else {
             showExitDialog = true
@@ -84,43 +108,57 @@ fun MainAppScreen(
         )
     }
 
+    val screenTitle = when (currentRoute) {
+        ScreenRoutes.DASHBOARD -> "Dashboard"
+        ScreenRoutes.CALENDAR -> "Calendar"
+        ScreenRoutes.ROOM_CALENDAR -> "Room Calendar"
+        ScreenRoutes.BOOK_ROOM -> "Book Room"
+        ScreenRoutes.MEETING_ROOMS -> "Meeting Rooms"
+        ScreenRoutes.ANNOUNCEMENTS -> "Announcements"
+        ScreenRoutes.REPORT -> "Report"
+        ScreenRoutes.PARTICIPANTS -> "Members"
+        ScreenRoutes.SETTINGS -> "Settings"
+        else -> "Dashboard"
+    }
+
     MainScaffold(
         sidebarItems = sidebarItems,
         selectedItem = selectedItem,
-        searchQuery = searchQuery,
-        onSearchQueryChanged = { searchQuery = it },
+        title = screenTitle,
         onSidebarItemSelected = { item ->
-            currentRoute = item.route
+            navigationStack = listOf(item.route)
             searchQuery = "" // Reset search when switching tabs
             pendingRoomName = null // Clear pending room when manually switching tabs
             pendingBookingDetails = null
         },
         onLogout = onLogout,
         showEditIcon = currentRoute == ScreenRoutes.MEETING_ROOMS,
+        showTopBar = currentRoute != ScreenRoutes.ROOM_CALENDAR && currentRoute != ScreenRoutes.PARTICIPANT_ADD,
         onEditClick = {
             if (currentRoute == ScreenRoutes.MEETING_ROOMS) {
                 isMeetingRoomsEditable = !isMeetingRoomsEditable
             }
-        }
+        },
+        onBackClick = if (navigationStack.size > 1) navigateBack else null
     ) {
         when (currentRoute) {
             ScreenRoutes.DASHBOARD -> {
                 DashboardScreen(
                     searchQuery = searchQuery,
-                    onNavigate = { currentRoute = it }
+                    onNavigate = navigateTo
                 )
             }
             ScreenRoutes.CALENDAR -> {
                 CalendarScreen(
                     searchQuery = searchQuery,
-                    onNavigate = { currentRoute = it }
+                    onNavigate = navigateTo
                 )
             }
             ScreenRoutes.MEETING_ROOMS -> {
                 MeetingRoomsScreen(
                     searchQuery = searchQuery,
                     isEditable = isMeetingRoomsEditable,
-                    onNavigate = { currentRoute = it },
+                    onNavigate = navigateTo,
                     onOpenRoomEdit = { roomName ->
                         navController.navigate(ScreenRoutes.meetingRoomEdit(roomName))
                     },
@@ -129,19 +167,16 @@ fun MainAppScreen(
                     },
                     onBookClick = { room ->
                         pendingRoomName = room.name
-                        currentRoute = ScreenRoutes.ROOM_CALENDAR
+                        showRoomCalendarBottomSheet = true
                     }
                 )
             }
             ScreenRoutes.ROOM_CALENDAR -> {
-                RoomCalendarScreen(
-                    roomName = pendingRoomName,
-                    initialDetails = pendingBookingDetails,
-                    onNavigateBack = { currentRoute = ScreenRoutes.MEETING_ROOMS },
-                    onProceed = { details ->
-                        pendingBookingDetails = details
-                        currentRoute = ScreenRoutes.BOOK_ROOM
-                    }
+                // This route is now handled via BottomSheet, but we keep it here for safety
+                // or redirect to Dashboard if it somehow ends up here.
+                DashboardScreen(
+                    searchQuery = searchQuery,
+                    onNavigate = navigateTo
                 )
             }
             ScreenRoutes.BOOK_ROOM -> {
@@ -151,11 +186,11 @@ fun MainAppScreen(
                     initialDetails = pendingBookingDetails,
                     onNavigateToCalendar = { currentDetails ->
                         pendingBookingDetails = currentDetails
-                        currentRoute = ScreenRoutes.ROOM_CALENDAR
+                        showRoomCalendarBottomSheet = true
                     },
-                    onNavigate = { currentRoute = it },
+                    onNavigate = navigateTo,
                     onNavigateToEdit = {
-                        currentRoute = ScreenRoutes.MEETING_ROOMS
+                        navigationStack = listOf(ScreenRoutes.MEETING_ROOMS)
                         isMeetingRoomsEditable = true
                     }
                 )
@@ -163,33 +198,58 @@ fun MainAppScreen(
             ScreenRoutes.ANNOUNCEMENTS -> {
                 AnnouncementsScreen(
                     searchQuery = searchQuery,
-                    onNavigate = { currentRoute = it }
+                    onNavigate = navigateTo
                 )
             }
             ScreenRoutes.REPORT -> {
                 ReportScreen(
                     searchQuery = searchQuery,
-                    onNavigate = { currentRoute = it }
+                    onNavigate = navigateTo
                 )
             }
             ScreenRoutes.PARTICIPANTS -> {
                 ParticipantsScreen(
                     searchQuery = searchQuery,
-                    onNavigate = { currentRoute = it }
+                    onNavigate = navigateTo
+                )
+            }
+            ScreenRoutes.PARTICIPANT_ADD -> {
+                AddParticipantScreen(
+                    onClose = navigateBack,
+                    onContinue = navigateBack
                 )
             }
             ScreenRoutes.SETTINGS -> {
                 SettingsScreen(
                     searchQuery = searchQuery,
-                    onNavigate = { currentRoute = it }
+                    onNavigate = navigateTo
                 )
             }
             else -> {
                 DashboardScreen(
                     searchQuery = searchQuery,
-                    onNavigate = { currentRoute = it }
+                    onNavigate = navigateTo
                 )
             }
+        }
+    }
+
+    if (showRoomCalendarBottomSheet) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        BottomSheetView(
+            onDismiss = { showRoomCalendarBottomSheet = false },
+            sheetState = sheetState
+        ) {
+            RoomCalendarScreen(
+                roomName = pendingRoomName,
+                initialDetails = pendingBookingDetails,
+                onNavigateBack = { showRoomCalendarBottomSheet = false },
+                onProceed = { details ->
+                    pendingBookingDetails = details
+                    showRoomCalendarBottomSheet = false
+                    navigateTo(ScreenRoutes.BOOK_ROOM)
+                }
+            )
         }
     }
 }

@@ -50,6 +50,7 @@ fun MeetingRoomsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
+        viewModel.loadRooms()
         viewModel.uiEvent.collect { event ->
             when (event) {
                 is MeetingRoomsEvent.ShowSnackbar -> {
@@ -67,10 +68,18 @@ fun MeetingRoomsScreen(
         if (uiState.isLoading && uiState.rooms.isEmpty()) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         } else if (uiState.filteredRooms.isEmpty()) {
+            val emptyText = if (uiState.errorMessage != null) {
+                "Error: ${uiState.errorMessage}"
+            } else if (uiState.searchQuery.isNotBlank()) {
+                "No rooms match \"${uiState.searchQuery}\""
+            } else {
+                "No meeting rooms found."
+            }
             androidx.compose.material3.Text(
-                text = "No meeting rooms found.",
-                modifier = Modifier.align(Alignment.Center),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                text = emptyText,
+                modifier = Modifier.align(Alignment.Center).padding(horizontal = 32.dp),
+                color = if (uiState.errorMessage != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
         } else {
             LazyColumn(
@@ -78,7 +87,7 @@ fun MeetingRoomsScreen(
                 contentPadding = PaddingValues(bottom = 88.dp), // extra bottom pad so last card isn't hidden behind FAB
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                items(uiState.filteredRooms, key = { it.id }) { room ->
+                items(uiState.filteredRooms, key = { "${it.id}-${it.name}" }) { room ->
                     RoomCard(
                         room = room,
                         isEditable = isEditable,

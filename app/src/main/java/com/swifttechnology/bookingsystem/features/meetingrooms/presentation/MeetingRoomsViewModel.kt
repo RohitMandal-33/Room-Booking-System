@@ -44,7 +44,7 @@ class MeetingRoomsViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             roomRepository.listAllRooms()
                 .onSuccess { page ->
-                    val rooms = page.data?.map { dto ->
+                    val rooms = page.content?.map { dto ->
                         val mappedAmenities = (dto.resources ?: emptyList()).mapNotNull { res ->
                             RoomAmenity.fromResourceString(res)
                         }
