@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -75,12 +74,20 @@ fun CalendarBottomBar(
                 Spacer(modifier = Modifier.weight(1f))
 
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                    Box(modifier = Modifier.width(90.dp)) {
-                         SecondaryButton(text = "Cancel", onClick = onCancel)
-                    }
-                    Box(modifier = Modifier.width(100.dp)) {
-                        PrimaryButton(text = "Proceed", onClick = onProceed)
-                    }
+                    SecondaryButton(
+                        text = "Cancel",
+                        onClick = onCancel,
+                        modifier = Modifier
+                            .width(80.dp)
+                            .height(36.dp)
+                    )
+                    PrimaryButton(
+                        text = "Proceed",
+                        onClick = onProceed,
+                        modifier = Modifier
+                            .width(90.dp)
+                            .height(36.dp)
+                    )
                 }
             }
         }
