@@ -1,4 +1,4 @@
-package com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents
+package com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.dayview
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -13,6 +13,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.shared.IntervalUtils
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.shared.TimeRange
 
 @Composable
 fun TimeOverlay(range: TimeRange, modifier: Modifier = Modifier) {

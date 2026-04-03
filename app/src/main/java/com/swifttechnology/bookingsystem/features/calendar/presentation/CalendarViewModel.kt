@@ -8,7 +8,7 @@ import com.swifttechnology.bookingsystem.core.model.Room
 import com.swifttechnology.bookingsystem.core.model.RoomStatus
 import com.swifttechnology.bookingsystem.features.auth.domain.repository.AuthRepository
 import com.swifttechnology.bookingsystem.features.booking.domain.repository.BookingRepository
-import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.TimeRange
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.shared.TimeRange
 import com.swifttechnology.bookingsystem.features.meetingrooms.domain.repository.RoomRepository
 import com.swifttechnology.bookingsystem.shared.components.SidebarItem
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -144,7 +144,7 @@ class CalendarViewModel @Inject constructor(
                         selectedDate = newMonth.atDay(newDay)
                     )
                 }
-                CalendarView.WEEK -> state.copy(selectedDate = state.selectedDate.minusWeeks(1))
+                CalendarView.WEEK -> state.copy(selectedDate = state.selectedDate.minusDays(2))
                 CalendarView.DAY -> state.copy(selectedDate = state.selectedDate.minusDays(1))
             }
         }
@@ -162,7 +162,7 @@ class CalendarViewModel @Inject constructor(
                         selectedDate = newMonth.atDay(newDay)
                     )
                 }
-                CalendarView.WEEK -> state.copy(selectedDate = state.selectedDate.plusWeeks(1))
+                CalendarView.WEEK -> state.copy(selectedDate = state.selectedDate.plusDays(2))
                 CalendarView.DAY -> state.copy(selectedDate = state.selectedDate.plusDays(1))
             }
         }

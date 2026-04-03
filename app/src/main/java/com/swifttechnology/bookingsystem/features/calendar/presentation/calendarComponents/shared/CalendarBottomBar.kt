@@ -1,4 +1,4 @@
-package com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents
+package com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.shared
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.swifttechnology.bookingsystem.core.designsystem.Spacing
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.dayview.TimeBox
 import com.swifttechnology.bookingsystem.shared.components.PrimaryButton
 import com.swifttechnology.bookingsystem.shared.components.SecondaryButton
 
@@ -31,6 +32,8 @@ fun CalendarBottomBar(
     onCancel: () -> Unit,
     onProceed: () -> Unit,
     modifier: Modifier = Modifier,
+    onStartTimeClick: (() -> Unit)? = null,
+    onEndTimeClick: (() -> Unit)? = null,
     purplePrimary: Color = Color(0xFF6C3EE8),
     purpleLight: Color = Color(0xFFEDE9FF)
 ) {
@@ -60,7 +63,10 @@ fun CalendarBottomBar(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                TimeBox(time = startLabel)
+                TimeBox(
+                    time = startLabel,
+                    onClick = onStartTimeClick
+                )
                 Spacer(modifier = Modifier.width(Spacing.sm))
                 Text(
                     text = "-",
@@ -69,23 +75,20 @@ fun CalendarBottomBar(
                     color = Color(0xFF333333)
                 )
                 Spacer(modifier = Modifier.width(Spacing.sm))
-                TimeBox(time = endLabel)
+                TimeBox(
+                    time = endLabel,
+                    onClick = onEndTimeClick
+                )
 
                 Spacer(modifier = Modifier.weight(1f))
 
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                    SecondaryButton(
-                        text = "Cancel",
-                        onClick = onCancel,
-                        modifier = Modifier
-                            .width(80.dp)
-                            .height(36.dp)
-                    )
+
                     PrimaryButton(
                         text = "Proceed",
                         onClick = onProceed,
                         modifier = Modifier
-                            .width(90.dp)
+                            .width(100.dp)
                             .height(36.dp)
                     )
                 }

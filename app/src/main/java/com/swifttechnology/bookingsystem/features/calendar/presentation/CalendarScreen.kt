@@ -36,7 +36,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.swifttechnology.bookingsystem.core.designsystem.*
 import com.swifttechnology.bookingsystem.core.model.Room
-import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.*
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.dayview.*
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.monthview.*
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.shared.*
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.weekview.*
 import com.swifttechnology.bookingsystem.navigation.ScreenRoutes
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -45,6 +48,7 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
+import com.swifttechnology.bookingsystem.shared.components.TimePickerBottomSheet
 
 private val PurplePrimary = Color(0xFF6C3EE8)
 private val PurpleLight = Color(0xFFEDE9FF)
@@ -77,6 +81,10 @@ fun CalendarScreen(
         onPrev = viewModel::onPrev,
         onNext = viewModel::onNext,
         onDateSelected = viewModel::onDateSelected,
+        onMonthTileClick = { date ->
+            viewModel.onDateSelected(date)
+            viewModel.onViewChange(CalendarView.DAY)
+        },
         onEventSelected = viewModel::onEventSelected,
         onRoomSelected = viewModel::onRoomSelected,
         onGridLongPress = pickerViewModel::onTimeSlotLongPressed,
@@ -89,7 +97,8 @@ fun CalendarScreen(
         onPickerCancelBooking = pickerViewModel::onCancelBooking,
         onProceed = {
             onNavigate(ScreenRoutes.BOOK_ROOM)
-        }
+        },
+        onTimePickerConfirm = pickerViewModel::initializePicker
     )
 }
 
@@ -103,6 +112,7 @@ private fun CalendarContent(
     onPrev: () -> Unit,
     onNext: () -> Unit,
     onDateSelected: (LocalDate) -> Unit,
+    onMonthTileClick: (LocalDate) -> Unit,
     onEventSelected: (MeetingEvent?) -> Unit,
     onRoomSelected: (Room) -> Unit,
     onGridLongPress: (Int) -> Unit,
@@ -113,21 +123,25 @@ private fun CalendarContent(
     onPickerResizeBottomCommitted: (Int) -> Unit,
     onPickerDragCancelled: () -> Unit,
     onPickerCancelBooking: () -> Unit,
-    onProceed: () -> Unit
+    onProceed: () -> Unit,
+    onTimePickerConfirm: (Int, Int) -> Unit
 ) {
+    var showStartPicker by remember { mutableStateOf(false) }
+    var showEndPicker   by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.customColors.whitePure)
     ) {
         TopBar(
+            currentView = uiState.currentView,
+            onViewChange = onViewChange,
             showRoomPicker = true,
             selectedRoom = uiState.selectedRoom,
             rooms = rooms,
             onRoomSelected = onRoomSelected
         )
-
-        ViewToggleBar(currentView = uiState.currentView, onViewChange = onViewChange)
 
         NavigationHeader(
             currentView = uiState.currentView,
@@ -158,13 +172,14 @@ private fun CalendarContent(
                     yearMonth = uiState.currentMonth,
                     events = uiState.events,
                     selectedDate = uiState.selectedDate,
-                    onDateClick = onDateSelected,
+                    onDateClick = onMonthTileClick,
                     onEventClick = { onEventSelected(it) }
                 )
 
                 CalendarView.WEEK -> WeekView(
                     selectedDate = uiState.selectedDate,
                     events = uiState.events,
+                    onDateClick = { onDateSelected(it) },
                     onEventClick = { onEventSelected(it) }
                 )
 
@@ -190,12 +205,50 @@ private fun CalendarContent(
                             pickerState = pickerUiState,
                             onCancel = onPickerCancelBooking,
                             onProceed = onProceed,
+                            onStartTimeClick = { showStartPicker = true },
+                            onEndTimeClick = { showEndPicker = true },
                             purplePrimary = PurplePrimary,
                             purpleLight = PurpleLight
                         )
                     }
                 }
             }
+        }
+    }
+
+    if (showStartPicker) {
+        val range = pickerUiState.draggableEvent?.timeRange
+        if (range != null) {
+            TimePickerBottomSheet(
+                title = "Set start time",
+                initialHour = range.startMinutes / 60,
+                initialMinute = range.startMinutes % 60,
+                onConfirm = { h, m ->
+                    val newStart = h * 60 + m
+                    val newEnd = (newStart + range.durationMinutes).coerceAtMost(24 * 60)
+                    onTimePickerConfirm(newStart, newEnd)
+                },
+                onDismiss = { showStartPicker = false }
+            )
+        }
+    }
+
+    if (showEndPicker) {
+        val range = pickerUiState.draggableEvent?.timeRange
+        if (range != null) {
+            TimePickerBottomSheet(
+                title = "Set end time",
+                initialHour = range.endMinutes / 60,
+                initialMinute = range.endMinutes % 60,
+                onConfirm = { h, m ->
+                    val newEnd = h * 60 + m
+                    val newStart = range.startMinutes
+                    if (newEnd > newStart) {
+                        onTimePickerConfirm(newStart, newEnd)
+                    }
+                },
+                onDismiss = { showEndPicker = false }
+            )
         }
     }
 
@@ -206,6 +259,8 @@ private fun CalendarContent(
 
 @Composable
 private fun TopBar(
+    currentView: CalendarView,
+    onViewChange: (CalendarView) -> Unit,
     showRoomPicker: Boolean,
     selectedRoom: Room?,
     rooms: List<Room>,
@@ -217,30 +272,59 @@ private fun TopBar(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = Spacing.md, vertical = Spacing.sm),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        if (showRoomPicker) {
-            Spacer(Modifier.weight(1f))
+        Row(
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), CircleShape)
+                .padding(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CalendarView.values().forEach { view ->
+                val isSelected = currentView == view
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(if (isSelected) PurplePrimary else Color.Transparent)
+                        .clickable { onViewChange(view) }
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = view.name.lowercase().replaceFirstChar { it.uppercase() },
+                        fontSize = 12.sp,
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                        color = if (isSelected) Color.White else MaterialTheme.customColors.textSecondary
+                    )
+                }
+            }
+        }
 
+        if (showRoomPicker) {
             Box {
                 Row(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(CornerRadius.md))
-                        .border(1.dp, MaterialTheme.customColors.divider, RoundedCornerShape(CornerRadius.md))
+                        .clip(CircleShape)
+                        .border(1.dp, Color(0xFF9D74FE), CircleShape)
+                        .background(Color.White)
                         .clickable { expanded = true }
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                        .padding(horizontal = 12.dp)
+                        .height(32.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = selectedRoom?.name ?: "Choose a Meeting Room",
-                        color = if (selectedRoom == null) MaterialTheme.customColors.textHint else MaterialTheme.customColors.textPrimary,
-                        style = MaterialTheme.typography.bodyMedium
+                        text = selectedRoom?.name ?: "Meeting Room",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.customColors.textPrimary
                     )
                     Icon(
                         imageVector = Icons.Default.ArrowDropDown,
-                        contentDescription = null,
-                        tint = MaterialTheme.customColors.textSecondary
+                        contentDescription = "Select room",
+                        tint = MaterialTheme.customColors.textPrimary,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
 
@@ -259,39 +343,8 @@ private fun TopBar(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun ViewToggleBar(
-    currentView: CalendarView,
-    onViewChange: (CalendarView) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = Spacing.md, vertical = Spacing.sm),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
-    ) {
-        CalendarView.values().forEach { view ->
-            val isSelected = currentView == view
-            Surface(
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable { onViewChange(view) },
-                shape = RoundedCornerShape(CornerRadius.sm),
-                color = if (isSelected) PurplePrimary else MaterialTheme.colorScheme.surfaceVariant,
-                tonalElevation = if (isSelected) Elevation.sm else 0.dp
-            ) {
-                Text(
-                    text = view.name.lowercase().capitalize(Locale.ROOT),
-                    modifier = Modifier.padding(vertical = Spacing.xs),
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = if (isSelected) Color.White else MaterialTheme.customColors.textSecondary
-                )
-            }
+        } else {
+            Spacer(modifier = Modifier.width(1.dp))
         }
     }
 }
@@ -318,7 +371,6 @@ private fun NavigationHeader(
         }
         CalendarView.DAY -> selectedDate.format(DateTimeFormatter.ofPattern("MMMM d, yyyy"))
     }
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -375,65 +427,124 @@ private fun MonthView(
     onDateClick: (LocalDate) -> Unit,
     onEventClick: (MeetingEvent) -> Unit
 ) {
+    val today = LocalDate.now()
     val firstDayOfMonth = yearMonth.atDay(1)
     val firstDayOfWeek = firstDayOfMonth.dayOfWeek.value % 7 // Sunday = 0
     val daysInMonth = yearMonth.lengthOfMonth()
-    
-    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+    ) {
         for (row in 0 until 6) {
-            Row(modifier = Modifier.fillMaxWidth().height(100.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp)
+            ) {
                 for (col in 0 until 7) {
                     val dayIndex = row * 7 + col - firstDayOfWeek + 1
                     if (dayIndex in 1..daysInMonth) {
                         val date = yearMonth.atDay(dayIndex)
                         val isSelected = date == selectedDate
+                        val isToday = date == today
                         val dayEvents = events.filter { it.date == date }
-                        
+                        val visibleEvents = dayEvents.take(3)
+                        val overflowCount = dayEvents.size - visibleEvents.size
+
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .border(
+                                    width = if (isSelected) 1.5.dp else 0.5.dp,
+                                    color = if (isSelected) PurplePrimary else MaterialTheme.customColors.divider
+                                )
+                                .clickable { onDateClick(date) }
+                                .padding(horizontal = 3.dp, vertical = 3.dp)
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                // Day number with today highlight
+                                Row(modifier = Modifier.fillMaxWidth()) {
+                                    if (isToday) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(22.dp)
+                                                .clip(CircleShape)
+                                                .background(PurplePrimary),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = dayIndex.toString(),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 11.sp,
+                                                color = Color.White
+                                            )
+                                        }
+                                    } else {
+                                        Text(
+                                            text = dayIndex.toString(),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                            color = if (isSelected) PurplePrimary else MaterialTheme.customColors.textPrimary,
+                                            modifier = Modifier.padding(start = 2.dp)
+                                        )
+                                    }
+                                }
+
+                                // Event pills
+                                visibleEvents.forEach { event ->
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(16.dp)
+                                            .clip(CircleShape)
+                                            .background(event.color.copy(alpha = 0.85f))
+                                            .clickable { onEventClick(event) }
+                                    )
+                                }
+
+                                // Overflow chip
+                                if (overflowCount > 0) {
+                                    Box(
+                                        modifier = Modifier
+                                            .wrapContentSize()
+                                            .border(1.dp, MaterialTheme.customColors.divider, CircleShape)
+                                            .padding(horizontal = 5.dp, vertical = 1.dp)
+                                    ) {
+                                        Text(
+                                            text = "More",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontSize = 9.sp,
+                                            color = MaterialTheme.customColors.textSecondary
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // Overflow days from adjacent months — muted
                         Box(
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxHeight()
                                 .border(0.5.dp, MaterialTheme.customColors.divider)
-                                .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f) else Color.Transparent)
-                                .clickable { onDateClick(date) }
-                                .padding(2.dp)
                         ) {
-                            Column {
-                                Text(
-                                    text = dayIndex.toString(),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isSelected) PurplePrimary else MaterialTheme.customColors.textPrimary
-                                )
-                                dayEvents.take(3).forEach { event ->
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 1.dp)
-                                            .background(PurplePrimary.copy(alpha = 0.2f), RoundedCornerShape(2.dp))
-                                            .padding(horizontal = 2.dp)
-                                            .clickable { onEventClick(event) }
-                                    ) {
-                                        Text(
-                                            text = event.title,
-                                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                            color = PurplePrimary
-                                        )
-                                    }
-                                }
-                                if (dayEvents.size > 3) {
-                                    Text(
-                                        text = "+${dayEvents.size - 3} more",
-                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
-                                        color = MaterialTheme.customColors.textSecondary
-                                    )
-                                }
+                            val overflowDay = if (dayIndex < 1) {
+                                val prevMonth = yearMonth.minusMonths(1)
+                                prevMonth.lengthOfMonth() + dayIndex
+                            } else {
+                                dayIndex - daysInMonth
                             }
+                            Text(
+                                text = overflowDay.toString(),
+                                modifier = Modifier.padding(4.dp),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.customColors.textSecondary.copy(alpha = 0.4f)
+                            )
                         }
-                    } else {
-                        Box(modifier = Modifier.weight(1f).fillMaxHeight().border(0.5.dp, MaterialTheme.customColors.divider))
                     }
                 }
             }

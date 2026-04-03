@@ -1,4 +1,4 @@
-package com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents
+package com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.dayview
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -42,6 +42,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.shared.DragHandle
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.shared.DraggableEvent
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.shared.IntervalUtils
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.shared.TimeRange
 import kotlin.math.roundToInt
 
 // Sizing constants
@@ -253,22 +257,13 @@ fun PickerEventBlock(
         }
 
         // TOP-LEFT resize dot
-        // The dot sits exactly on the top border line:
-        //   - Aligned to TopStart so x=0 is the left edge of the block
-        //   - x offset = DOT_EDGE_INSET moves it away from the left corner
-        //   - y offset = -(DOT_SIZE / 2) so the dot straddles the top border (half above, half below)
-        // The TOUCH_TARGET wrapper is centered on the dot for a comfortable hit area.
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(TOUCH_TARGET)
                 .align(Alignment.TopStart)
-                // Center the touch target horizontally over the dot position:
-                // dot center is at x = DOT_EDGE_INSET, so shift by (DOT_EDGE_INSET - TOUCH_TARGET/2)
                 .offset(
                     x = DOT_EDGE_INSET - TOUCH_TARGET / 2,
-                    // Center touch target vertically on the border line:
-                    // dot center is at y = 0, so shift by -(TOUCH_TARGET / 2)
                     y = -(TOUCH_TARGET / 2)
                 )
                 .background(Color.Transparent)
@@ -282,22 +277,13 @@ fun PickerEventBlock(
         }
 
         // BOTTOM-RIGHT resize dot
-        // The dot sits exactly on the bottom border line:
-        //   - Aligned to BottomEnd so x=0 is the right edge of the block
-        //   - x offset = -(DOT_EDGE_INSET) moves it away from the right corner (negative = leftward from end)
-        //   - y offset = +(DOT_SIZE / 2) so the dot straddles the bottom border (half above, half below)
-        // The TOUCH_TARGET wrapper is centered on the dot for a comfortable hit area.
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(TOUCH_TARGET)
                 .align(Alignment.BottomEnd)
-                // Center the touch target horizontally over the dot position:
-                // dot center is at x = -DOT_EDGE_INSET from the right, so shift by -(DOT_EDGE_INSET - TOUCH_TARGET/2)
                 .offset(
                     x = -(DOT_EDGE_INSET - TOUCH_TARGET / 2),
-                    // Center touch target vertically on the border line:
-                    // dot center is at y = 0 (bottom), so shift by +(TOUCH_TARGET / 2)
                     y = TOUCH_TARGET / 2
                 )
                 .background(Color.Transparent)

@@ -1,4 +1,4 @@
-package com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents
+package com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.shared
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

@@ -1,6 +1,5 @@
 package com.swifttechnology.bookingsystem.features.booking.presentation
 
-import android.app.TimePickerDialog
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
@@ -44,17 +43,18 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.swifttechnology.bookingsystem.core.designsystem.Spacing
-import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.DayColumnWithPicker
-import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.DayStrip
-import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.DayTimePickerViewModel
-import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.IntervalUtils
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.dayview.DayColumnWithPicker
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.shared.DayStrip
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.shared.DayTimePickerViewModel
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.shared.IntervalUtils
 import com.swifttechnology.bookingsystem.features.calendar.presentation.CalendarViewModel
 import com.swifttechnology.bookingsystem.features.main.presentation.PendingBookingDetails
 import com.swifttechnology.bookingsystem.shared.components.PrimaryButton
-import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.CalendarLegendRow
-import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.TimeBox
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.shared.CalendarLegendRow
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.dayview.TimeBox
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import com.swifttechnology.bookingsystem.shared.components.TimePickerBottomSheet
 
 private val PurplePrimary  = Color(0xFF6C3EE8)
 private val PurpleLight    = Color(0xFFEDE9FF)
@@ -90,6 +90,11 @@ fun RoomCalendarScreen(
         )
     }
 
+    var showStartTimePicker by remember { mutableStateOf(false) }
+    var showEndTimePicker   by remember { mutableStateOf(false) }
+
+    val draggable = pickerUiState.draggableEvent
+
     LaunchedEffect(initialDetails) {
         if (initialDetails?.startTime != null && initialDetails.endTime != null) {
             try {
@@ -113,7 +118,7 @@ fun RoomCalendarScreen(
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
         Column(modifier = Modifier.fillMaxSize()) {
 
-            // ── Top bar ──────────────────────────────────────────────────
+            //    Top bar                                                   
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -160,7 +165,7 @@ fun RoomCalendarScreen(
                     .padding(bottom = Spacing.sm)
             )
 
-            // ── Week strip ────────────────────────────────────────────────
+            //    Week strip                                                 
             DayStrip(
                 selectedDate = selectedDate,
                 onDateClick = { selectedDate = it },
@@ -168,7 +173,7 @@ fun RoomCalendarScreen(
                 onNextWeek = { selectedDate = selectedDate.plusWeeks(1) }
             )
 
-            // ── Time picking grid (fills remaining space) ─────────────────
+            //    Time picking grid (fills remaining space)                  
             DayColumnWithPicker(
                 selectedDate = selectedDate,
                 regularEvents = roomName?.let {
@@ -185,11 +190,10 @@ fun RoomCalendarScreen(
                 modifier = Modifier.weight(1f)
             )
 
-            // ── Legend ────────────────────────────────────────────────────
+            //    Legend                                                     
             CalendarLegendRow()
 
-            // ── Bottom: Selected Time Slot card — visible only when a picker block exists ──
-            val draggable = pickerUiState.draggableEvent
+            //    Bottom: Selected Time Slot card — visible only when a picker block exists   
             if (draggable != null) {
                 val range      = draggable.timeRange
                 val startLabel = IntervalUtils.formatMinutes(range.startMinutes)
@@ -219,22 +223,7 @@ fun RoomCalendarScreen(
                             // Start time box — tapping opens spinner time picker
                             TimeBox(
                                 time = startLabel,
-                                onClick = {
-                                    val h = range.startMinutes / 60
-                                    val m = range.startMinutes % 60
-                                    @Suppress("DEPRECATION")
-                    TimePickerDialog(
-                                        context,
-                                        android.R.style.Theme_Holo_Light_Dialog_NoActionBar,
-                                        { _, hour, minute ->
-                                            val newStart = hour * 60 + minute
-                                            val newEnd   = newStart + range.durationMinutes
-                                            pickerViewModel.initializePicker(newStart, newEnd.coerceAtMost(24 * 60))
-                                        },
-                                        h, m,
-                                        false   // use 12-hour AM/PM format
-                                    ).show()
-                                }
+                                onClick = { showStartTimePicker = true }
                             )
 
                             Spacer(modifier = Modifier.width(Spacing.sm))
@@ -249,24 +238,7 @@ fun RoomCalendarScreen(
                             // End time box — tapping opens spinner time picker
                             TimeBox(
                                 time = endLabel,
-                                onClick = {
-                                    val h = range.endMinutes / 60
-                                    val m = range.endMinutes % 60
-                                    @Suppress("DEPRECATION")
-                    TimePickerDialog(
-                                        context,
-                                        android.R.style.Theme_Holo_Light_Dialog_NoActionBar,
-                                        { _, hour, minute ->
-                                            val newEnd = hour * 60 + minute
-                                            pickerViewModel.initializePicker(
-                                                range.startMinutes,
-                                                newEnd.coerceAtLeast(range.startMinutes + 5)
-                                            )
-                                        },
-                                        h, m,
-                                        false
-                                    ).show()
-                                }
+                                onClick = { showEndTimePicker = true }
                             )
 
                             Spacer(modifier = Modifier.weight(1f))
@@ -307,5 +279,39 @@ fun RoomCalendarScreen(
                 }
             }
         }
+    }
+
+    if (showStartTimePicker && draggable != null) {
+        val range = draggable.timeRange
+        TimePickerBottomSheet(
+            title = "Set start time",
+            initialHour = range.startMinutes / 60,
+            initialMinute = range.startMinutes % 60,
+            onConfirm = { h, m ->
+                val newStart = h * 60 + m
+                val newEnd = (newStart + range.durationMinutes).coerceAtMost(24 * 60)
+                pickerViewModel.initializePicker(newStart, newEnd)
+                showStartTimePicker = false
+            },
+            onDismiss = { showStartTimePicker = false }
+        )
+    }
+
+    if (showEndTimePicker && draggable != null) {
+        val range = draggable.timeRange
+        TimePickerBottomSheet(
+            title = "Set end time",
+            initialHour = range.endMinutes / 60,
+            initialMinute = range.endMinutes % 60,
+            onConfirm = { h, m ->
+                val newEnd = h * 60 + m
+                pickerViewModel.initializePicker(
+                    range.startMinutes,
+                    newEnd.coerceAtLeast(range.startMinutes + 5)
+                )
+                showEndTimePicker = false
+            },
+            onDismiss = { showEndTimePicker = false }
+        )
     }
 }

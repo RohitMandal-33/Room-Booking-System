@@ -103,12 +103,14 @@ fun MeetingRoomsScreen(
             }
         }
 
-        AddFab(
-            onClick = { onNavigateToAddRoom() },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(24.dp)
-        )
+        if (isEditable) {
+            AddFab(
+                onClick = { onNavigateToAddRoom() },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(24.dp)
+            )
+        }
 
         SnackbarHost(
             hostState = snackbarHostState,

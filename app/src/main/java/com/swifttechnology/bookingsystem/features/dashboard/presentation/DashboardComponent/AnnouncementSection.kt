@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -121,6 +120,7 @@ fun AnnouncementSection(onView: () -> Unit) {
                             text     = item.message,
                             color    = MaterialTheme.colorScheme.onSurface,
                             style    = MaterialTheme.typography.bodyMedium,
+                            minLines = 3,
                             maxLines = 3,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.fillMaxWidth(0.92f)
@@ -134,8 +134,21 @@ fun AnnouncementSection(onView: () -> Unit) {
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment     = Alignment.CenterVertically
                     ) {
-                        Text(item.author, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.labelLarge)
-                        Text(item.date,   color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.labelLarge)
+                        Text(
+                            text     = item.author,
+                            color    = MaterialTheme.colorScheme.onSurface,
+                            style    = MaterialTheme.typography.labelLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Spacer(modifier = Modifier.width(Spacing.sm))
+                        Text(
+                            text     = item.date,
+                            color    = MaterialTheme.colorScheme.onSurface,
+                            style    = MaterialTheme.typography.labelLarge,
+                            maxLines = 1
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(Spacing.ms))

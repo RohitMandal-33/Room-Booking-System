@@ -12,12 +12,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -28,7 +26,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -36,6 +33,8 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -55,7 +54,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -78,13 +76,16 @@ import com.swifttechnology.bookingsystem.features.booking.presentation.RoomBooki
 import com.swifttechnology.bookingsystem.shared.components.PrimaryButton
 
 
-  
-// Root sheet — call this inside ModalBottomSheet with windowInsets = WindowInsets(0)
-// so it stretches edge-to-edge up to the status bar.
-  
+// Keep for backward-compat if anything still imports it
+
+enum class ParticipantSheetMode { INTERNAL, EXTERNAL }
+
+
+//  INTERNAL bottom-sheet
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ParticipantsSheetContent(
+fun InternalParticipantsBottomSheet(
     formState: RoomBookingFormState,
     availableParticipants: List<InternalMember>,
     onFormStateChanged: (RoomBookingFormState) -> Unit,
@@ -94,64 +95,23 @@ fun ParticipantsSheetContent(
     isSearching: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    var participantType by remember { mutableStateOf(ParticipantType.INTERNAL) }
-    var groupBy by remember { mutableStateOf(GroupBy.PEOPLE) }
-    var externalName by remember { mutableStateOf("") }
-    var externalEmail by remember { mutableStateOf("") }
-
-    // Status bar height so content starts right below notification bar
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    var groupBy by remember { mutableStateOf(GroupBy.PEOPLE) }
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
-            .padding(top = statusBarPadding)   // push below notification bar
+            .padding(top = statusBarPadding)
     ) {
+        // Drag handle
+        DragHandle()
 
-        //      Drag handle                                                                                                             
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = Spacing.xs),
-            contentAlignment = Alignment.Center
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(width = 36.dp, height = 4.dp)
-                    .clip(RoundedCornerShape(CornerRadius.full))
-                    .background(Neutral300)
-            )
-        }
+        // Header — title centred, close on right
+        SheetHeader(title = "Internal Member", onClose = onClose)
 
-        //      Header                                                                                                                       
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = Spacing.xs, vertical = Spacing.xs),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onClose) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Neutral700
-                )
-            }
-            Text(
-                text = "Add Participants",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.customColors.bookRoomLabel
-            )
-        }
-
-
-        //      Selected participant chips                                                                                 
-        val hasAnySelected =
-            formState.participants.isNotEmpty() || formState.externalMembers.isNotEmpty()
-
-        if (hasAnySelected) {
+        // Selected chips
+        if (formState.participants.isNotEmpty()) {
             FlowRow(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -169,6 +129,70 @@ fun ParticipantsSheetContent(
                         }
                     )
                 }
+            }
+        }
+
+        // Scrollable list
+        Box(modifier = Modifier.weight(1f).imePadding()) {
+            InternalParticipantsContent(
+                formState = formState,
+                onFormStateChanged = onFormStateChanged,
+                groupBy = groupBy,
+                onGroupByChange = { groupBy = it },
+                searchQuery = searchQuery,
+                onSearchQueryChange = onSearchQueryChange,
+                isSearching = isSearching,
+                filteredParticipants = availableParticipants
+            )
+        }
+
+        // Done button
+        PrimaryButton(
+            text = "Done",
+            onClick = onClose,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.md, vertical = Spacing.sm)
+        )
+    }
+}
+
+
+//  EXTERNAL bottom-sheet
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun ExternalParticipantsBottomSheet(
+    formState: RoomBookingFormState,
+    onFormStateChanged: (RoomBookingFormState) -> Unit,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    var externalName by remember { mutableStateOf("") }
+    var externalEmail by remember { mutableStateOf("") }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(top = statusBarPadding)
+    ) {
+        // Drag handle
+        DragHandle()
+
+        // Header — title centred, close on right
+        SheetHeader(title = "External Member", onClose = onClose)
+
+        // Selected chips
+        if (formState.externalMembers.isNotEmpty()) {
+            FlowRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.md, vertical = Spacing.xs),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+            ) {
                 formState.externalMembers.forEach { member ->
                     SelectedParticipantChip(
                         name = member.name,
@@ -182,66 +206,23 @@ fun ParticipantsSheetContent(
             }
         }
 
-        //      Section label                                                                                                         
-        Text(
-            text = "Participants",
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.customColors.bookRoomLabel,
-            modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.xs)
-        )
-
-        //      Internal / External pills                                                                                 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = Spacing.md, vertical = Spacing.xs),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
-        ) {
-            ParticipantTypePill(
-                label = "Internal",
-                isSelected = participantType == ParticipantType.INTERNAL,
-                isExpanded = participantType == ParticipantType.INTERNAL,
-                onClick = { participantType = ParticipantType.INTERNAL }
-            )
-            ParticipantTypePill(
-                label = "External",
-                isSelected = participantType == ParticipantType.EXTERNAL,
-                isExpanded = participantType == ParticipantType.EXTERNAL,
-                onClick = { participantType = ParticipantType.EXTERNAL }
-            )
-        }
-
-        //      Scrollable content                                                                                               
+        // Scrollable form
         Box(modifier = Modifier.weight(1f).imePadding()) {
-            when (participantType) {
-                ParticipantType.INTERNAL -> InternalParticipantsContent(
-                    formState = formState,
-                    onFormStateChanged = onFormStateChanged,
-                    groupBy = groupBy,
-                    onGroupByChange = { groupBy = it },
-                    searchQuery = searchQuery,
-                    onSearchQueryChange = onSearchQueryChange,
-                    isSearching = isSearching,
-                    filteredParticipants = availableParticipants
-                )
-
-                ParticipantType.EXTERNAL -> ExternalParticipantsContent(
-                    formState = formState,
-                    onFormStateChanged = onFormStateChanged,
-                    externalName = externalName,
-                    externalEmail = externalEmail,
-                    onExternalNameChange = { externalName = it },
-                    onExternalEmailChange = { externalEmail = it },
-                    onClearForm = {
-                        externalName = ""
-                        externalEmail = ""
-                    }
-                )
-            }
+            ExternalParticipantsContent(
+                formState = formState,
+                onFormStateChanged = onFormStateChanged,
+                externalName = externalName,
+                externalEmail = externalEmail,
+                onExternalNameChange = { externalName = it },
+                onExternalEmailChange = { externalEmail = it },
+                onClearForm = {
+                    externalName = ""
+                    externalEmail = ""
+                }
+            )
         }
 
-        //      Done button                                                                                                               
+        // Done button
         PrimaryButton(
             text = "Done",
             onClick = onClose,
@@ -253,14 +234,59 @@ fun ParticipantsSheetContent(
 }
 
 
-  
-// Selected chip
-  
+//  Shared small composables
+
+
 @Composable
-fun SelectedParticipantChip(
-    name: String,
-    onRemove: () -> Unit
-) {
+private fun DragHandle() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = Spacing.xs),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .size(width = 36.dp, height = 4.dp)
+                .clip(RoundedCornerShape(CornerRadius.full))
+                .background(Neutral300)
+        )
+    }
+}
+
+/** Title centred, X button pinned to the right. */
+@Composable
+private fun SheetHeader(title: String, onClose: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.md, vertical = Spacing.xs)
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.customColors.bookRoomLabel,
+            modifier = Modifier.align(Alignment.Center)
+        )
+        IconButton(
+            onClick = onClose,
+            modifier = Modifier.align(Alignment.CenterEnd)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = "Close",
+                tint = Neutral700
+            )
+        }
+    }
+}
+
+
+//  Selected chip
+
+@Composable
+fun SelectedParticipantChip(name: String, onRemove: () -> Unit) {
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(CornerRadius.full))
@@ -270,19 +296,19 @@ fun SelectedParticipantChip(
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
                 shape = RoundedCornerShape(CornerRadius.full)
             )
-            .padding(start = Spacing.sm, end = 4.dp, top = 4.dp, bottom = 4.dp),
+            .padding(start = 6.dp, end = 2.dp, top = 2.dp, bottom = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Text(
             text = name,
-            fontSize = 12.sp,
+            fontSize = 11.sp,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.primary
         )
         Box(
             modifier = Modifier
-                .size(16.dp)
+                .size(14.dp)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
                 .clickable { onRemove() },
@@ -292,70 +318,20 @@ fun SelectedParticipantChip(
                 imageVector = Icons.Default.Close,
                 contentDescription = "Remove $name",
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(10.dp)
+                modifier = Modifier.size(8.dp)
             )
         }
     }
 }
 
 
-  
-// Internal / External pill toggle
-  
-private enum class ParticipantType { INTERNAL, EXTERNAL }
+//  GroupBy enum
+
 private enum class GroupBy { PEOPLE, TEAMS, ALL }
 
-@Composable
-private fun ParticipantTypePill(
-    label: String,
-    isSelected: Boolean,
-    isExpanded: Boolean,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(CornerRadius.lg))
-            .background(
-                if (isSelected) MaterialTheme.customColors.bookRoomInputBackground
-                else MaterialTheme.colorScheme.surface
-            )
-            .border(
-                0.5.dp,
-                if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.4f) else Neutral300,
-                RoundedCornerShape(CornerRadius.lg)
-            )
-            .clickable { onClick() }
-            .padding(horizontal = Spacing.md, vertical = Spacing.sm),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
-    ) {
-        Icon(
-            imageVector = Icons.Default.PersonAdd,
-            contentDescription = null,
-            tint = if (isSelected) MaterialTheme.colorScheme.primary else Neutral700,
-            modifier = Modifier.size(16.dp)
-        )
-        Text(
-            text = label,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Medium,
-            color = if (isSelected) MaterialTheme.colorScheme.primary
-            else MaterialTheme.customColors.bookRoomLabel
-        )
-        Icon(
-            imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp
-            else Icons.Default.KeyboardArrowDown,
-            contentDescription = null,
-            tint = if (isSelected) MaterialTheme.colorScheme.primary else Neutral700,
-            modifier = Modifier.size(18.dp)
-        )
-    }
-}
 
+//  Internal participants panel  (People / Teams / All tabs + search + list)
 
-  
-// Internal participants panel
-  
 @Composable
 private fun InternalParticipantsContent(
     formState: RoomBookingFormState,
@@ -368,6 +344,13 @@ private fun InternalParticipantsContent(
     isSearching: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    // Department dropdown state (Teams tab only)
+    var departmentDropdownExpanded by remember { mutableStateOf(false) }
+    var selectedDepartment by remember { mutableStateOf<String?>(null) }
+    val departments = remember(filteredParticipants) {
+        filteredParticipants.map { it.department }.distinct().sorted()
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -376,7 +359,7 @@ private fun InternalParticipantsContent(
             .background(MaterialTheme.colorScheme.surface)
             .border(0.5.dp, Neutral300, RoundedCornerShape(CornerRadius.lg))
     ) {
-        //      Segmented People / Teams / All                                                                       
+        // Segmented control: People / Teams / All
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -391,7 +374,11 @@ private fun InternalParticipantsContent(
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .clickable { onGroupByChange(value) }
+                        .clickable {
+                            onGroupByChange(value)
+                            // Reset department filter when switching tabs
+                            if (value != GroupBy.TEAMS) selectedDepartment = null
+                        }
                         .background(
                             if (isActive) MaterialTheme.colorScheme.primary
                             else Color.Transparent
@@ -412,7 +399,81 @@ private fun InternalParticipantsContent(
 
         HorizontalDivider(color = Neutral300, thickness = 0.5.dp)
 
-        //      Inner search                                                                                                           
+        //    Department dropdown (Teams tab only)                               
+        if (groupBy == GroupBy.TEAMS) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.md, vertical = Spacing.xs)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(CornerRadius.lg))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
+                        .border(0.5.dp, Neutral300, RoundedCornerShape(CornerRadius.lg))
+                        .clickable { departmentDropdownExpanded = true }
+                        .padding(horizontal = Spacing.md, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = selectedDepartment ?: "Select Department",
+                        fontSize = 13.sp,
+                        color = if (selectedDepartment != null) MaterialTheme.customColors.bookRoomLabel
+                        else Neutral400
+                    )
+                    Icon(
+                        imageVector = if (departmentDropdownExpanded) Icons.Default.KeyboardArrowUp
+                        else Icons.Default.KeyboardArrowDown,
+                        contentDescription = null,
+                        tint = Neutral700,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                DropdownMenu(
+                    expanded = departmentDropdownExpanded,
+                    onDismissRequest = { departmentDropdownExpanded = false },
+                    modifier = Modifier
+                        .fillMaxWidth(0.85f)
+                        .background(MaterialTheme.colorScheme.surface)
+                ) {
+                    // "All departments" option
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = "All Departments",
+                                fontSize = 13.sp,
+                                color = MaterialTheme.customColors.bookRoomLabel
+                            )
+                        },
+                        onClick = {
+                            selectedDepartment = null
+                            departmentDropdownExpanded = false
+                        }
+                    )
+                    HorizontalDivider(color = Neutral300, thickness = 0.5.dp)
+                    departments.forEach { dept ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = dept,
+                                    fontSize = 13.sp,
+                                    color = MaterialTheme.customColors.bookRoomLabel
+                                )
+                            },
+                            onClick = {
+                                selectedDepartment = dept
+                                departmentDropdownExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+            HorizontalDivider(color = Neutral300, thickness = 0.5.dp)
+        }
+
+        //    Search bar                                                         
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -427,24 +488,23 @@ private fun InternalParticipantsContent(
                 tint = Neutral400,
                 modifier = Modifier.size(16.dp)
             )
-            TextField(
+            // Use OutlinedTextField (not TextField) so the placeholder always renders correctly
+            OutlinedTextField(
                 value = searchQuery,
                 onValueChange = onSearchQueryChange,
                 placeholder = {
                     Text(
-                        text = "Search by name or email...",
+                        text = "Search by name or email…",
                         color = Neutral400,
                         fontSize = 13.sp
                     )
                 },
-                modifier = Modifier
-                    .weight(1f)
-                    .height(44.dp),
-                colors = TextFieldDefaults.colors(
+                modifier = Modifier.weight(1f),
+                colors = OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent,
                     focusedTextColor = MaterialTheme.customColors.bookRoomLabel,
                     unfocusedTextColor = MaterialTheme.customColors.bookRoomLabel,
                     cursorColor = MaterialTheme.colorScheme.primary
@@ -454,7 +514,7 @@ private fun InternalParticipantsContent(
             )
         }
 
-        //      Search progress indicator                                                                                 
+        // Progress or divider
         if (isSearching) {
             LinearProgressIndicator(
                 modifier = Modifier
@@ -467,57 +527,71 @@ private fun InternalParticipantsContent(
             HorizontalDivider(color = Neutral300, thickness = 0.5.dp)
         }
 
-        //      Participant list                                                                                                   
+        //    Participant list                                                   
+        val displayList = when (groupBy) {
+            GroupBy.TEAMS -> if (selectedDepartment != null)
+                filteredParticipants.filter { it.department == selectedDepartment }
+            else filteredParticipants
+            else -> filteredParticipants
+        }
+
         LazyColumn(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
         ) {
-            if (groupBy == GroupBy.TEAMS) {
-                val grouped = filteredParticipants.groupBy { it.department }
-                grouped.forEach { (department, members) ->
-                    item(key = "dept_$department") {
-                        Text(
-                            text = department,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.06f)
+            when (groupBy) {
+                GroupBy.TEAMS -> {
+                    val grouped = displayList.groupBy { it.department }
+                    grouped.forEach { (department, members) ->
+                        item(key = "dept_$department") {
+                            Text(
+                                text = department,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.06f)
+                                    )
+                                    .padding(horizontal = Spacing.md, vertical = 5.dp)
+                            )
+                        }
+                        items(members, key = { it.id }) { participant ->
+                            InternalParticipantItem(
+                                participant = participant,
+                                isSelected = formState.participants.any { it.id == participant.id },
+                                onToggleSelection = {
+                                    toggleParticipant(formState, participant, onFormStateChanged)
+                                }
+                            )
+                            if (members.last() != participant) {
+                                HorizontalDivider(
+                                    color = Neutral300,
+                                    thickness = 0.5.dp,
+                                    modifier = Modifier.padding(horizontal = Spacing.md)
                                 )
-                                .padding(horizontal = Spacing.md, vertical = 5.dp)
-                        )
+                            }
+                        }
                     }
-                    items(members, key = { it.id }) { participant ->
+                }
+                else -> {
+                    items(displayList, key = { it.id }) { participant ->
                         InternalParticipantItem(
                             participant = participant,
                             isSelected = formState.participants.any { it.id == participant.id },
-                            onToggleSelection = { toggleParticipant(formState, participant, onFormStateChanged) }
+                            onToggleSelection = {
+                                toggleParticipant(formState, participant, onFormStateChanged)
+                            }
                         )
-                        if (members.last() != participant) {
+                        if (displayList.last() != participant) {
                             HorizontalDivider(
                                 color = Neutral300,
                                 thickness = 0.5.dp,
                                 modifier = Modifier.padding(horizontal = Spacing.md)
                             )
                         }
-                    }
-                }
-            } else {
-                items(filteredParticipants, key = { it.id }) { participant ->
-                    InternalParticipantItem(
-                        participant = participant,
-                        isSelected = formState.participants.any { it.id == participant.id },
-                        onToggleSelection = { toggleParticipant(formState, participant, onFormStateChanged) }
-                    )
-                    if (filteredParticipants.last() != participant) {
-                        HorizontalDivider(
-                            color = Neutral300,
-                            thickness = 0.5.dp,
-                            modifier = Modifier.padding(horizontal = Spacing.md)
-                        )
                     }
                 }
             }
@@ -540,9 +614,8 @@ private fun toggleParticipant(
 }
 
 
-  
-// Single internal participant row
-  
+//  Single internal participant row
+
 @Composable
 private fun InternalParticipantItem(
     participant: InternalMember,
@@ -557,7 +630,7 @@ private fun InternalParticipantItem(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
     ) {
-        //      Checkbox (left-most)                                                                                           
+        // Checkbox
         Box(
             modifier = Modifier
                 .size(18.dp)
@@ -583,30 +656,30 @@ private fun InternalParticipantItem(
             }
         }
 
-        // Avatar circle
-        Box(
-            modifier = Modifier
-                .size(34.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = participant.name
-                    .split(" ")
-                    .mapNotNull { it.firstOrNull()?.uppercaseChar() }
-                    .take(2)
-                    .joinToString(""),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
+        // Avatar
+//        Box(
+//            modifier = Modifier
+//                .size(34.dp)
+//                .clip(CircleShape)
+//                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+//            contentAlignment = Alignment.Center
+//        ) {
+//            Text(
+//                text = participant.name
+//                    .split(" ")
+//                    .mapNotNull { it.firstOrNull()?.uppercaseChar() }
+//                    .take(2)
+//                    .joinToString(""),
+//                fontSize = 12.sp,
+//                fontWeight = FontWeight.SemiBold,
+//                color = MaterialTheme.colorScheme.primary
+//            )
+//        }
 
-        //      Name / email / department (tightly grouped)                                               
+        // Name / email / department
         Column(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(1.dp)   // tight spacing
+            verticalArrangement = Arrangement.spacedBy(1.dp)
         ) {
             Text(
                 text = participant.name,
@@ -632,9 +705,8 @@ private fun InternalParticipantItem(
 }
 
 
-  
-// External participants panel
-  
+//  External participants form panel
+
 @Composable
 private fun ExternalParticipantsContent(
     formState: RoomBookingFormState,
@@ -652,7 +724,7 @@ private fun ExternalParticipantsContent(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = Spacing.md, vertical = Spacing.xs)
     ) {
-        //      Add form card                                                                                                         
+        // Add-form card
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -662,7 +734,6 @@ private fun ExternalParticipantsContent(
                 .padding(Spacing.md),
             verticalArrangement = Arrangement.spacedBy(Spacing.sm)
         ) {
-            // Card title
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
@@ -683,7 +754,6 @@ private fun ExternalParticipantsContent(
 
             HorizontalDivider(color = Neutral300, thickness = 0.5.dp)
 
-            // Name field
             ExternalFormField(
                 label = "Name",
                 value = externalName,
@@ -692,7 +762,6 @@ private fun ExternalParticipantsContent(
                 onValueChange = onExternalNameChange
             )
 
-            // Email field
             ExternalFormField(
                 label = "Email",
                 value = externalEmail,
@@ -701,7 +770,6 @@ private fun ExternalParticipantsContent(
                 onValueChange = onExternalEmailChange
             )
 
-            // Warning note
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -718,12 +786,10 @@ private fun ExternalParticipantsContent(
                 )
             }
 
-            // Action buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
-                // Add button
                 OutlinedButton(
                     onClick = {
                         if (externalName.isNotBlank() && externalEmail.isNotBlank()) {
@@ -761,16 +827,13 @@ private fun ExternalParticipantsContent(
                     Text("Add Member", fontSize = 13.sp, fontWeight = FontWeight.Medium)
                 }
 
-                // Clear button
                 OutlinedButton(
                     onClick = onClearForm,
                     modifier = Modifier
                         .weight(0.55f)
                         .height(44.dp),
                     shape = RoundedCornerShape(CornerRadius.lg),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = Neutral700
-                    ),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Neutral700),
                     border = androidx.compose.foundation.BorderStroke(0.5.dp, Neutral300)
                 ) {
                     Text("Clear", fontSize = 13.sp)
@@ -778,7 +841,7 @@ private fun ExternalParticipantsContent(
             }
         }
 
-        //      Added external members list                                                                               
+        // Added members list
         if (formState.externalMembers.isNotEmpty()) {
             Spacer(modifier = Modifier.height(Spacing.md))
 
@@ -805,7 +868,6 @@ private fun ExternalParticipantsContent(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        // Avatar + info
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
@@ -879,9 +941,8 @@ private fun ExternalParticipantsContent(
 }
 
 
-  
-// External form field
-  
+//  External form field
+
 @Composable
 private fun ExternalFormField(
     label: String,
@@ -939,20 +1000,19 @@ private fun ExternalFormField(
         )
     }
 }
-// Preview
-  
+
+
+//  Preview
+
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun ParticipantsSheetContentPreview() {
+fun InternalParticipantsBottomSheetPreview() {
     MeetingRoomBookingTheme {
-        ParticipantsSheetContent(
+        InternalParticipantsBottomSheet(
             formState = RoomBookingFormState(
                 participants = listOf(
                     InternalMember(1L, "John Carter", "john.carter@fintech.com", "Engineering"),
                     InternalMember(2L, "Emily Davis", "emily.davis@fintech.com", "Product")
-                ),
-                externalMembers = listOf(
-                    ExternalMember("Alice Smith", "alice.smith@example.com")
                 )
             ),
             availableParticipants = listOf(
@@ -966,6 +1026,22 @@ fun ParticipantsSheetContentPreview() {
             onClose = {},
             searchQuery = "",
             onSearchQueryChange = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun ExternalParticipantsBottomSheetPreview() {
+    MeetingRoomBookingTheme {
+        ExternalParticipantsBottomSheet(
+            formState = RoomBookingFormState(
+                externalMembers = listOf(
+                    ExternalMember("Alice Smith", "alice.smith@example.com")
+                )
+            ),
+            onFormStateChanged = {},
+            onClose = {}
         )
     }
 }
