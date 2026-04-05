@@ -11,4 +11,5 @@ interface BookingRepository {
     suspend fun updateBooking(bookingId: Long, request: RoomBookingRequestDTO): Result<BookingResponseDTO>
     suspend fun getMyBookings(): Result<List<BookingResponseDTO>>
     suspend fun getAllBookings(): Result<List<BookingResponseDTO>>
+    suspend fun getUpcomingMeetings(): Result<List<BookingResponseDTO>>
 }

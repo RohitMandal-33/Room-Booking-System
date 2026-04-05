@@ -4,7 +4,11 @@ package com.swifttechnology.bookingsystem.features.user.data.dtos
  * Request body for POST /api/v1/signup (Admin only).
  */
 data class CreateUserRequestDTO(
+    val firstname: String,
+    val lastname: String,
     val email: String,
+    val position: String,
+    val phoneNo: String,
     val password: String,
     val roleId: Long,
     val departmentId: Long
@@ -31,7 +35,7 @@ data class UserDetailsDTO(
     val lastname: String? = null,
     val email: String,
     val position: String? = null,
-    val phoneNumber: String? = null,
+    val phoneNo: String? = null,
     val role: String? = null,
     val department: String? = null,
     val status: String? = null

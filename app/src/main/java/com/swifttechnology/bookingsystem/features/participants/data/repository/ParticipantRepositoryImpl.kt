@@ -31,7 +31,7 @@ class ParticipantRepositoryImpl @Inject constructor(
                 name = fullName,
                 role = dto.role ?: "Unknown Role",
                 email = dto.email,
-                phone = dto.phoneNumber ?: "N/A",
+                phone = dto.phoneNo ?: "N/A",
                 meetingCount = 0,
                 department = dto.department ?: "Unknown Department",
                 status = dto.status ?: "UNKNOWN",

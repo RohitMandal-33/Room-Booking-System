@@ -22,4 +22,7 @@ interface BookingApiService {
 
     @GET(APIEndpoint.ALL_BOOKINGS)
     suspend fun getAllBookings(): GlobalResponse<List<BookingResponseDTO>>
+
+    @GET(APIEndpoint.UPCOMING_MEETING)
+    suspend fun getUpcomingMeetings(): GlobalResponse<List<BookingResponseDTO>>
 }

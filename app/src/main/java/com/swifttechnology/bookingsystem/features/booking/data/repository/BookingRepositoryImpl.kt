@@ -36,4 +36,10 @@ class BookingRepositoryImpl @Inject constructor(
         if (!response.success || response.data == null) throw Exception(response.message)
         response.data
     }
+
+    override suspend fun getUpcomingMeetings(): Result<List<BookingResponseDTO>> = runCatching {
+        val response = api.getUpcomingMeetings()
+        if (!response.success || response.data == null) throw Exception(response.message)
+        response.data
+    }
 }

@@ -33,11 +33,9 @@ import com.swifttechnology.bookingsystem.features.dashboard.presentation.Dashboa
 import com.swifttechnology.bookingsystem.features.dashboard.presentation.DashboardComponent.StatTilesSection
 import com.swifttechnology.bookingsystem.features.dashboard.presentation.DashboardComponent.TotalBookingsRow
 import com.swifttechnology.bookingsystem.navigation.ScreenRoutes
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
-private val rooms = listOf(
-    "Conference Room 1A", "Conference Room 2A", "Conference Room 3A",
-    "Board Room 5A", "Meeting Room 1B", "Executive Suite"
-)
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -46,12 +44,12 @@ fun DashboardScreen(
     onNavigate: (String) -> Unit,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(searchQuery) {
         viewModel.onSearchQueryChanged(searchQuery)
     }
 
     // UI state
-    var selectedRoom       by remember { mutableStateOf(rooms.first()) }
     var dropdownExpanded   by remember { mutableStateOf(false) }
     var selectedPeriod     by remember { mutableStateOf("Days") }
     var selectedDay        by remember { mutableIntStateOf(3) }
@@ -114,34 +112,34 @@ fun DashboardScreen(
 //            Spacer(modifier = Modifier.height(Spacing.sm))
 
             // 7. Upcoming meeting cards
-            MeetingCardsSection()
+            MeetingCardsSection(meetings = uiState.upcomingMeetings)
 
             Spacer(modifier = Modifier.height(Spacing.lg))
         }
 
         // Floating room-picker dropdown overlay
-        if (dropdownExpanded) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clickable { dropdownExpanded = false }
-            ) {
-                val anchorPos  = roomDropdownAnchorPos
-                val anchorSize = roomDropdownAnchorSize
-                val rootPos    = rootWindowPos
-
-                if (anchorPos != null && anchorSize != null && rootPos != null) {
-                    val localX = anchorPos.x - rootPos.x
-                    val localY = anchorPos.y - rootPos.y + anchorSize.height
-
-                    RoomDropdownOverlay(
-                        rooms          = rooms,
-                        selectedRoom   = selectedRoom,
-                        onRoomSelected = { selectedRoom = it; dropdownExpanded = false },
-                        modifier       = Modifier.offset { IntOffset(localX, localY) }
-                    )
-                }
-            }
-        }
+//        if (dropdownExpanded) {
+//            Box(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .clickable { dropdownExpanded = false }
+//            ) {
+//                val anchorPos  = roomDropdownAnchorPos
+//                val anchorSize = roomDropdownAnchorSize
+//                val rootPos    = rootWindowPos
+//
+//                if (anchorPos != null && anchorSize != null && rootPos != null) {
+//                    val localX = anchorPos.x - rootPos.x
+//                    val localY = anchorPos.y - rootPos.y + anchorSize.height
+//
+//                    RoomDropdownOverlay(
+//                        rooms          = rooms,
+//                        selectedRoom   = selectedRoom,
+//                        onRoomSelected = { selectedRoom = it; dropdownExpanded = false },
+//                        modifier       = Modifier.offset { IntOffset(localX, localY) }
+//                    )
+//                }
+//            }
+//        }
     }
 }

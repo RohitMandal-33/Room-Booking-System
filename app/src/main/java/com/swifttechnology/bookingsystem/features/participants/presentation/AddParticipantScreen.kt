@@ -30,14 +30,25 @@ import com.swifttechnology.bookingsystem.features.booking.presentation.component
 import com.swifttechnology.bookingsystem.features.booking.presentation.components.BookingTextField
 import com.swifttechnology.bookingsystem.shared.components.PrimaryButton
 import com.swifttechnology.bookingsystem.features.participants.domain.model.Participant
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddParticipantScreen(
     initialParticipant: Participant? = null,
     onClose: () -> Unit,
-    onContinue: () -> Unit
+    onContinue: () -> Unit,
+    viewModel: AddParticipantViewModel = hiltViewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(uiState.isSuccess) {
+        if (uiState.isSuccess) {
+            onContinue()
+            viewModel.resetState()
+        }
+    }
     var firstName by remember(initialParticipant) { mutableStateOf(initialParticipant?.name?.split(" ")?.firstOrNull() ?: "") }
     var lastName by remember(initialParticipant) { mutableStateOf(initialParticipant?.name?.split(" ")?.drop(1)?.joinToString(" ") ?: "") }
     var email by remember(initialParticipant) { mutableStateOf(initialParticipant?.email ?: "") }
@@ -231,22 +242,47 @@ fun AddParticipantScreen(
                     .padding(horizontal = Spacing.lg, vertical = Spacing.lg)
                     .background(Color.White)
             ) {
+                if (uiState.error != null) {
+                    Text(
+                        text = uiState.error ?: "",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.align(Alignment.TopCenter).padding(bottom = 8.dp)
+                    )
+                }
+                
                 Button(
-                    onClick = onContinue,
+                    onClick = {
+                        viewModel.createParticipant(
+                            firstname = firstName,
+                            lastname = lastName,
+                            email = email,
+                            position = position,
+                            phoneNo = phoneNumber,
+                            password = password,
+                            role = role,
+                            department = department
+                        )
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF4A3496) // The purple color from screenshot
-                    )
+                    ),
+                    enabled = !uiState.isLoading
                 ) {
-                    Text(
-                        text = "Continue",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White
-                    )
+                    if (uiState.isLoading) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    } else {
+                        Text(
+                            text = "Continue",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White
+                        )
+                    }
                 }
             }
         }

@@ -35,6 +35,7 @@ import com.swifttechnology.bookingsystem.core.designsystem.CornerRadius
 import com.swifttechnology.bookingsystem.core.designsystem.Elevation
 import com.swifttechnology.bookingsystem.core.designsystem.Spacing
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
+import com.swifttechnology.bookingsystem.features.booking.data.dtos.BookingResponseDTO
 
 private val OrangeAccent = Color(0xFFF97316)
 private val BlueAccent   = Color(0xFF3B82F6)
@@ -69,7 +70,7 @@ val meetingCards = listOf(
 )
 
 @Composable
-fun MeetingCardsSection() {
+fun MeetingCardsSection(meetings: List<BookingResponseDTO> = emptyList()) {
     Card(
         modifier  = Modifier.fillMaxWidth(),
         shape     = RoundedCornerShape(0.dp),
@@ -82,11 +83,36 @@ fun MeetingCardsSection() {
                 horizontalArrangement = Arrangement.spacedBy(Spacing.ms),
                 modifier              = Modifier.fillMaxWidth()
             ) {
-                items(meetingCards) { meeting -> MeetingCardItem(meeting) }
+                if (meetings.isEmpty()) {
+                    item {
+                        Text(
+                            text = "No upcoming meetings",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.customColors.textBody,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
+                } else {
+                    items(meetings) { meeting ->
+                        val card = MeetingCard(
+                            title = meeting.meetingTitle ?: "Untitled",
+                            type = meeting.meetingType ?: "Unknown",
+                            typeColor = if (meeting.meetingType == "CLIENT") OrangeAccent else if (meeting.meetingType == "INTERNAL") BlueAccent else Color(0xFF7C3AED),
+                            typeBg = if (meeting.meetingType == "CLIENT") Color(0xFFFFF7ED) else if (meeting.meetingType == "INTERNAL") Color(0xFFEFF6FF) else Color(0xFFF3EEFF),
+                            time = "${meeting.date} ${meeting.startTime} - ${meeting.endTime}",
+                            room = meeting.roomName ?: "Unknown Room",
+                            by = meeting.organizerEmail ?: "System",
+                            participants = (meeting.internalParticipantIds?.size ?: 0) + (meeting.externalParticipants?.size ?: 0)
+                        )
+                        MeetingCardItem(card)
+                    }
+                }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
-            ViewAllButton(onClick = {}, modifier = Modifier.padding(horizontal = Spacing.md))
+            if (meetings.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(10.dp))
+                ViewAllButton(onClick = {}, modifier = Modifier.padding(horizontal = Spacing.md))
+            }
         }
     }
 }

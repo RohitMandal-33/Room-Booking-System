@@ -9,13 +9,34 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import com.swifttechnology.bookingsystem.shared.components.SidebarItem
+import androidx.lifecycle.viewModelScope
+import com.swifttechnology.bookingsystem.features.booking.domain.repository.BookingRepository
+import kotlinx.coroutines.launch
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val bookingRepository: BookingRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
+
+    init {
+        fetchUpcomingMeetings()
+    }
+
+    private fun fetchUpcomingMeetings() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingMeetings = true, error = null) }
+            bookingRepository.getUpcomingMeetings()
+                .onSuccess { meetings ->
+                    _uiState.update { it.copy(isLoadingMeetings = false, upcomingMeetings = meetings) }
+                }
+                .onFailure { exception ->
+                    _uiState.update { it.copy(isLoadingMeetings = false, error = exception.message) }
+                }
+        }
+    }
 
     fun onSidebarItemSelected(item: SidebarItem) {
         _uiState.update { current ->

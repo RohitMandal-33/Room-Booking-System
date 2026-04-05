@@ -110,27 +110,47 @@ fun ParticipantsScreen(
             ParticipantsTabRow(
                 selectedTab      = uiState.selectedTab,
                 onTabSelected    = viewModel::onTabSelected,
-                customGroupsCount = 2
+                customGroupsCount = uiState.customGroups.size
             )
             Spacer(modifier = Modifier.height(8.dp))
 
             when {
                 uiState.isLoading    -> LoadingContent()
                 uiState.error != null -> ErrorContent(uiState.error!!)
-                else -> DirectoryContent(
-                    participants       = uiState.participants,
-                    searchQuery        = uiState.searchQuery,
-                    onSearchQueryChanged = viewModel::onSearchQueryChanged,
-                    isEditable         = isEditable,
-                    selectedParticipantIds = selectedParticipantIds,
-                    onSelectionChanged = { id, selected ->
-                        selectedParticipantIds = if (selected) {
-                            selectedParticipantIds + id
-                        } else {
-                            selectedParticipantIds - id
+                else -> {
+                    val displayList = if (uiState.selectedTab == ParticipantsTab.ALL_PARTICIPANTS) {
+                        uiState.participants
+                    } else {
+                        uiState.customGroups.map { group ->
+                            Participant(
+                                id = group.id,
+                                name = group.name,
+                                role = "GROUP",
+                                email = group.description,
+                                phone = "${group.memberCount} members",
+                                department = "Custom Group",
+                                status = "ACTIVE",
+                                position = "Group",
+                                meetingCount = 0
+                            )
                         }
                     }
-                )
+
+                    DirectoryContent(
+                        participants       = displayList,
+                        searchQuery        = uiState.searchQuery,
+                        onSearchQueryChanged = viewModel::onSearchQueryChanged,
+                        isEditable         = isEditable,
+                        selectedParticipantIds = selectedParticipantIds,
+                        onSelectionChanged = { id, selected ->
+                            selectedParticipantIds = if (selected) {
+                                selectedParticipantIds + id
+                            } else {
+                                selectedParticipantIds - id
+                            }
+                        }
+                    )
+                }
             }
         }
 
@@ -143,7 +163,13 @@ fun ParticipantsScreen(
             exit = fadeOut() + scaleOut()
         ) {
             AddFab(
-                onClick  = { onNavigate(com.swifttechnology.bookingsystem.navigation.ScreenRoutes.PARTICIPANT_ADD) }
+                onClick  = {
+                    if (uiState.selectedTab == ParticipantsTab.ALL_PARTICIPANTS) {
+                        onNavigate(com.swifttechnology.bookingsystem.navigation.ScreenRoutes.PARTICIPANT_ADD)
+                    } else {
+                        viewModel.onAddGroupClicked()
+                    }
+                }
             )
         }
 
@@ -202,10 +228,96 @@ fun ParticipantsScreen(
                 }
             }
         }
+
+        if (uiState.showAddGroupDialog) {
+            AddCustomGroupDialog(
+                participants = uiState.participants,
+                onDismiss = { viewModel.dismissAddGroupDialog() },
+                onCreate = { name, desc, members ->
+                    viewModel.createCustomGroup(name, desc, members)
+                }
+            )
+        }
     }
 }
 
-  
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddCustomGroupDialog(
+    participants: List<Participant>,
+    onDismiss: () -> Unit,
+    onCreate: (String, String, List<Long>) -> Unit
+) {
+    var groupName by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var selectedMembers by remember { mutableStateOf(setOf<Long>()) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Create Custom Group") },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                OutlinedTextField(
+                    value = groupName,
+                    onValueChange = { groupName = it },
+                    label = { Text("Group Name") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                Text("Select Members (${selectedMembers.size})", fontWeight = FontWeight.SemiBold)
+                
+                Column {
+                    participants.take(20).forEach { participant -> // Show up to 20 for simplicity
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    if (selectedMembers.contains(participant.id)) {
+                                        selectedMembers = selectedMembers - participant.id
+                                    } else {
+                                        selectedMembers = selectedMembers + participant.id
+                                    }
+                                }
+                                .padding(vertical = 4.dp)
+                        ) {
+                            Checkbox(
+                                checked = selectedMembers.contains(participant.id),
+                                onCheckedChange = null
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(participant.name)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onCreate(groupName, description, selectedMembers.toList()) },
+                enabled = groupName.isNotBlank() && selectedMembers.isNotEmpty()
+            ) {
+                Text("Create")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
 // Tab row
   
 
@@ -481,7 +593,9 @@ fun ParticipantCard(
                         color    = Color(0xFF3C3C43).copy(alpha = 0.55f)
                     )
                 }
-                RoleBadge(role = participant.role)
+                if (participant.status.equals("active", ignoreCase = true)) {
+                    RoleBadge(role = participant.role)
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -505,7 +619,6 @@ fun ParticipantCard(
                     Spacer(modifier = Modifier.height(5.dp))
                     ContactRow(icon = Icons.Outlined.Phone, text = participant.phone)
                 }
-                StatusPill(status = participant.status)
             }
         }
     }

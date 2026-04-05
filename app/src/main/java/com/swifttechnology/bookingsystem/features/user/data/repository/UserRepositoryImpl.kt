@@ -10,13 +10,26 @@ class UserRepositoryImpl @Inject constructor(
 ) : UserRepository {
 
     override suspend fun createUser(
+        firstname: String,
+        lastname: String,
         email: String,
+        position: String,
+        phoneNo: String,
         password: String,
         roleId: Long,
         departmentId: Long
     ): Result<Unit> = runCatching {
         val response = api.createUser(
-            CreateUserRequestDTO(email = email, password = password, roleId = roleId, departmentId = departmentId)
+            CreateUserRequestDTO(
+                firstname = firstname,
+                lastname = lastname,
+                email = email,
+                position = position,
+                phoneNo = phoneNo,
+                password = password,
+                roleId = roleId,
+                departmentId = departmentId
+            )
         )
         if (!response.success) throw Exception(response.message)
     }
