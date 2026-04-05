@@ -1,5 +1,7 @@
 package com.swifttechnology.bookingsystem.features.dashboard.presentation
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +39,7 @@ private val rooms = listOf(
     "Board Room 5A", "Meeting Room 1B", "Executive Suite"
 )
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun DashboardScreen(
     searchQuery: String,
@@ -92,23 +95,23 @@ fun DashboardScreen(
             Spacer(modifier = Modifier.height(Spacing.sm))
 
             // 4. Room booking statistics header
-            RoomBookingHeader(
-                selectedRoom               = selectedRoom,
-                dropdownExpanded            = dropdownExpanded,
-                onDropdownToggle            = { dropdownExpanded = !dropdownExpanded },
-                onDropdownAnchorPositioned  = { pos, size ->
-                    roomDropdownAnchorPos  = pos
-                    roomDropdownAnchorSize = size
-                }
-            )
+//            RoomBookingHeader(
+//                selectedRoom               = selectedRoom,
+//                dropdownExpanded            = dropdownExpanded,
+//                onDropdownToggle            = { dropdownExpanded = !dropdownExpanded },
+//                onDropdownAnchorPositioned  = { pos, size ->
+//                    roomDropdownAnchorPos  = pos
+//                    roomDropdownAnchorSize = size
+//                }
+//            )
 
-            Spacer(modifier = Modifier.height(Spacing.sm))
+//            Spacer(modifier = Modifier.height(Spacing.sm))
 
 
             // 6. Total bookings + Book CTA
-            TotalBookingsRow(room = selectedRoom)
+//            TotalBookingsRow(room = selectedRoom)
 
-            Spacer(modifier = Modifier.height(Spacing.sm))
+//            Spacer(modifier = Modifier.height(Spacing.sm))
 
             // 7. Upcoming meeting cards
             MeetingCardsSection()

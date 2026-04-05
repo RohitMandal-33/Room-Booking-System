@@ -29,26 +29,28 @@ import com.swifttechnology.bookingsystem.core.designsystem.Spacing
 import com.swifttechnology.bookingsystem.features.booking.presentation.components.BookingDropdownField
 import com.swifttechnology.bookingsystem.features.booking.presentation.components.BookingTextField
 import com.swifttechnology.bookingsystem.shared.components.PrimaryButton
+import com.swifttechnology.bookingsystem.features.participants.domain.model.Participant
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddParticipantScreen(
+    initialParticipant: Participant? = null,
     onClose: () -> Unit,
     onContinue: () -> Unit
 ) {
-    var firstName by remember { mutableStateOf("") }
-    var lastName by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
+    var firstName by remember(initialParticipant) { mutableStateOf(initialParticipant?.name?.split(" ")?.firstOrNull() ?: "") }
+    var lastName by remember(initialParticipant) { mutableStateOf(initialParticipant?.name?.split(" ")?.drop(1)?.joinToString(" ") ?: "") }
+    var email by remember(initialParticipant) { mutableStateOf(initialParticipant?.email ?: "") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var phoneNumber by remember { mutableStateOf("") }
-    var position by remember { mutableStateOf("") }
+    var phoneNumber by remember(initialParticipant) { mutableStateOf(initialParticipant?.phone ?: "") }
+    var position by remember(initialParticipant) { mutableStateOf(initialParticipant?.position ?: "") }
 
-    var role by remember { mutableStateOf("") }
+    var role by remember(initialParticipant) { mutableStateOf(initialParticipant?.role ?: "") }
     var roleExpanded by remember { mutableStateOf(false) }
     val roleOptions = listOf("Admin", "User", "Manager")
 
-    var department by remember { mutableStateOf("") }
+    var department by remember(initialParticipant) { mutableStateOf(initialParticipant?.department ?: "") }
     var departmentExpanded by remember { mutableStateOf(false) }
     val departmentOptions = listOf("Mobile App", "Web Development", "HR", "Design")
 
@@ -92,7 +94,7 @@ fun AddParticipantScreen(
 
                 // Header
                 Text(
-                    text = "Add New Participant",
+                    text = if (initialParticipant != null) "Edit member" else "Add New Participant",
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black

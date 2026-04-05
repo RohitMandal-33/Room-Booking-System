@@ -1,5 +1,17 @@
 package com.swifttechnology.bookingsystem.features.participants.presentation
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -75,10 +87,19 @@ private fun resolveStatusStyle(status: String): StatusStyle = when (status.lower
 @Composable
 fun ParticipantsScreen(
     searchQuery: String,
+    isEditable: Boolean = false,
     onNavigate: (String) -> Unit,
+    onEditSelected: (Participant) -> Unit = {},
     viewModel: ParticipantsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var selectedParticipantIds by remember { mutableStateOf(setOf<Long>()) }
+
+    LaunchedEffect(isEditable) {
+        if (!isEditable) {
+            selectedParticipantIds = emptySet()
+        }
+    }
 
     LaunchedEffect(searchQuery) {
         viewModel.onSearchQueryChanged(searchQuery)
@@ -99,17 +120,88 @@ fun ParticipantsScreen(
                 else -> DirectoryContent(
                     participants       = uiState.participants,
                     searchQuery        = uiState.searchQuery,
-                    onSearchQueryChanged = viewModel::onSearchQueryChanged
+                    onSearchQueryChanged = viewModel::onSearchQueryChanged,
+                    isEditable         = isEditable,
+                    selectedParticipantIds = selectedParticipantIds,
+                    onSelectionChanged = { id, selected ->
+                        selectedParticipantIds = if (selected) {
+                            selectedParticipantIds + id
+                        } else {
+                            selectedParticipantIds - id
+                        }
+                    }
                 )
             }
         }
 
-        AddFab(
-            onClick  = { onNavigate(com.swifttechnology.bookingsystem.navigation.ScreenRoutes.PARTICIPANT_ADD) },
+        AnimatedVisibility(
+            visible = !isEditable,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(24.dp)
-        )
+                .padding(24.dp),
+            enter = fadeIn() + scaleIn(),
+            exit = fadeOut() + scaleOut()
+        ) {
+            AddFab(
+                onClick  = { onNavigate(com.swifttechnology.bookingsystem.navigation.ScreenRoutes.PARTICIPANT_ADD) }
+            )
+        }
+
+        AnimatedVisibility(
+            visible = isEditable,
+            modifier = Modifier.align(Alignment.BottomCenter),
+            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    val editEnabled = selectedParticipantIds.size == 1
+                    val deleteEnabled = selectedParticipantIds.isNotEmpty()
+
+                    Button(
+                        onClick = {
+                            val selectedId = selectedParticipantIds.firstOrNull()
+                            val participant = uiState.participants.find { it.id == selectedId }
+                            if (participant != null) {
+                                onEditSelected(participant)
+                            }
+                        },
+                        enabled = editEnabled,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(50.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007AFF))
+                    ) {
+                        Icon(Icons.Outlined.Edit, contentDescription = "Edit", modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Edit", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    }
+
+                    Button(
+                        onClick = { /* Handle delete logic here */ },
+                        enabled = deleteEnabled,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(50.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF3B30))
+                    ) {
+                        Icon(Icons.Outlined.Delete, contentDescription = "Delete", modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Delete", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -226,7 +318,10 @@ fun ParticipantsTabItem(
 fun DirectoryContent(
     participants: List<Participant>,
     searchQuery: String,
-    onSearchQueryChanged: (String) -> Unit
+    onSearchQueryChanged: (String) -> Unit,
+    isEditable: Boolean = false,
+    selectedParticipantIds: Set<Long> = emptySet(),
+    onSelectionChanged: (Long, Boolean) -> Unit = { _, _ -> }
 ) {
     Column {
         Text(
@@ -248,7 +343,14 @@ fun DirectoryContent(
             contentPadding = PaddingValues(bottom = 80.dp)
         ) {
             items(participants, key = { it.id }) { participant ->
-                ParticipantCard(participant = participant)
+                ParticipantCard(
+                    participant = participant,
+                    isEditable = isEditable,
+                    isSelected = selectedParticipantIds.contains(participant.id),
+                    onSelectionChange = { selected ->
+                        onSelectionChanged(participant.id, selected)
+                    }
+                )
             }
         }
     }
@@ -298,21 +400,62 @@ fun DirectorySearchBar(
   
 
 @Composable
-fun ParticipantCard(participant: Participant) {
-    Surface(
+fun ParticipantCard(
+    participant: Participant,
+    isEditable: Boolean = false,
+    isSelected: Boolean = false,
+    onSelectionChange: (Boolean) -> Unit = {}
+) {
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        shape  = RoundedCornerShape(20.dp),
-        color  = Color.White,
-        border = BorderStroke(1.dp, Color(0xFF3C3C43).copy(alpha = 0.15f))
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable(enabled = isEditable) {
+                if (isEditable) {
+                    onSelectionChange(!isSelected)
+                }
+            },
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(
-            modifier = Modifier
-                .clickable { /* Navigate to detail */ }
-                .padding(16.dp)
+        AnimatedVisibility(
+            visible = isEditable,
+            enter = fadeIn(animationSpec = tween(250)) + expandHorizontally(
+                expandFrom = Alignment.Start,
+                animationSpec = tween(250)
+            ) + slideInHorizontally(
+                initialOffsetX = { -it / 2 },
+                animationSpec = tween(250)
+            ),
+            exit = fadeOut(animationSpec = tween(250)) + shrinkHorizontally(
+                shrinkTowards = Alignment.Start,
+                animationSpec = tween(250)
+            ) + slideOutHorizontally(
+                targetOffsetX = { -it / 2 },
+                animationSpec = tween(250)
+            )
         ) {
-            // ── Top row: name block + role badge ──────────────
+            Checkbox(
+                checked = isSelected,
+                onCheckedChange = { onSelectionChange(it) },
+                colors = CheckboxDefaults.colors(
+                    checkedColor = Color(0xFF007AFF)
+                ),
+                modifier = Modifier.padding(end = 12.dp)
+            )
+        }
+
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape  = RoundedCornerShape(20.dp),
+            color  = Color.White,
+            border = BorderStroke(1.dp, Color(0xFF3C3C43).copy(alpha = 0.15f))
+        ) {
+            Column(
+                modifier = Modifier
+                    .clickable(enabled = !isEditable) { /* Navigate to detail */ }
+                    .padding(16.dp)
+            ) {
+            //    Top row: name block + role badge               
             Row(
                 modifier              = Modifier.fillMaxWidth(),
                 verticalAlignment     = Alignment.Top,
@@ -343,7 +486,7 @@ fun ParticipantCard(participant: Participant) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // ── Divider ───────────────────────────────────────
+            //    Divider                                        
             HorizontalDivider(
                 color     = Color(0xFF3C3C43).copy(alpha = 0.08f),
                 thickness = 0.5.dp
@@ -351,7 +494,7 @@ fun ParticipantCard(participant: Participant) {
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // ── Bottom row: contact info + status pill ────────
+            //    Bottom row: contact info + status pill         
             Row(
                 modifier              = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -367,9 +510,10 @@ fun ParticipantCard(participant: Participant) {
         }
     }
 }
+}
 
   
-// Status pill  (replaces the old bare dot)
+// Status pill 
   
 
 @Composable

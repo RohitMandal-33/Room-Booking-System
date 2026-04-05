@@ -40,7 +40,7 @@ fun MainScaffold(
     onSidebarItemSelected: (SidebarItem) -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier,
-    containerColor: androidx.compose.ui.graphics.Color = MaterialTheme.customColors.dashboardBg,
+    containerColor: androidx.compose.ui.graphics.Color = MaterialTheme.customColors.neutral100,
     showEditIcon: Boolean = false,
     showTopBar: Boolean = true,
     onEditClick: () -> Unit = {},
