@@ -4,7 +4,20 @@ import android.app.Activity
 import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -13,8 +26,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.swifttechnology.bookingsystem.features.announcements.presentation.AnnouncementsScreen
 import com.swifttechnology.bookingsystem.features.booking.presentation.BookRoomScreen
@@ -22,7 +40,8 @@ import com.swifttechnology.bookingsystem.features.calendar.presentation.Calendar
 import com.swifttechnology.bookingsystem.features.dashboard.presentation.DashboardScreen
 import com.swifttechnology.bookingsystem.features.meetingrooms.presentation.MeetingRoomsScreen
 import com.swifttechnology.bookingsystem.features.participants.presentation.ParticipantsScreen
-import com.swifttechnology.bookingsystem.features.participants.presentation.AddParticipantScreen
+import com.swifttechnology.bookingsystem.features.participants.presentation.components.AddCustomGroupScreen
+import com.swifttechnology.bookingsystem.features.participants.presentation.components.AddParticipantScreen
 import com.swifttechnology.bookingsystem.features.report.presentation.ReportScreen
 import com.swifttechnology.bookingsystem.features.settings.presentation.SettingsScreen
 import com.swifttechnology.bookingsystem.navigation.ScreenRoutes
@@ -34,6 +53,7 @@ import com.swifttechnology.bookingsystem.features.booking.presentation.RoomCalen
 import com.swifttechnology.bookingsystem.core.model.Room
 import com.swifttechnology.bookingsystem.shared.layout.BottomSheetView
 import com.swifttechnology.bookingsystem.features.participants.domain.model.Participant
+import com.swifttechnology.bookingsystem.features.participants.domain.model.CustomGroup
 
 data class PendingBookingDetails(
     val roomName: String,
@@ -72,6 +92,16 @@ fun MainAppScreen(
     var pendingRoomName by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingBookingDetails by remember { mutableStateOf<PendingBookingDetails?>(null) }
     var pendingParticipantToEdit by remember { mutableStateOf<Participant?>(null) }
+    var pendingCustomGroupToEdit by remember { mutableStateOf<CustomGroup?>(null) }
+    // Success toast shown on the Participants screen after add/edit
+    var groupSuccessMessage by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(groupSuccessMessage) {
+        if (groupSuccessMessage != null) {
+            kotlinx.coroutines.delay(2500)
+            groupSuccessMessage = null
+        }
+    }
 
     val sidebarItems = defaultSidebarItems.map {
         it.copy(isActive = it.route == currentRoute)
@@ -130,13 +160,19 @@ fun MainAppScreen(
         title = screenTitle,
         onSidebarItemSelected = { item ->
             navigationStack = listOf(item.route)
-            searchQuery = "" // Reset search when switching tabs
-            pendingRoomName = null // Clear pending room when manually switching tabs
+            searchQuery = ""
+            pendingRoomName = null
             pendingBookingDetails = null
+            isMeetingRoomsEditable = false
+            isParticipantsEditable = false
         },
         onLogout = onLogout,
         showEditIcon = currentRoute == ScreenRoutes.MEETING_ROOMS || currentRoute == ScreenRoutes.PARTICIPANTS,
-        showTopBar = currentRoute != ScreenRoutes.ROOM_CALENDAR && currentRoute != ScreenRoutes.PARTICIPANT_ADD,
+        isEditMode = (currentRoute == ScreenRoutes.MEETING_ROOMS && isMeetingRoomsEditable) ||
+            (currentRoute == ScreenRoutes.PARTICIPANTS && isParticipantsEditable),
+        showTopBar = currentRoute != ScreenRoutes.ROOM_CALENDAR &&
+            currentRoute != ScreenRoutes.PARTICIPANT_ADD &&
+            currentRoute != ScreenRoutes.CUSTOM_GROUP_ADD,
         onEditClick = {
             if (currentRoute == ScreenRoutes.MEETING_ROOMS) {
                 isMeetingRoomsEditable = !isMeetingRoomsEditable
@@ -173,6 +209,9 @@ fun MainAppScreen(
                     onBookClick = { room ->
                         pendingRoomName = room.name
                         showRoomCalendarBottomSheet = true
+                    },
+                    onEnterEditMode = {
+                        isMeetingRoomsEditable = true
                     }
                 )
             }
@@ -213,25 +252,84 @@ fun MainAppScreen(
                 )
             }
             ScreenRoutes.PARTICIPANTS -> {
-                ParticipantsScreen(
-                    searchQuery = searchQuery,
-                    isEditable = isParticipantsEditable,
-                    onNavigate = navigateTo,
-                    onEditSelected = { participant ->
-                        pendingParticipantToEdit = participant
-                        navigateTo(ScreenRoutes.PARTICIPANT_ADD)
+                Box(modifier = Modifier.fillMaxSize()) {
+                    ParticipantsScreen(
+                        searchQuery = searchQuery,
+                        isEditable = isParticipantsEditable,
+                        onNavigate = navigateTo,
+                        onEditSelected = { participant ->
+                            pendingParticipantToEdit = participant
+                            navigateTo(ScreenRoutes.PARTICIPANT_ADD)
+                        },
+                        onEditGroupSelected = { group ->
+                            pendingCustomGroupToEdit = group
+                            navigateTo(ScreenRoutes.CUSTOM_GROUP_ADD)
+                        },
+                        onEnterEditMode = {
+                            isParticipantsEditable = true
+                        },
+                        onExitEditMode = {
+                            isParticipantsEditable = false
+                        }
+                    )
+
+                    // Success toast: slides up from the bottom after add/edit
+                    AnimatedVisibility(
+                        visible = groupSuccessMessage != null,
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp)
+                                .navigationBarsPadding()
+                                .padding(bottom = 24.dp)
+                                .background(
+                                    color = Color(0xFF1C1C1E),
+                                    shape = RoundedCornerShape(14.dp)
+                                )
+                                .padding(horizontal = 20.dp, vertical = 14.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = groupSuccessMessage ?: "",
+                                color = Color.White,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
-                )
+                }
             }
             ScreenRoutes.PARTICIPANT_ADD -> {
                 AddParticipantScreen(
                     initialParticipant = pendingParticipantToEdit,
                     onClose = {
                         pendingParticipantToEdit = null
+                        isParticipantsEditable = false
                         navigateBack()
                     },
                     onContinue = {
                         pendingParticipantToEdit = null
+                        isParticipantsEditable = false
+                        navigateBack()
+                    }
+                )
+            }
+            ScreenRoutes.CUSTOM_GROUP_ADD -> {
+                AddCustomGroupScreen(
+                    initialGroup = pendingCustomGroupToEdit,
+                    onClose = {
+                        pendingCustomGroupToEdit = null
+                        isParticipantsEditable = false
+                        navigateBack()
+                    },
+                    onContinue = { message ->
+                        pendingCustomGroupToEdit = null
+                        isParticipantsEditable = false
+                        groupSuccessMessage = message
                         navigateBack()
                     }
                 )
@@ -270,3 +368,4 @@ fun MainAppScreen(
         }
     }
 }
+

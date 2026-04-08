@@ -255,7 +255,7 @@ fun BookingDropdownField(
                     )
                     .clip(RoundedCornerShape(CornerRadius.lg))
                     .background(MaterialTheme.customColors.bookRoomInputBackground)
-                    .menuAnchor()
+                    .menuAnchor(type = androidx.compose.material3.ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
                     .padding(horizontal = Spacing.md),
                 contentAlignment = Alignment.CenterStart
             ) {

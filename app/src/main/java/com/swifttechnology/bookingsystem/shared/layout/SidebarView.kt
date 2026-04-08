@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Announcement
+import androidx.compose.material.icons.automirrored.filled.Announcement
 import androidx.compose.material.icons.filled.BookOnline
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Dashboard
@@ -44,8 +44,8 @@ val defaultSidebarItems = listOf(
     SidebarItem("Rooms", Icons.Default.MeetingRoom, "rooms"),
     SidebarItem("My Bookings", Icons.Default.BookOnline, "bookings"),
     SidebarItem("Reports", Icons.Default.BarChart, "reports"),
-    SidebarItem("Announcements", Icons.Default.Announcement, "announcements"),
-    SidebarItem("Profile", Icons.Default.Person, "profile")
+    SidebarItem("Announcements", Icons.AutoMirrored.Filled.Announcement, "announcements"),
+    SidebarItem("Settings", Icons.Default.Person, "settings")
 )
 
 

@@ -31,11 +31,15 @@ class ParticipantRepositoryImpl @Inject constructor(
                 name = fullName,
                 role = dto.role ?: "Unknown Role",
                 email = dto.email,
-                phone = dto.phoneNo ?: "N/A",
+                phone = dto.phoneNo?.trim()?.takeIf { it.isNotEmpty() } ?: "N/A",
                 meetingCount = 0,
                 department = dto.department ?: "Unknown Department",
                 status = dto.status ?: "UNKNOWN",
-                position = dto.position ?: "N/A"
+                position = dto.position ?: "N/A",
+                firstname = dto.firstname?.trim()?.takeIf { it.isNotEmpty() },
+                lastname = dto.lastname?.trim()?.takeIf { it.isNotEmpty() },
+                departmentId = dto.departmentId,
+                roleId = dto.roleId
             )
         }
 

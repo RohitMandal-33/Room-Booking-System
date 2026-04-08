@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -39,6 +40,7 @@ fun TopBar(
     onTrailingClick: (() -> Unit)? = null,
     trailingIcon: ImageVector? = null,
     showEditIcon: Boolean = false,
+    isEditMode: Boolean = false,
     onEditClick: () -> Unit = {},
     onBackClick: (() -> Unit)? = null
 ) {
@@ -105,12 +107,21 @@ fun TopBar(
                 modifier = rightActionModifier.clickable { onEditClick() },
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    painter = painterResource(R.drawable.edit_square_24px),
-                    contentDescription = "Edit",
-                    modifier = Modifier.size(24.dp),
-                    tint = MaterialTheme.customColors.deepBlack
-                )
+                if (isEditMode) {
+                    Icon(
+                        imageVector = Icons.Outlined.Check,
+                        contentDescription = "Done editing",
+                        modifier = Modifier.size(24.dp),
+                        tint = MaterialTheme.customColors.deepBlack
+                    )
+                } else {
+                    Icon(
+                        painter = painterResource(R.drawable.edit_square_24px),
+                        contentDescription = "Edit",
+                        modifier = Modifier.size(24.dp),
+                        tint = MaterialTheme.customColors.deepBlack
+                    )
+                }
             }
         } else {
             Box(

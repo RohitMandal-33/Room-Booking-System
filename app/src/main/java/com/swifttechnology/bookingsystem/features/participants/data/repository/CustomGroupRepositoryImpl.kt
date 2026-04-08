@@ -18,11 +18,18 @@ class CustomGroupRepositoryImpl @Inject constructor(
         
         val content = response.data
         val groups = content.map { dto ->
+            val ids = dto.member ?: emptyList()
+            val count = when {
+                ids.isNotEmpty() -> ids.size
+                dto.memberCount != null && dto.memberCount > 0 -> dto.memberCount
+                else -> 0
+            }
             CustomGroup(
                 id = dto.id ?: 0,
                 name = dto.groupName ?: "Unknown Group",
                 description = dto.description ?: "",
-                memberCount = dto.member?.size ?: 0
+                memberCount = count,
+                memberIds = ids
             )
         }
         emit(groups)
@@ -34,11 +41,18 @@ class CustomGroupRepositoryImpl @Inject constructor(
         if (!response.success || response.data == null) throw Exception(response.message)
         
         val dto = response.data
+        val idsCreate = dto.member ?: emptyList()
+        val countCreate = when {
+            idsCreate.isNotEmpty() -> idsCreate.size
+            dto.memberCount != null && dto.memberCount > 0 -> dto.memberCount
+            else -> 0
+        }
         CustomGroup(
             id = dto.id ?: 0,
             name = dto.groupName ?: "Unknown Group",
             description = dto.description ?: "",
-            memberCount = dto.member?.size ?: 0
+            memberCount = countCreate,
+            memberIds = idsCreate
         )
     }
 
@@ -48,11 +62,18 @@ class CustomGroupRepositoryImpl @Inject constructor(
         if (!response.success || response.data == null) throw Exception(response.message)
         
         val dto = response.data
+        val idsUpdate = dto.member ?: emptyList()
+        val countUpdate = when {
+            idsUpdate.isNotEmpty() -> idsUpdate.size
+            dto.memberCount != null && dto.memberCount > 0 -> dto.memberCount
+            else -> 0
+        }
         CustomGroup(
             id = dto.id ?: 0,
             name = dto.groupName ?: "Unknown Group",
             description = dto.description ?: "",
-            memberCount = dto.member?.size ?: 0
+            memberCount = countUpdate,
+            memberIds = idsUpdate
         )
     }
 

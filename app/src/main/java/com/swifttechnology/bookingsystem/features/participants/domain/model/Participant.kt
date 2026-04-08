@@ -9,5 +9,9 @@ data class Participant(
     val meetingCount: Int,
     val department: String,
     val status: String,
-    val position: String
+    val position: String,
+    val firstname: String? = null,
+    val lastname: String? = null,
+    val departmentId: Long? = null,
+    val roleId: Long? = null
 )

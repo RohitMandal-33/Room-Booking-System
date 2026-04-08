@@ -13,6 +13,8 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,13 +22,17 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -34,6 +40,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.swifttechnology.bookingsystem.features.meetingrooms.presentation.AddFab
+import com.swifttechnology.bookingsystem.shared.components.DialogStyle
+import com.swifttechnology.bookingsystem.shared.components.ReusableAlertDialog
+import com.swifttechnology.bookingsystem.features.participants.domain.model.CustomGroup
 import com.swifttechnology.bookingsystem.features.participants.domain.model.Participant
 
   
@@ -56,20 +65,6 @@ private fun resolveStatusStyle(status: String): StatusStyle = when (status.lower
         borderColor = Color(0xFFA3D9BC),
         dotColor    = Color(0xFF34C759)
     )
-    "away" -> StatusStyle(
-        label       = "Away",
-        textColor   = Color(0xFF7A5000),
-        bgColor     = Color(0xFFFFF8E1),
-        borderColor = Color(0xFFFFD580),
-        dotColor    = Color(0xFFFF9F0A)
-    )
-    "busy" -> StatusStyle(
-        label       = "Busy",
-        textColor   = Color(0xFF8B1A1A),
-        bgColor     = Color(0xFFFFF0F0),
-        borderColor = Color(0xFFF5BABA),
-        dotColor    = Color(0xFFFF6B6B)
-    )
     else -> StatusStyle(
         label       = "Inactive",
         textColor   = Color(0xFFB02020),
@@ -90,19 +85,42 @@ fun ParticipantsScreen(
     isEditable: Boolean = false,
     onNavigate: (String) -> Unit,
     onEditSelected: (Participant) -> Unit = {},
+    onEditGroupSelected: (CustomGroup) -> Unit = {},
+    onEnterEditMode: () -> Unit = {},
+    onExitEditMode: () -> Unit = {},
     viewModel: ParticipantsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var selectedParticipantIds by remember { mutableStateOf(setOf<Long>()) }
+    var selectedGroupIds by remember { mutableStateOf(setOf<Long>()) }
+    var showDeleteGroupDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(isEditable) {
         if (!isEditable) {
             selectedParticipantIds = emptySet()
+            selectedGroupIds = emptySet()
         }
+    }
+
+    LaunchedEffect(uiState.selectedTab) {
+        onExitEditMode()
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.refresh()
     }
 
     LaunchedEffect(searchQuery) {
         viewModel.onSearchQueryChanged(searchQuery)
+    }
+
+    val filteredCustomGroups = remember(uiState.customGroups, uiState.searchQuery) {
+        val q = uiState.searchQuery.trim()
+        if (q.isEmpty()) uiState.customGroups
+        else uiState.customGroups.filter { g ->
+            g.name.contains(q, ignoreCase = true) ||
+                g.description.contains(q, ignoreCase = true)
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -118,38 +136,50 @@ fun ParticipantsScreen(
                 uiState.isLoading    -> LoadingContent()
                 uiState.error != null -> ErrorContent(uiState.error!!)
                 else -> {
-                    val displayList = if (uiState.selectedTab == ParticipantsTab.ALL_PARTICIPANTS) {
-                        uiState.participants
-                    } else {
-                        uiState.customGroups.map { group ->
-                            Participant(
-                                id = group.id,
-                                name = group.name,
-                                role = "GROUP",
-                                email = group.description,
-                                phone = "${group.memberCount} members",
-                                department = "Custom Group",
-                                status = "ACTIVE",
-                                position = "Group",
-                                meetingCount = 0
+                    when (uiState.selectedTab) {
+                        ParticipantsTab.ALL_PARTICIPANTS -> {
+                            DirectoryContent(
+                                participants       = uiState.participants,
+                                searchQuery        = uiState.searchQuery,
+                                onSearchQueryChanged = viewModel::onSearchQueryChanged,
+                                isEditable         = isEditable,
+                                selectedParticipantIds = selectedParticipantIds,
+                                onSelectionChanged = { id, selected ->
+                                    selectedParticipantIds = if (selected) {
+                                        selectedParticipantIds + id
+                                    } else {
+                                        selectedParticipantIds - id
+                                    }
+                                },
+                                onLongPress = {
+                                    if (!isEditable) onEnterEditMode()
+                                }
+                            )
+                        }
+                        ParticipantsTab.CUSTOM_GROUPS -> {
+                            CustomGroupsDirectoryContent(
+                                groups = filteredCustomGroups,
+                                searchQuery = uiState.searchQuery,
+                                onSearchQueryChanged = viewModel::onSearchQueryChanged,
+                                expandedGroupId = uiState.expandedCustomGroupId,
+                                participants = uiState.participants,
+                                resolvedUserNames = uiState.resolvedUserNames,
+                                onMembersRowClick = viewModel::onCustomGroupMembersClick,
+                                isEditable = isEditable,
+                                selectedGroupIds = selectedGroupIds,
+                                onSelectionChanged = { id, selected ->
+                                    selectedGroupIds = if (selected) {
+                                        selectedGroupIds + id
+                                    } else {
+                                        selectedGroupIds - id
+                                    }
+                                },
+                                onLongPress = {
+                                    if (!isEditable) onEnterEditMode()
+                                }
                             )
                         }
                     }
-
-                    DirectoryContent(
-                        participants       = displayList,
-                        searchQuery        = uiState.searchQuery,
-                        onSearchQueryChanged = viewModel::onSearchQueryChanged,
-                        isEditable         = isEditable,
-                        selectedParticipantIds = selectedParticipantIds,
-                        onSelectionChanged = { id, selected ->
-                            selectedParticipantIds = if (selected) {
-                                selectedParticipantIds + id
-                            } else {
-                                selectedParticipantIds - id
-                            }
-                        }
-                    )
                 }
             }
         }
@@ -167,7 +197,7 @@ fun ParticipantsScreen(
                     if (uiState.selectedTab == ParticipantsTab.ALL_PARTICIPANTS) {
                         onNavigate(com.swifttechnology.bookingsystem.navigation.ScreenRoutes.PARTICIPANT_ADD)
                     } else {
-                        viewModel.onAddGroupClicked()
+                        onNavigate(com.swifttechnology.bookingsystem.navigation.ScreenRoutes.CUSTOM_GROUP_ADD)
                     }
                 }
             )
@@ -179,6 +209,10 @@ fun ParticipantsScreen(
             enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
             exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
         ) {
+            val isOnAllTab = uiState.selectedTab == ParticipantsTab.ALL_PARTICIPANTS
+            val editEnabled = if (isOnAllTab) selectedParticipantIds.size == 1 else selectedGroupIds.size == 1
+            val deleteEnabled = if (isOnAllTab) selectedParticipantIds.isNotEmpty() else selectedGroupIds.isNotEmpty()
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -189,15 +223,20 @@ fun ParticipantsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    val editEnabled = selectedParticipantIds.size == 1
-                    val deleteEnabled = selectedParticipantIds.isNotEmpty()
-
                     Button(
                         onClick = {
-                            val selectedId = selectedParticipantIds.firstOrNull()
-                            val participant = uiState.participants.find { it.id == selectedId }
-                            if (participant != null) {
-                                onEditSelected(participant)
+                            if (isOnAllTab) {
+                                val selectedId = selectedParticipantIds.firstOrNull()
+                                val participant = uiState.participants.find { it.id == selectedId }
+                                if (participant != null) {
+                                    onEditSelected(participant)
+                                }
+                            } else {
+                                val selectedId = selectedGroupIds.firstOrNull()
+                                val group = uiState.customGroups.find { it.id == selectedId }
+                                if (group != null) {
+                                    onEditGroupSelected(group)
+                                }
                             }
                         },
                         enabled = editEnabled,
@@ -213,7 +252,13 @@ fun ParticipantsScreen(
                     }
 
                     Button(
-                        onClick = { /* Handle delete logic here */ },
+                        onClick = {
+                            if (isOnAllTab) {
+                                /* Handle participant delete logic here */
+                            } else {
+                                showDeleteGroupDialog = true
+                            }
+                        },
                         enabled = deleteEnabled,
                         modifier = Modifier
                             .weight(1f)
@@ -229,93 +274,241 @@ fun ParticipantsScreen(
             }
         }
 
-        if (uiState.showAddGroupDialog) {
-            AddCustomGroupDialog(
-                participants = uiState.participants,
-                onDismiss = { viewModel.dismissAddGroupDialog() },
-                onCreate = { name, desc, members ->
-                    viewModel.createCustomGroup(name, desc, members)
-                }
+        if (showDeleteGroupDialog) {
+            ReusableAlertDialog(
+                style = DialogStyle.WARNING,
+                title = "Delete Custom Group${if (selectedGroupIds.size > 1) "s" else ""}",
+                message = "Are you sure you want to delete ${selectedGroupIds.size} custom group${if (selectedGroupIds.size > 1) "s" else ""}? This action cannot be undone.",
+                confirmText = "Delete",
+                onConfirm = {
+                    viewModel.deleteCustomGroups(selectedGroupIds)
+                    selectedGroupIds = emptySet()
+                    showDeleteGroupDialog = false
+                },
+                onDismiss = { showDeleteGroupDialog = false }
             )
+        }
+
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun CustomGroupsDirectoryContent(
+    groups: List<CustomGroup>,
+    searchQuery: String,
+    onSearchQueryChanged: (String) -> Unit,
+    expandedGroupId: Long?,
+    participants: List<Participant>,
+    resolvedUserNames: Map<Long, String>,
+    onMembersRowClick: (Long) -> Unit,
+    isEditable: Boolean = false,
+    selectedGroupIds: Set<Long> = emptySet(),
+    onSelectionChanged: (Long, Boolean) -> Unit = { _, _ -> },
+    onLongPress: () -> Unit = {}
+) {
+    Column {
+        Text(
+            text = "Members Directory",
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 17.sp,
+            color = Color(0xFF1C1C1E),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
+        )
+
+        DirectorySearchBar(
+            query = searchQuery,
+            onQueryChanged = onSearchQueryChanged
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        LazyColumn(
+            contentPadding = PaddingValues(bottom = 80.dp)
+        ) {
+            items(groups, key = { it.id }) { group ->
+                CustomGroupCard(
+                    group = group,
+                    isExpanded = expandedGroupId == group.id,
+                    memberDisplayNames = memberDisplayNamesForGroup(group, participants, resolvedUserNames),
+                    onMembersRowClick = { onMembersRowClick(group.id) },
+                    isEditable = isEditable,
+                    isSelected = selectedGroupIds.contains(group.id),
+                    onSelectionChange = { selected ->
+                        onSelectionChanged(group.id, selected)
+                    },
+                    onLongPress = {
+                        onLongPress()
+                        onSelectionChanged(group.id, true)
+                    }
+                )
+            }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AddCustomGroupDialog(
+private fun memberDisplayNamesForGroup(
+    group: CustomGroup,
     participants: List<Participant>,
-    onDismiss: () -> Unit,
-    onCreate: (String, String, List<Long>) -> Unit
-) {
-    var groupName by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var selectedMembers by remember { mutableStateOf(setOf<Long>()) }
+    resolvedUserNames: Map<Long, String>
+): List<String> =
+    group.memberIds.map { id ->
+        participants.find { it.id == id }?.name
+            ?: resolvedUserNames[id]
+            ?: "User #$id"
+    }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Create Custom Group") },
-        text = {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                OutlinedTextField(
-                    value = groupName,
-                    onValueChange = { groupName = it },
-                    label = { Text("Group Name") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun CustomGroupCard(
+    group: CustomGroup,
+    isExpanded: Boolean,
+    memberDisplayNames: List<String>,
+    onMembersRowClick: () -> Unit,
+    isEditable: Boolean = false,
+    isSelected: Boolean = false,
+    onSelectionChange: (Boolean) -> Unit = {},
+    onLongPress: () -> Unit = {}
+) {
+    val chevronRotation by animateFloatAsState(
+        targetValue = if (isExpanded) 180f else 0f,
+        animationSpec = tween(250),
+        label = "chevron"
+    )
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .pointerInput(isEditable) {
+                detectTapGestures(
+                    onTap = {
+                        if (isEditable) {
+                            onSelectionChange(!isSelected)
+                        }
+                    },
+                    onLongPress = {
+                        if (!isEditable) {
+                            onLongPress()
+                        }
+                    }
                 )
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text("Description") },
-                    modifier = Modifier.fillMaxWidth()
+            },
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AnimatedVisibility(
+            visible = isEditable,
+            enter = fadeIn(animationSpec = tween(250)) + expandHorizontally(
+                expandFrom = Alignment.Start,
+                animationSpec = tween(250)
+            ) + slideInHorizontally(
+                initialOffsetX = { -it / 2 },
+                animationSpec = tween(250)
+            ),
+            exit = fadeOut(animationSpec = tween(250)) + shrinkHorizontally(
+                shrinkTowards = Alignment.Start,
+                animationSpec = tween(250)
+            ) + slideOutHorizontally(
+                targetOffsetX = { -it / 2 },
+                animationSpec = tween(250)
+            )
+        ) {
+            Checkbox(
+                checked = isSelected,
+                onCheckedChange = { onSelectionChange(it) },
+                colors = CheckboxDefaults.colors(
+                    checkedColor = Color(0xFF007AFF)
+                ),
+                modifier = Modifier.padding(end = 12.dp)
+            )
+        }
+
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            color = Color.White,
+            border = BorderStroke(1.dp, Color(0xFF3C3C43).copy(alpha = 0.15f))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = group.name,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color(0xFF1C1C1E)
                 )
-                
-                Text("Select Members (${selectedMembers.size})", fontWeight = FontWeight.SemiBold)
-                
-                Column {
-                    participants.take(20).forEach { participant -> // Show up to 20 for simplicity
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    if (selectedMembers.contains(participant.id)) {
-                                        selectedMembers = selectedMembers - participant.id
-                                    } else {
-                                        selectedMembers = selectedMembers + participant.id
-                                    }
-                                }
-                                .padding(vertical = 4.dp)
+                if (group.description.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = group.description,
+                        fontSize = 14.sp,
+                        color = Color(0xFF3C3C43).copy(alpha = 0.65f),
+                        fontStyle = FontStyle.Italic
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable(onClick = onMembersRowClick),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.AccountCircle,
+                        contentDescription = null,
+                        tint = Color(0xFF3C3C43).copy(alpha = 0.55f),
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Members : ${group.memberCount}",
+                        fontSize = 14.sp,
+                        color = Color(0xFF3C3C43).copy(alpha = 0.75f),
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(
+                        imageVector = Icons.Outlined.KeyboardArrowDown,
+                        contentDescription = if (isExpanded) "Collapse" else "Expand",
+                        tint = Color(0xFF3C3C43).copy(alpha = 0.55f),
+                        modifier = Modifier
+                            .size(20.dp)
+                            .rotate(chevronRotation)
+                    )
+                }
+
+                AnimatedVisibility(visible = isExpanded) {
+                    Column {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Checkbox(
-                                checked = selectedMembers.contains(participant.id),
-                                onCheckedChange = null
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(participant.name)
+                            memberDisplayNames.forEach { name ->
+                                Surface(
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = Color(0xFFF2F2F7),
+                                    border = BorderStroke(
+                                        0.5.dp,
+                                        Color(0xFF3C3C43).copy(alpha = 0.12f)
+                                    )
+                                ) {
+                                    Text(
+                                        text = name,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                        fontSize = 13.sp,
+                                        color = Color(0xFF1C1C1E),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = { onCreate(groupName, description, selectedMembers.toList()) },
-                enabled = groupName.isNotBlank() && selectedMembers.isNotEmpty()
-            ) {
-                Text("Create")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
         }
-    )
+    }
 }
 
 // Tab row
@@ -433,7 +626,8 @@ fun DirectoryContent(
     onSearchQueryChanged: (String) -> Unit,
     isEditable: Boolean = false,
     selectedParticipantIds: Set<Long> = emptySet(),
-    onSelectionChanged: (Long, Boolean) -> Unit = { _, _ -> }
+    onSelectionChanged: (Long, Boolean) -> Unit = { _, _ -> },
+    onLongPress: () -> Unit = {}
 ) {
     Column {
         Text(
@@ -461,6 +655,10 @@ fun DirectoryContent(
                     isSelected = selectedParticipantIds.contains(participant.id),
                     onSelectionChange = { selected ->
                         onSelectionChanged(participant.id, selected)
+                    },
+                    onLongPress = {
+                        onLongPress()
+                        onSelectionChanged(participant.id, true)
                     }
                 )
             }
@@ -516,16 +714,26 @@ fun ParticipantCard(
     participant: Participant,
     isEditable: Boolean = false,
     isSelected: Boolean = false,
-    onSelectionChange: (Boolean) -> Unit = {}
+    onSelectionChange: (Boolean) -> Unit = {},
+    onLongPress: () -> Unit = {}
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
-            .clickable(enabled = isEditable) {
-                if (isEditable) {
-                    onSelectionChange(!isSelected)
-                }
+            .pointerInput(isEditable) {
+                detectTapGestures(
+                    onTap = {
+                        if (isEditable) {
+                            onSelectionChange(!isSelected)
+                        }
+                    },
+                    onLongPress = {
+                        if (!isEditable) {
+                            onLongPress()
+                        }
+                    }
+                )
             },
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -564,7 +772,6 @@ fun ParticipantCard(
         ) {
             Column(
                 modifier = Modifier
-                    .clickable(enabled = !isEditable) { /* Navigate to detail */ }
                     .padding(16.dp)
             ) {
             //    Top row: name block + role badge               

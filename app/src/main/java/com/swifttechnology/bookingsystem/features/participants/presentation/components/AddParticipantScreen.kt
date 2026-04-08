@@ -1,4 +1,4 @@
-package com.swifttechnology.bookingsystem.features.participants.presentation
+package com.swifttechnology.bookingsystem.features.participants.presentation.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -32,6 +32,39 @@ import com.swifttechnology.bookingsystem.shared.components.PrimaryButton
 import com.swifttechnology.bookingsystem.features.participants.domain.model.Participant
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.swifttechnology.bookingsystem.features.participants.presentation.AddParticipantViewModel
+import java.util.Locale
+
+private fun apiRoleToUiLabel(apiRole: String?): String {
+    if (apiRole.isNullOrBlank()) return ""
+    return when (apiRole.trim().uppercase(Locale.ROOT)) {
+        "ADMIN" -> "Admin"
+        "MANAGER" -> "Manager"
+        "STAFF", "USER" -> "User"
+        else -> "User"
+    }
+}
+
+private fun initialFirstName(p: Participant?): String {
+    if (p == null) return ""
+    val direct = p.firstname?.trim()?.takeIf { it.isNotEmpty() }
+    if (direct != null) return direct
+    val parts = p.name.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
+    return parts.firstOrNull().orEmpty()
+}
+
+private fun initialLastName(p: Participant?): String {
+    if (p == null) return ""
+    val direct = p.lastname?.trim()?.takeIf { it.isNotEmpty() }
+    if (direct != null) return direct
+    val parts = p.name.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
+    return parts.drop(1).joinToString(" ")
+}
+
+private fun initialPhone(p: Participant?): String {
+    val raw = p?.phone?.trim().orEmpty()
+    return if (raw.equals("N/A", ignoreCase = true)) "" else raw
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,27 +76,44 @@ fun AddParticipantScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    val editKey = initialParticipant?.id
+    var firstName by remember(editKey) { mutableStateOf(initialFirstName(initialParticipant)) }
+    var lastName by remember(editKey) { mutableStateOf(initialLastName(initialParticipant)) }
+    var email by remember(editKey) { mutableStateOf(initialParticipant?.email?.trim().orEmpty()) }
+    var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var phoneNumber by remember(editKey) { mutableStateOf(initialPhone(initialParticipant)) }
+    var position by remember(editKey) { mutableStateOf(initialParticipant?.position?.trim().orEmpty()) }
+
+    var role by remember(editKey) { mutableStateOf(apiRoleToUiLabel(initialParticipant?.role)) }
+    var roleExpanded by remember { mutableStateOf(false) }
+    val roleOptions = listOf("Admin", "User", "Manager")
+
+    var department by remember(editKey) { mutableStateOf(initialParticipant?.department?.trim().orEmpty()) }
+    var departmentId by remember(editKey) {
+        mutableLongStateOf(initialParticipant?.departmentId?.takeIf { it > 0 } ?: -1L)
+    }
+    var departmentExpanded by remember { mutableStateOf(false) }
+    val departmentOptions = uiState.departments.map { it.departmentName }
+
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
             onContinue()
             viewModel.resetState()
         }
     }
-    var firstName by remember(initialParticipant) { mutableStateOf(initialParticipant?.name?.split(" ")?.firstOrNull() ?: "") }
-    var lastName by remember(initialParticipant) { mutableStateOf(initialParticipant?.name?.split(" ")?.drop(1)?.joinToString(" ") ?: "") }
-    var email by remember(initialParticipant) { mutableStateOf(initialParticipant?.email ?: "") }
-    var password by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
-    var phoneNumber by remember(initialParticipant) { mutableStateOf(initialParticipant?.phone ?: "") }
-    var position by remember(initialParticipant) { mutableStateOf(initialParticipant?.position ?: "") }
 
-    var role by remember(initialParticipant) { mutableStateOf(initialParticipant?.role ?: "") }
-    var roleExpanded by remember { mutableStateOf(false) }
-    val roleOptions = listOf("Admin", "User", "Manager")
-
-    var department by remember(initialParticipant) { mutableStateOf(initialParticipant?.department ?: "") }
-    var departmentExpanded by remember { mutableStateOf(false) }
-    val departmentOptions = listOf("Mobile App", "Web Development", "HR", "Design")
+    LaunchedEffect(uiState.departments, initialParticipant) {
+        if (initialParticipant != null && departmentId == -1L && uiState.departments.isNotEmpty()) {
+            val deptName = initialParticipant.department.trim()
+            val found = uiState.departments.find {
+                it.departmentName.trim().equals(deptName, ignoreCase = true)
+            }
+            if (found != null) {
+                departmentId = found.id
+            }
+        }
+    }
 
     Scaffold(
         containerColor = Color.White
@@ -156,29 +206,31 @@ fun AddParticipantScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                 )
 
-                Spacer(modifier = Modifier.height(Spacing.md))
+                if (initialParticipant == null) {
+                    Spacer(modifier = Modifier.height(Spacing.md))
 
-                // Password
-                BookingTextField(
-                    label = "Password",
-                    value = password,
-                    placeholder = "Enter new password",
-                    isRequired = true,
-                    onValueChange = { password = it },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    // Password
+                    BookingTextField(
+                        label = "Password",
+                        value = password,
+                        placeholder = "Enter new password",
+                        isRequired = true,
+                        onValueChange = { password = it },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
 
-                    trailingIcon = {
-                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                            Icon(
-                                imageVector = if (passwordVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
-                                contentDescription = if (passwordVisible) "Hide password" else "Show password",
-                                tint = Color.Gray,
-                                modifier = Modifier.size(20.dp)
-                            )
+                        trailingIcon = {
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(
+                                    imageVector = if (passwordVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
+                                    contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                                    tint = Color.Gray,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                         }
-                    }
-                )
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(Spacing.md))
 
@@ -228,7 +280,10 @@ fun AddParticipantScreen(
                     expanded = departmentExpanded,
                     options = departmentOptions,
                     onExpandChange = { departmentExpanded = it },
-                    onOptionSelected = { department = it }
+                    onOptionSelected = { selectedName ->
+                        department = selectedName
+                        departmentId = uiState.departments.find { it.departmentName == selectedName }?.id ?: -1L
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(120.dp)) // space for button
@@ -253,16 +308,29 @@ fun AddParticipantScreen(
                 
                 Button(
                     onClick = {
-                        viewModel.createParticipant(
-                            firstname = firstName,
-                            lastname = lastName,
-                            email = email,
-                            position = position,
-                            phoneNo = phoneNumber,
-                            password = password,
-                            role = role,
-                            department = department
-                        )
+                        if (initialParticipant == null) {
+                            viewModel.createParticipant(
+                                firstname = firstName,
+                                lastname = lastName,
+                                email = email,
+                                position = position,
+                                phoneNo = phoneNumber,
+                                password = password,
+                                role = role,
+                                departmentId = departmentId
+                            )
+                        } else {
+                            viewModel.updateParticipant(
+                                id = initialParticipant.id,
+                                firstname = firstName,
+                                lastname = lastName,
+                                email = email,
+                                position = position,
+                                phoneNo = phoneNumber,
+                                role = role,
+                                departmentId = departmentId
+                            )
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -271,7 +339,7 @@ fun AddParticipantScreen(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF4A3496) // The purple color from screenshot
                     ),
-                    enabled = !uiState.isLoading
+                    enabled = !uiState.isLoading && departmentId != -1L
                 ) {
                     if (uiState.isLoading) {
                         CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))

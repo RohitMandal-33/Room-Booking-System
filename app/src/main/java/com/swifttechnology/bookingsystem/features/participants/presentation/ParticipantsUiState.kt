@@ -15,7 +15,8 @@ data class ParticipantsUiState(
     val isEditMode: Boolean = false,
     val isLoading: Boolean = true,
     val error: String? = null,
-    val showAddGroupDialog: Boolean = false,
     val participants: List<Participant> = emptyList(),
-    val customGroups: List<com.swifttechnology.bookingsystem.features.participants.domain.model.CustomGroup> = emptyList()
+    val customGroups: List<com.swifttechnology.bookingsystem.features.participants.domain.model.CustomGroup> = emptyList(),
+    val expandedCustomGroupId: Long? = null,
+    val resolvedUserNames: Map<Long, String> = emptyMap()
 )

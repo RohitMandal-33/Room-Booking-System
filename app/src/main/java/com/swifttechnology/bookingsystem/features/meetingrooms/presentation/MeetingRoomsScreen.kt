@@ -44,6 +44,7 @@ fun MeetingRoomsScreen(
     onNavigateToAddRoom: () -> Unit,
     onBookClick: (Room) -> Unit,
     isEditable: Boolean = false,
+    onEnterEditMode: () -> Unit = {},
     viewModel: MeetingRoomsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -97,7 +98,8 @@ fun MeetingRoomsScreen(
                         onDeleteClick = { roomToDelete ->
                             viewModel.deleteRoom(roomToDelete)
                         },
-                        onBookClick = onBookClick
+                        onBookClick = onBookClick,
+                        onLongPress = onEnterEditMode
                     )
                 }
             }

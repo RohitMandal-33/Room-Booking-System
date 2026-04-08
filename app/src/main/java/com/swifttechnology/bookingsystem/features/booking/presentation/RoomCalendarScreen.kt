@@ -96,7 +96,7 @@ fun RoomCalendarScreen(
     val draggable = pickerUiState.draggableEvent
 
     LaunchedEffect(initialDetails) {
-        if (initialDetails?.startTime != null && initialDetails.endTime != null) {
+        if (initialDetails != null) {
             try {
                 val startParts = initialDetails.startTime.split(":")
                 val endParts   = initialDetails.endTime.split(":")

@@ -13,6 +13,12 @@ interface UserApiService {
     @POST(APIEndpoint.USERS_GET_ALL)
     suspend fun getAllUsers(@Body request: UserDataRequestDTO): GlobalResponse<UserPageDTO>
 
+    @PUT(APIEndpoint.USER_UPDATE)
+    suspend fun updateUser(
+        @Path("id") id: Long,
+        @Body request: UpdateUserRequestDTO
+    ): GlobalResponse<Unit>
+
     @GET(APIEndpoint.USER_BY_ID)
     suspend fun getUserById(@Path("id") id: Long): GlobalResponse<UserDetailsDTO>
 

@@ -21,6 +21,7 @@ object APIEndpoint {
     const val USER_BY_ID = "api/v1/users/{id}"
     const val USER_GET_ALL_SIMPLE = "api/v1/user/get-all"
     const val USER_SEARCH = "api/v1/user/search"
+    const val USER_UPDATE = "api/v1/user/{id}/update"
 
     // Meeting Rooms
     const val ROOM_ADD = "api/v1/room/add"
@@ -38,6 +39,7 @@ object APIEndpoint {
 
     // Department
     const val DEPARTMENT_ADD = "api/v1/department/add"
+    const val DEPARTMENT_LIST = "api/v1/department/list"
 
     // Custom Group
     const val GROUP_ADD = "api/v1/group/add"

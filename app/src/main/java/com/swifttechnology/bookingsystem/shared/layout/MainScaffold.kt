@@ -42,6 +42,7 @@ fun MainScaffold(
     modifier: Modifier = Modifier,
     containerColor: androidx.compose.ui.graphics.Color = MaterialTheme.customColors.neutral100,
     showEditIcon: Boolean = false,
+    isEditMode: Boolean = false,
     showTopBar: Boolean = true,
     onEditClick: () -> Unit = {},
     onBackClick: (() -> Unit)? = null,
@@ -109,6 +110,7 @@ fun MainScaffold(
                         title = title,
                         onMenuClick = { scope.launch { drawerState.open() } },
                         showEditIcon = showEditIcon,
+                        isEditMode = isEditMode,
                         onEditClick = onEditClick,
                         onBackClick = onBackClick
                     )
