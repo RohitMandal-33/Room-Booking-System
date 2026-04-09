@@ -14,9 +14,15 @@ interface ReportApiService {
     @GET(APIEndpoint.REPORTS_GET_ALL)
     suspend fun getAllReports(): GlobalResponse<List<ReportItemDTO>>
 
-    /** POST /api/v1/reports — fetch filtered / paginated reports */
     @POST(APIEndpoint.REPORTS_FILTERED)
     suspend fun getFilteredReports(
         @Body request: ReportDataRequestDTO
     ): GlobalResponse<List<ReportItemDTO>>
+
+    /** POST /api/v1/reports/export — download reports */
+    @retrofit2.http.Streaming
+    @POST(APIEndpoint.REPORTS_EXPORT)
+    suspend fun exportReports(
+        @Body request: ReportDataRequestDTO
+    ): retrofit2.Response<okhttp3.ResponseBody>
 }

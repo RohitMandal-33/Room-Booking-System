@@ -21,4 +21,10 @@ class ReportRepositoryImpl @Inject constructor(
         if (!response.success || response.data == null) throw Exception(response.message)
         response.data
     }
+
+    override suspend fun exportReports(request: ReportDataRequestDTO): Result<okhttp3.ResponseBody> = runCatching {
+        val response = api.exportReports(request)
+        if (!response.isSuccessful || response.body() == null) throw Exception(response.message())
+        response.body()!!
+    }
 }

@@ -13,10 +13,23 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -25,6 +38,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.swifttechnology.bookingsystem.features.report.presentation.ActivityEntry
 import com.swifttechnology.bookingsystem.features.report.presentation.ReportsAnalyticsViewModel
+import com.swifttechnology.bookingsystem.R
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
 
  
 // Design Tokens (local to this component)
@@ -41,10 +58,10 @@ internal val ColorChipBorder     = Color(0xFFCFC2D7)
  
 // Column Definitions
  
-internal data class ColDef(val label: String, val width: Dp)
+internal data class ColDef(val label: String, val width: Dp, val isFixed: Boolean = false)
 
-internal val columns = listOf(
-    ColDef("Meeting Title", 220.dp),
+internal val allColumns = listOf(
+    ColDef("Meeting Title", 220.dp, isFixed = true),
     ColDef("Date",          120.dp),
     ColDef("Start Time",    120.dp),
     ColDef("End Time",      120.dp),
@@ -55,8 +72,24 @@ internal val columns = listOf(
  
 // Activity Table Card
  
+
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ActivityTableCard(vm: ReportsAnalyticsViewModel) {
+    val context = LocalContext.current
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("text/csv")
+    ) { uri ->
+        if (uri != null) {
+            vm.saveExportToUri(context, uri)
+        }
+    }
+
+    var showColumnsSheet by remember { mutableStateOf(false) }
+    var visibleColumns by remember { mutableStateOf(allColumns.toSet()) }
+    val activeColumns = allColumns.filter { visibleColumns.contains(it) }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -77,14 +110,16 @@ fun ActivityTableCard(vm: ReportsAnalyticsViewModel) {
                     .clip(RoundedCornerShape(12.dp))
                     .border(1.dp, ColorChipBorder, RoundedCornerShape(12.dp))
                     .background(Color.White)
-                    .clickable {}
+                    .clickable { showColumnsSheet = true }
                     .padding(horizontal = 16.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    Icons.Default.SwapVert, null,
-                    tint = ColorPrimaryMedium, modifier = Modifier.size(18.dp)
+                    imageVector = Icons.Default.SwapVert,
+                    contentDescription = null,
+                    tint = ColorPrimaryMedium,
+                    modifier = Modifier.size(18.dp)
                 )
                 Text(
                     "Columns", style = TextStyle(
@@ -99,14 +134,16 @@ fun ActivityTableCard(vm: ReportsAnalyticsViewModel) {
                 modifier = Modifier
                     .clip(RoundedCornerShape(12.dp))
                     .background(ColorPrimary)
-                    .clickable { vm.onExport() }
+                    .clickable { exportLauncher.launch("Reports_Export.csv") }
                     .padding(horizontal = 20.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    Icons.Default.SwapVert, null,
-                    tint = Color.White, modifier = Modifier.size(18.dp)
+                    painter = painterResource(id = R.drawable.outline_download_24),
+                    contentDescription = "Export",
+                    tint = Color.White,
+                    modifier = Modifier.size(18.dp)
                 )
                 Text(
                     "Export", style = TextStyle(
@@ -119,13 +156,23 @@ fun ActivityTableCard(vm: ReportsAnalyticsViewModel) {
         HorizontalDivider(color = ColorDivider)
 
         // Scrollable table
+        val scrollState = rememberScrollState()
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
+                .then(
+                    if (activeColumns.size > 2) Modifier.horizontalScroll(scrollState)
+                    else Modifier
+                )
         ) {
-            Column(modifier = Modifier.width(IntrinsicSize.Max)) {
-                TableHeaderRow()
+            Column(
+                modifier = if (activeColumns.size == 2) {
+                    Modifier.fillMaxWidth()
+                } else {
+                    Modifier.width(IntrinsicSize.Max)
+                }
+            ) {
+                TableHeaderRow(activeColumns)
                 HorizontalDivider(color = ColorDivider)
                 val entries = vm.visibleEntries
                 if (entries.isEmpty()) {
@@ -142,7 +189,7 @@ fun ActivityTableCard(vm: ReportsAnalyticsViewModel) {
                     }
                 } else {
                     entries.forEachIndexed { i, entry ->
-                        TableBodyRow(entry, isEven = i % 2 == 0)
+                        TableBodyRow(entry, isEven = i % 2 == 0, activeColumns)
                         if (i < entries.lastIndex) HorizontalDivider(color = ColorDivider)
                     }
                 }
@@ -152,24 +199,75 @@ fun ActivityTableCard(vm: ReportsAnalyticsViewModel) {
         HorizontalDivider(color = ColorDivider)
         TableFooter(vm)
     }
+
+    if (showColumnsSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showColumnsSheet = false },
+            containerColor = ColorSurface
+        ) {
+            Column(modifier = Modifier.padding(20.dp).fillMaxWidth()) {
+                Text("Select Columns", style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 18.sp, color = ColorOnSurface))
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    allColumns.forEach { col ->
+                        val isSelected = visibleColumns.contains(col)
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = {
+                                if (col.isFixed) return@FilterChip
+                                if (isSelected) {
+                                    if (visibleColumns.size > 2) {
+                                        visibleColumns = visibleColumns - col
+                                    }
+                                } else {
+                                    visibleColumns = visibleColumns + col
+                                }
+                            },
+                            label = { Text(col.label) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = if (isSelected) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            },
+                            colors = if (col.isFixed) {
+                                FilterChipDefaults.filterChipColors(
+                                    containerColor = ColorDivider
+                                )
+                            } else FilterChipDefaults.filterChipColors()
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(40.dp))
+            }
+        }
+    }
 }
 
- 
+
 // Table Header Row
  
 @Composable
-internal fun TableHeaderRow() {
+internal fun TableHeaderRow(activeColumns: List<ColDef>) {
     Row(
         modifier = Modifier
+            .fillMaxWidth()
             .background(Color.White)
             .padding(vertical = 14.dp)
     ) {
-        columns.forEach { col ->
+        activeColumns.forEach { col ->
             Text(
                 text = col.label,
-                modifier = Modifier
-                    .width(col.width)
-                    .padding(horizontal = 16.dp),
+                modifier = if (activeColumns.size == 2) {
+                    Modifier.weight(1f).padding(horizontal = 16.dp)
+                } else {
+                    Modifier.width(col.width).padding(horizontal = 16.dp)
+                },
                 style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ColorOnSurface),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -182,27 +280,35 @@ internal fun TableHeaderRow() {
 // Table Body Row
  
 @Composable
-internal fun TableBodyRow(entry: ActivityEntry, isEven: Boolean) {
-    val cells = listOf(
-        entry.meetingTitle, entry.date, entry.startTime, entry.endTime,
-        entry.roomName, entry.createdBy
+internal fun TableBodyRow(entry: ActivityEntry, isEven: Boolean, activeColumns: List<ColDef>) {
+    val cellsMap = mapOf(
+        "Meeting Title" to entry.meetingTitle,
+        "Date" to entry.date,
+        "Start Time" to entry.startTime,
+        "End Time" to entry.endTime,
+        "Room" to entry.roomName,
+        "Created By" to entry.createdBy
     )
     Row(
         modifier = Modifier
+            .fillMaxWidth()
             .background(if (isEven) Color.White else ColorSurface)
             .padding(vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        cells.forEachIndexed { i, text ->
+        activeColumns.forEach { col ->
+            val text = cellsMap[col.label] ?: ""
             Text(
                 text = text,
-                modifier = Modifier
-                    .width(columns[i].width)
-                    .padding(horizontal = 16.dp),
+                modifier = if (activeColumns.size == 2) {
+                    Modifier.weight(1f).padding(horizontal = 16.dp)
+                } else {
+                    Modifier.width(col.width).padding(horizontal = 16.dp)
+                },
                 style = TextStyle(
-                    fontWeight = if (i == 0) FontWeight.Medium else FontWeight.Normal,
+                    fontWeight = if (col.isFixed) FontWeight.Medium else FontWeight.Normal,
                     fontSize = 14.sp,
-                    color = if (i == 0) ColorOnSurface else ColorOnSurfaceVar
+                    color = if (col.isFixed) ColorOnSurface else ColorOnSurfaceVar
                 ),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis

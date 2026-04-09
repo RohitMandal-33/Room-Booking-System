@@ -10,6 +10,10 @@ import com.swifttechnology.bookingsystem.features.report.data.dtos.ReportDataReq
 import com.swifttechnology.bookingsystem.features.report.domain.repository.ReportRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import android.content.Context
+import android.net.Uri
 import javax.inject.Inject
 
 @HiltViewModel
@@ -105,5 +109,30 @@ class ReportsAnalyticsViewModel @Inject constructor(
     fun onRoomSelected(v: String)       { selectedRoom = v;       currentPage = 0 }
     fun onDepartmentSelected(v: String) { selectedDepartment = v; currentPage = 0 }
     fun onSortSelected(v: String)       { selectedSort = v;       currentPage = 0 }
-    fun onExport()                      { /* hook CSV/PDF export */ }
+
+    fun saveExportToUri(context: Context, uri: Uri) {
+        viewModelScope.launch {
+            isLoading = true
+            error = null
+            try {
+                withContext(Dispatchers.IO) {
+                    context.contentResolver.openOutputStream(uri)?.use { out ->
+                        // Write CSV Header
+                        out.write("Meeting Title,Date,Start Time,End Time,Room,Created By\n".toByteArray())
+                        
+                        // Write each row, replacing commas to prevent CSV breakage
+                        filteredEntries.forEach { e ->
+                            val title = e.meetingTitle.replace(",", " -")
+                            val room = e.roomName.replace(",", " ")
+                            val author = e.createdBy.replace(",", " ")
+                            out.write("$title,${e.date},${e.startTime},${e.endTime},$room,$author\n".toByteArray())
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                error = e.message ?: "Failed to export CSV"
+            }
+            isLoading = false
+        }
+    }
 }
