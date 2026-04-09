@@ -26,6 +26,9 @@ data class RoomBookingFormState(
     val recurringType: String = "",
     val description: String = "",
     val participants: List<InternalMember> = emptyList(),
+    /** Tracks which custom-group IDs were explicitly selected via the Groups tab.
+     *  Independent of individual member selection in the People / Teams tabs. */
+    val selectedGroupIds: Set<Long> = emptySet(),
     val externalMembers: List<ExternalMember> = emptyList(),
     val selectedRoom: String = "",
     val selectedRoomId: Long? = null

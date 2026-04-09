@@ -35,7 +35,7 @@ object APIEndpoint {
     const val UPDATE_BOOKING = "api/v1/update-booked-room/{bookingId}"
     const val MY_BOOKINGS = "api/v1/get-booked-room"
     const val ALL_BOOKINGS = "api/v1/get-all-booked-room"
-    const val UPCOMING_MEETING = "api/v1/upcoming_meeting"
+    const val UPCOMING_MEETING = "api/v1/upcoming-meeting"
 
     // Department
     const val DEPARTMENT_ADD = "api/v1/department/add"
@@ -46,4 +46,9 @@ object APIEndpoint {
     const val GROUP_LIST = "api/v1/group/list"
     const val GROUP_UPDATE = "api/v1/group/{id}/update"
     const val GROUP_DELETE = "api/v1/group/{id}/delete"
+
+    // Reports
+    const val REPORTS_GET_ALL = "api/v1/reports/get-all"
+    const val REPORTS_FILTERED = "api/v1/reports"
+    const val REPORTS_EXPORT   = "api/v1/reports/export"
 }

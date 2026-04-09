@@ -9,6 +9,7 @@ import com.swifttechnology.bookingsystem.features.department.data.api.Department
 import com.swifttechnology.bookingsystem.features.meetingrooms.data.api.RoomApiService
 import com.swifttechnology.bookingsystem.features.user.data.api.UserApiService
 import com.swifttechnology.bookingsystem.features.participants.data.api.CustomGroupApiService
+import com.swifttechnology.bookingsystem.features.report.data.api.ReportApiService
 import dagger.Lazy
 import dagger.Module
 import dagger.Provides
@@ -66,4 +67,9 @@ object NetworkModule {
     @Singleton
     fun provideCustomGroupApiService(retrofit: Retrofit): CustomGroupApiService =
         retrofit.create(CustomGroupApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideReportApiService(retrofit: Retrofit): ReportApiService =
+        retrofit.create(ReportApiService::class.java)
 }

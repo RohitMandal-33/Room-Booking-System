@@ -112,7 +112,11 @@ fun DashboardScreen(
 //            Spacer(modifier = Modifier.height(Spacing.sm))
 
             // 7. Upcoming meeting cards
-            MeetingCardsSection(meetings = uiState.upcomingMeetings)
+            MeetingCardsSection(
+                meetings = uiState.upcomingMeetings,
+                isLoading = uiState.isLoadingMeetings,
+                error = uiState.error
+            )
 
             Spacer(modifier = Modifier.height(Spacing.lg))
         }

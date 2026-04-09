@@ -421,7 +421,7 @@ fun BookRoomScreen(
                             isRequired = false,   // asterisk shown on the shared label above
                             leadingIcon = {
                                 Icon(
-                                    painter = painterResource(android.R.drawable.ic_menu_myplaces),
+                                    painter = painterResource(R.drawable.outline_groups_24),
                                     contentDescription = null,
                                     tint = Neutral700,
                                     modifier = Modifier.size(Spacing.ml)
@@ -440,7 +440,7 @@ fun BookRoomScreen(
                             isRequired = false,
                             leadingIcon = {
                                 Icon(
-                                    painter = painterResource(android.R.drawable.ic_menu_myplaces),
+                                    painter = painterResource(R.drawable.outline_groups_24),
                                     contentDescription = null,
                                     tint = Neutral700,
                                     modifier = Modifier.size(Spacing.ml)

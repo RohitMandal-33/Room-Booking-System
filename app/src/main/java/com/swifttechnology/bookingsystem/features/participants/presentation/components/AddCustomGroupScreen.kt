@@ -87,23 +87,14 @@ fun AddCustomGroupScreen(
         }
     }
 
-    // Bullet-proof success handler:
-    // LaunchedEffect(Unit) never gets cancelled due to state changes.
-    // We record the successEventId at screen-entry so we skip any events that
-    // were already processed in a previous session (whose id was preserved in resetState).
-    LaunchedEffect(Unit) {
-        var lastProcessedEventId = viewModel.uiState.value.successEventId
-        viewModel.uiState.collect { state ->
-            if (state.successEventId > lastProcessedEventId) {
-                lastProcessedEventId = state.successEventId
-                // Capture mode BEFORE resetState clears editGroupId
-                val message = if (state.editGroupId != null)
-                    "Group updated successfully."
-                else
-                    "Group created successfully."
-                viewModel.resetState()
-                onContinue(message)
-            }
+    LaunchedEffect(uiState.isSuccess) {
+        if (uiState.isSuccess) {
+            val message = if (uiState.editGroupId != null)
+                "Group updated successfully."
+            else
+                "Group created successfully."
+            onContinue(message)
+            viewModel.resetState()
         }
     }
 
@@ -257,7 +248,9 @@ fun AddCustomGroupScreen(
                     .background(Color.White)
             ) {
                 Button(
-                    onClick = { viewModel.submit() },
+                    onClick = {
+                        viewModel.submit()
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),

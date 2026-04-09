@@ -24,12 +24,8 @@ data class AddCustomGroupUiState(
     val availableParticipants: List<InternalMember> = emptyList(),
     val isSearchingParticipants: Boolean = false,
     val isLoading: Boolean = false,
-    val error: String? = null,
-    // A monotonically-increasing counter used as a LaunchedEffect key.
-    // Using a Boolean causes Compose to cancel the running coroutine when it
-    // flips back to false (via resetState), so onContinue() never executes.
-    // A counter that is NEVER decremented in resetState() avoids that race.
-    val successEventId: Int = 0
+    val isSuccess: Boolean = false,
+    val error: String? = null
 )
 
 @HiltViewModel
@@ -144,7 +140,7 @@ class AddCustomGroupViewModel @Inject constructor(
                 memberIds = memberIds
             )
             result.onSuccess {
-                _uiState.update { it.copy(isLoading = false, successEventId = it.successEventId + 1) }
+                _uiState.update { it.copy(isLoading = false, isSuccess = true) }
             }.onFailure { e ->
                 _uiState.update {
                     it.copy(isLoading = false, error = e.message ?: "Failed to create group")
@@ -172,7 +168,7 @@ class AddCustomGroupViewModel @Inject constructor(
                 description = desc.takeIf { it.isNotEmpty() },
                 memberIds = memberIds
             ).onSuccess {
-                _uiState.update { it.copy(isLoading = false, successEventId = it.successEventId + 1) }
+                _uiState.update { it.copy(isLoading = false, isSuccess = true) }
             }.onFailure { e ->
                 _uiState.update {
                     it.copy(isLoading = false, error = e.message ?: "Failed to update group")
@@ -182,12 +178,12 @@ class AddCustomGroupViewModel @Inject constructor(
     }
 
     fun resetState() {
-        _uiState.update {
+        _uiState.update { current ->
             AddCustomGroupUiState(
-                availableParticipants = it.availableParticipants,
-                // IMPORTANT: preserve successEventId so a running LaunchedEffect
-                // coroutine is NOT cancelled when it calls resetState() mid-flight.
-                successEventId = it.successEventId
+                availableParticipants = current.availableParticipants,
+                isSuccess = false,
+                isLoading = false,
+                error = null
             )
         }
     }

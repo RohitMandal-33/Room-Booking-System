@@ -11,6 +11,7 @@ import com.swifttechnology.bookingsystem.features.booking.domain.repository.Book
 import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.shared.TimeRange
 import com.swifttechnology.bookingsystem.features.meetingrooms.domain.repository.RoomRepository
 import com.swifttechnology.bookingsystem.shared.components.SidebarItem
+import com.swifttechnology.bookingsystem.core.utils.DateTimeUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import java.time.LocalTime
@@ -24,6 +25,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
 import kotlin.math.min
 
+@RequiresApi(Build.VERSION_CODES.O)
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
     private val authRepository: AuthRepository,
@@ -37,6 +39,7 @@ class CalendarViewModel @Inject constructor(
             events = sampleEvents()
         )
     )
+    @RequiresApi(Build.VERSION_CODES.O)
     val uiState: StateFlow<CalendarUiState> = _uiState.asStateFlow()
 
     private val _rooms = MutableStateFlow<List<Room>>(emptyList())
@@ -78,12 +81,8 @@ class CalendarViewModel @Inject constructor(
                     val events = bookings.mapIndexedNotNull { index, dto ->
                         try {
                             val date = LocalDate.parse(dto.date ?: return@mapIndexedNotNull null)
-                            val startTime = dto.startTime?.let {
-                                try { LocalTime.parse(it) } catch (e: Exception) { null }
-                            } ?: return@mapIndexedNotNull null
-                            val endTime = dto.endTime?.let {
-                                try { LocalTime.parse(it) } catch (e: Exception) { null }
-                            } ?: return@mapIndexedNotNull null
+                            val startTime = DateTimeUtils.parseLocalTime(dto.startTime) ?: return@mapIndexedNotNull null
+                            val endTime = DateTimeUtils.parseLocalTime(dto.endTime) ?: return@mapIndexedNotNull null
 
                             val color = when (dto.meetingType) {
                                 "INTERNAL" -> Color(0xFF4CD8A8)
@@ -100,7 +99,7 @@ class CalendarViewModel @Inject constructor(
                                 endTime = endTime,
                                 color = color,
                                 description = dto.description ?: "",
-                                meetingRoom = dto.roomName ?: ""
+                                meetingRoom = dto.room?.roomName ?: ""
                             )
                         } catch (e: Exception) {
                             null

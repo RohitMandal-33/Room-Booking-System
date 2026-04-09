@@ -38,9 +38,18 @@ class CustomGroupRepositoryImpl @Inject constructor(
     override suspend fun createCustomGroup(name: String, description: String?, memberIds: List<Long>): Result<CustomGroup> = runCatching {
         val request = CustomGroupRequestDTO(groupName = name, description = description, member = memberIds)
         val response = api.addCustomGroup(request)
-        if (!response.success || response.data == null) throw Exception(response.message)
+        if (!response.success) throw Exception(response.message)
         
         val dto = response.data
+        if (dto == null) {
+            return@runCatching CustomGroup(
+                id = 0L,
+                name = name,
+                description = description ?: "",
+                memberCount = memberIds.size,
+                memberIds = memberIds
+            )
+        }
         val idsCreate = dto.member ?: emptyList()
         val countCreate = when {
             idsCreate.isNotEmpty() -> idsCreate.size
@@ -59,9 +68,18 @@ class CustomGroupRepositoryImpl @Inject constructor(
     override suspend fun updateCustomGroup(id: Long, name: String, description: String?, memberIds: List<Long>): Result<CustomGroup> = runCatching {
         val request = CustomGroupRequestDTO(groupName = name, description = description, member = memberIds)
         val response = api.updateCustomGroup(id, request)
-        if (!response.success || response.data == null) throw Exception(response.message)
+        if (!response.success) throw Exception(response.message)
         
         val dto = response.data
+        if (dto == null) {
+            return@runCatching CustomGroup(
+                id = id,
+                name = name,
+                description = description ?: "",
+                memberCount = memberIds.size,
+                memberIds = memberIds
+            )
+        }
         val idsUpdate = dto.member ?: emptyList()
         val countUpdate = when {
             idsUpdate.isNotEmpty() -> idsUpdate.size

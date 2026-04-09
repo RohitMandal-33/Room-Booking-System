@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -62,11 +61,9 @@ import com.swifttechnology.bookingsystem.core.designsystem.Spacing
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.features.booking.presentation.InternalMember
 import com.swifttechnology.bookingsystem.features.booking.presentation.RoomBookingFormState
-import com.swifttechnology.bookingsystem.shared.components.PrimaryButton
+import com.swifttechnology.bookingsystem.features.participants.presentation.components.CustomGroupCard
 
-enum class GroupBy { PEOPLE, TEAMS, CUSTOM }
-
-//     INTERNAL bottom-sheet                                                    
+enum class GroupBy { PEOPLE, TEAMS, GROUPS }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -93,7 +90,6 @@ fun InternalParticipantsBottomSheet(
 
         SheetHeader(title = "Internal Member", onClose = onClose)
 
-        // Selected chips
         if (formState.participants.isNotEmpty()) {
             FlowRow(
                 modifier = Modifier
@@ -127,11 +123,8 @@ fun InternalParticipantsBottomSheet(
                 filteredParticipants = availableParticipants
             )
         }
-
     }
 }
-
-//     Internal participants panel                                              
 
 @Composable
 private fun InternalParticipantsContent(
@@ -147,13 +140,21 @@ private fun InternalParticipantsContent(
     modifier: Modifier = Modifier
 ) {
     val apiDepartments by viewModel.departments.collectAsStateWithLifecycle()
+    val customGroups by viewModel.customGroups.collectAsStateWithLifecycle()
+    
     var departmentDropdownExpanded by remember { mutableStateOf(false) }
     var selectedDepartment by remember { mutableStateOf<String?>(null) }
+    var expandedGroupIds by remember { mutableStateOf(setOf<Long>()) }
+
     val departments = remember(apiDepartments, filteredParticipants) {
         if (apiDepartments.isNotEmpty()) apiDepartments else filteredParticipants.map { it.department }.distinct().sorted()
     }
 
-    // Compute the display list early so Select All can reference it
+    val filteredGroups = remember(customGroups, searchQuery) {
+        if (searchQuery.isBlank()) customGroups
+        else customGroups.filter { it.name.contains(searchQuery, ignoreCase = true) }
+    }
+
     val displayList = when (groupBy) {
         GroupBy.TEAMS -> if (selectedDepartment != null)
             filteredParticipants.filter { it.department == selectedDepartment }
@@ -161,8 +162,14 @@ private fun InternalParticipantsContent(
         else -> filteredParticipants
     }
 
-    val allSelected = displayList.isNotEmpty() &&
-            displayList.all { p -> formState.participants.any { it.id == p.id } }
+    // For GROUPS: a group is "selected" if its ID is in selectedGroupIds (purely UI tracking).
+    // For PEOPLE/TEAMS: "all selected" means every visible member is in participants.
+    val allSelected = when (groupBy) {
+        GroupBy.GROUPS -> filteredGroups.isNotEmpty() &&
+                filteredGroups.all { it.id in formState.selectedGroupIds }
+        else -> displayList.isNotEmpty() &&
+                displayList.all { p -> formState.participants.any { it.id == p.id } }
+    }
 
     Column(
         modifier = modifier
@@ -170,8 +177,6 @@ private fun InternalParticipantsContent(
             .padding(horizontal = Spacing.md, vertical = Spacing.xs),
         verticalArrangement = Arrangement.spacedBy(Spacing.xs)
     ) {
-
-        //    1. Floating capsule segmented control                              
         Row(
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
@@ -188,7 +193,7 @@ private fun InternalParticipantsContent(
             listOf(
                 GroupBy.PEOPLE to "People",
                 GroupBy.TEAMS  to "Teams",
-                GroupBy.CUSTOM    to "Custom"
+                GroupBy.GROUPS to "Group"
             ).forEach { (value, label) ->
                 val isActive = groupBy == value
                 Box(
@@ -216,7 +221,6 @@ private fun InternalParticipantsContent(
             }
         }
 
-        //    2. Main card                                                       
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -225,8 +229,6 @@ private fun InternalParticipantsContent(
                 .background(MaterialTheme.colorScheme.surface)
                 .border(0.5.dp, Neutral300, RoundedCornerShape(CornerRadius.lg))
         ) {
-
-            //    2a. Select All Checkbox + Search bar
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -234,16 +236,55 @@ private fun InternalParticipantsContent(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
             ) {
-                // Checkbox "All"
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(CornerRadius.sm))
                         .clickable {
                             if (allSelected) {
-                                onFormStateChanged(formState.copy(participants = emptyList()))
+                                if (groupBy == GroupBy.GROUPS) {
+                                    // Deselect all visible groups:
+                                    // Remove their IDs from selectedGroupIds and remove members
+                                    // that no longer belong to any still-selected group.
+                                    val deselectedGroupIds = filteredGroups.map { it.id }.toSet()
+                                    val remainingGroupIds = formState.selectedGroupIds - deselectedGroupIds
+                                    val remainingGroupMemberIds = customGroups
+                                        .filter { it.id in remainingGroupIds }
+                                        .flatMap { it.memberIds }
+                                        .toSet()
+                                    val removedMemberIds = filteredGroups
+                                        .flatMap { it.memberIds }
+                                        .toSet()
+                                    onFormStateChanged(formState.copy(
+                                        participants = formState.participants.filterNot {
+                                            it.id in removedMemberIds && it.id !in remainingGroupMemberIds
+                                        },
+                                        selectedGroupIds = remainingGroupIds
+                                    ))
+                                } else {
+                                    // People / Teams: clear only the visible list from participants
+                                    val removeIds = displayList.map { it.id }.toSet()
+                                    onFormStateChanged(formState.copy(
+                                        participants = formState.participants.filterNot { it.id in removeIds }
+                                    ))
+                                }
                             } else {
-                                val merged = (formState.participants + displayList).distinctBy { it.id }
-                                onFormStateChanged(formState.copy(participants = merged))
+                                if (groupBy == GroupBy.GROUPS) {
+                                    // Select all visible groups:
+                                    // Add all their IDs to selectedGroupIds and merge their members.
+                                    val newGroupIds = filteredGroups.map { it.id }.toSet()
+                                    val allToSelect = filteredGroups.flatMap { group ->
+                                        filteredParticipants.filter { it.id in group.memberIds }
+                                    }.distinctBy { it.id }
+                                    val merged = (formState.participants + allToSelect).distinctBy { it.id }
+                                    onFormStateChanged(formState.copy(
+                                        participants = merged,
+                                        selectedGroupIds = formState.selectedGroupIds + newGroupIds
+                                    ))
+                                } else {
+                                    // People / Teams: add visible members to participants only
+                                    val merged = (formState.participants + displayList).distinctBy { it.id }
+                                    onFormStateChanged(formState.copy(participants = merged))
+                                }
                             }
                         }
                         .padding(end = 4.dp, top = 8.dp, bottom = 8.dp),
@@ -282,7 +323,6 @@ private fun InternalParticipantsContent(
                     )
                 }
 
-                // Pill search field
                 Row(
                     modifier = Modifier
                         .weight(1f)
@@ -305,7 +345,7 @@ private fun InternalParticipantsContent(
                         onValueChange = onSearchQueryChange,
                         placeholder = {
                             Text(
-                                text = "Search name or email…",
+                                text = "Search name or email\u2026",
                                 color = Neutral400,
                                 fontSize = 12.sp
                             )
@@ -328,7 +368,6 @@ private fun InternalParticipantsContent(
 
             HorizontalDivider(color = Neutral300, thickness = 0.5.dp)
 
-            //    2b. Department dropdown — Teams tab only, below search         
             if (groupBy == GroupBy.TEAMS) {
                 Box(
                     modifier = Modifier
@@ -401,7 +440,6 @@ private fun InternalParticipantsContent(
                 HorizontalDivider(color = Neutral300, thickness = 0.5.dp)
             }
 
-            //    2c. Progress indicator or static divider                        
             if (isSearching) {
                 LinearProgressIndicator(
                     modifier = Modifier
@@ -412,7 +450,6 @@ private fun InternalParticipantsContent(
                 )
             }
 
-            //    2d. Participant list                                            
             LazyColumn(
                 modifier = Modifier
                     .weight(1f)
@@ -454,6 +491,60 @@ private fun InternalParticipantsContent(
                             }
                         }
                     }
+                    GroupBy.GROUPS -> {
+                        items(filteredGroups, key = { it.id }) { group ->
+                            val groupMembers = filteredParticipants.filter { it.id in group.memberIds }
+                            // isSelected is purely driven by selectedGroupIds — independent of
+                            // whether individual members were added/removed via People / Teams tab.
+                            val isGroupSelected = group.id in formState.selectedGroupIds
+                            val memberNames = group.memberIds.map { id ->
+                                filteredParticipants.find { it.id == id }?.name ?: "User #$id"
+                            }
+
+                            CustomGroupCard(
+                                group = group,
+                                isExpanded = expandedGroupIds.contains(group.id),
+                                memberDisplayNames = memberNames,
+                                onMembersRowClick = {
+                                    expandedGroupIds = if (expandedGroupIds.contains(group.id)) {
+                                        expandedGroupIds - group.id
+                                    } else {
+                                        expandedGroupIds + group.id
+                                    }
+                                },
+                                isEditable = true,
+                                isSelected = isGroupSelected,
+                                onSelectionChange = { selected ->
+                                    if (selected) {
+                                        // Add group ID to selectedGroupIds and merge any new
+                                        // members into participants (skip already-present ones).
+                                        val toAdd = groupMembers.filterNot { gm ->
+                                            formState.participants.any { it.id == gm.id }
+                                        }
+                                        onFormStateChanged(formState.copy(
+                                            participants = (formState.participants + toAdd).distinctBy { it.id },
+                                            selectedGroupIds = formState.selectedGroupIds + group.id
+                                        ))
+                                    } else {
+                                        // Remove group ID from selectedGroupIds.
+                                        // Only remove members whose IDs are NOT present in any
+                                        // other still-selected group — so shared members are kept.
+                                        val remainingGroupIds = formState.selectedGroupIds - group.id
+                                        val remainingGroupMemberIds = customGroups
+                                            .filter { it.id in remainingGroupIds }
+                                            .flatMap { it.memberIds }
+                                            .toSet()
+                                        onFormStateChanged(formState.copy(
+                                            participants = formState.participants.filterNot { p ->
+                                                p.id in group.memberIds && p.id !in remainingGroupMemberIds
+                                            },
+                                            selectedGroupIds = remainingGroupIds
+                                        ))
+                                    }
+                                }
+                            )
+                        }
+                    }
                     else -> {
                         items(displayList, key = { it.id }) { participant ->
                             InternalParticipantItem(
@@ -478,9 +569,11 @@ private fun InternalParticipantsContent(
     }
 }
 
-
-//     Toggle helper                                                             
-
+/**
+ * Toggles an individual participant in the People / Teams tab.
+ * Deliberately does NOT touch [RoomBookingFormState.selectedGroupIds] — group selection
+ * is fully independent and managed only through the Groups tab.
+ */
 private fun toggleParticipant(
     formState: RoomBookingFormState,
     participant: InternalMember,
@@ -492,11 +585,9 @@ private fun toggleParticipant(
     } else {
         current.add(participant)
     }
+    // selectedGroupIds is intentionally left unchanged here.
     onFormStateChanged(formState.copy(participants = current.distinct()))
 }
-
-
-//     Single internal participant row                                          
 
 @Composable
 private fun InternalParticipantItem(
@@ -512,7 +603,6 @@ private fun InternalParticipantItem(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
     ) {
-        // Checkbox
         Box(
             modifier = Modifier
                 .size(18.dp)
@@ -538,7 +628,6 @@ private fun InternalParticipantItem(
             }
         }
 
-        // Name / email / department
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(1.dp)
@@ -566,7 +655,6 @@ private fun InternalParticipantItem(
     }
 }
 
-//     Previews                                                                 
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
