@@ -116,10 +116,15 @@ fun BookRoomScreen(
         if (uiState.availableRooms.isNotEmpty()) {
             if (initialDetails != null) {
                 viewModel.prefillBookingDetails(
-                    roomName = initialDetails.roomName,
-                    date = initialDetails.date,
-                    startTime = initialDetails.startTime,
-                    endTime = initialDetails.endTime
+                    roomName              = initialDetails.roomName,
+                    date                  = initialDetails.date,
+                    startTime             = initialDetails.startTime,
+                    endTime               = initialDetails.endTime,
+                    meetingTitle          = initialDetails.meetingTitle,
+                    meetingType           = initialDetails.meetingType,
+                    description           = initialDetails.description,
+                    internalParticipantIds = initialDetails.internalParticipantIds,
+                    externalMembers       = initialDetails.externalMembers
                 )
             } else if (initialRoomName != null) {
                 viewModel.preSelectRoom(initialRoomName)

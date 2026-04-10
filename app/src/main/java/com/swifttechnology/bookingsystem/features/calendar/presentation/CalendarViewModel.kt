@@ -93,13 +93,19 @@ class CalendarViewModel @Inject constructor(
 
                             MeetingEvent(
                                 id = (dto.id ?: index.toLong()).toInt(),
+                                meetingId = dto.id,
                                 title = dto.meetingTitle ?: "Meeting",
                                 date = date,
                                 startTime = startTime,
                                 endTime = endTime,
                                 color = color,
                                 description = dto.description ?: "",
-                                meetingRoom = dto.room?.roomName ?: ""
+                                meetingRoom = dto.room?.roomName ?: "",
+                                meetingType = dto.meetingType ?: "",
+                                internalParticipants = dto.internalParticipant ?: emptyList(),
+                                externalParticipants = dto.externalParticipant ?: emptyList(),
+                                createdBy = dto.roomBooker?.email ?: dto.roomBooker?.firstName ?: "",
+                                meetingStatus = dto.meetingStatus ?: dto.status
                             )
                         } catch (e: Exception) {
                             null
@@ -230,24 +236,24 @@ private fun sampleEvents(): List<MeetingEvent> {
     fun d(day: Int) = ym.atDay(day.coerceIn(1, ym.lengthOfMonth()))
 
     return listOf(
-        MeetingEvent(1, "Team Sync", d(5), LocalTime.of(10, 0), LocalTime.of(11, 0), eventGreen),
-        MeetingEvent(2, "Design Review", d(7), LocalTime.of(14, 0), LocalTime.of(15, 0), eventOrange),
-        MeetingEvent(3, "Sprint Planning", d(9), LocalTime.of(9, 0), LocalTime.of(10, 30), eventGreen),
-        MeetingEvent(4, "1:1 Meeting", d(13), LocalTime.of(11, 0), LocalTime.of(12, 0), eventGreen),
-        MeetingEvent(5, "Product Demo", d(20), LocalTime.of(15, 0), LocalTime.of(16, 0), eventOrange),
+        MeetingEvent(id = 1, title = "Team Sync", date = d(5), startTime = LocalTime.of(10, 0), endTime = LocalTime.of(11, 0), color = eventGreen),
+        MeetingEvent(id = 2, title = "Design Review", date = d(7), startTime = LocalTime.of(14, 0), endTime = LocalTime.of(15, 0), color = eventOrange),
+        MeetingEvent(id = 3, title = "Sprint Planning", date = d(9), startTime = LocalTime.of(9, 0), endTime = LocalTime.of(10, 30), color = eventGreen),
+        MeetingEvent(id = 4, title = "1:1 Meeting", date = d(13), startTime = LocalTime.of(11, 0), endTime = LocalTime.of(12, 0), color = eventGreen),
+        MeetingEvent(id = 5, title = "Product Demo", date = d(20), startTime = LocalTime.of(15, 0), endTime = LocalTime.of(16, 0), color = eventOrange),
         MeetingEvent(
-            6,
-            "Board Review",
-            d(23),
-            LocalTime.of(10, 0),
-            LocalTime.of(11, 0),
-            eventBlue,
+            id = 6,
+            title = "Board Review",
+            date = d(23),
+            startTime = LocalTime.of(10, 0),
+            endTime = LocalTime.of(11, 0),
+            color = eventBlue,
             description = "This is the description about the meeting",
             meetingRoom = "Conference Room A",
             createdBy = "John Doe",
             timeZone = "Time Zone",
             repeats = false
         ),
-        MeetingEvent(7, "Weekly Standup", d(27), LocalTime.of(9, 0), LocalTime.of(9, 30), eventOrange)
+        MeetingEvent(id = 7, title = "Weekly Standup", date = d(27), startTime = LocalTime.of(9, 0), endTime = LocalTime.of(9, 30), color = eventOrange)
     )
 }

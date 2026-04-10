@@ -3,12 +3,14 @@ package com.swifttechnology.bookingsystem.features.calendar.presentation
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -19,6 +21,8 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,16 +35,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
+import androidx.compose.foundation.BorderStroke
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.swifttechnology.bookingsystem.core.designsystem.*
 import com.swifttechnology.bookingsystem.core.model.Room
+import com.swifttechnology.bookingsystem.features.booking.data.dtos.ExternalParticipantDTO
+import com.swifttechnology.bookingsystem.features.booking.data.dtos.InternalParticipantDTO
 import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.dayview.*
 import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.monthview.*
 import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.shared.*
 import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.weekview.*
 import com.swifttechnology.bookingsystem.navigation.ScreenRoutes
+import com.swifttechnology.bookingsystem.shared.components.TimePickerBottomSheet
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
@@ -48,16 +55,17 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
-import com.swifttechnology.bookingsystem.shared.components.TimePickerBottomSheet
 
 private val PurplePrimary = Color(0xFF6C3EE8)
 private val PurpleLight = Color(0xFFEDE9FF)
 
 @RequiresApi(Build.VERSION_CODES.O)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarScreen(
     searchQuery: String,
     onNavigate: (String) -> Unit,
+    onEditMeeting: (MeetingEvent) -> Unit = {},
     viewModel: CalendarViewModel = hiltViewModel(),
     pickerViewModel: DayTimePickerViewModel = hiltViewModel()
 ) {
@@ -95,14 +103,17 @@ fun CalendarScreen(
         onPickerResizeBottomCommitted = pickerViewModel::onResizeBottomCommitted,
         onPickerDragCancelled = pickerViewModel::onDragCancelled,
         onPickerCancelBooking = pickerViewModel::onCancelBooking,
-        onProceed = {
-            onNavigate(ScreenRoutes.BOOK_ROOM)
-        },
-        onTimePickerConfirm = pickerViewModel::initializePicker
+        onProceed = { onNavigate(ScreenRoutes.BOOK_ROOM) },
+        onTimePickerConfirm = pickerViewModel::initializePicker,
+        onEditMeeting = { event ->
+            onEditMeeting(event)
+            viewModel.onEventSelected(null)
+        }
     )
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CalendarContent(
     uiState: CalendarUiState,
@@ -124,7 +135,8 @@ private fun CalendarContent(
     onPickerDragCancelled: () -> Unit,
     onPickerCancelBooking: () -> Unit,
     onProceed: () -> Unit,
-    onTimePickerConfirm: (Int, Int) -> Unit
+    onTimePickerConfirm: (Int, Int) -> Unit,
+    onEditMeeting: (MeetingEvent) -> Unit = {}
 ) {
     var showStartPicker by remember { mutableStateOf(false) }
     var showEndPicker   by remember { mutableStateOf(false) }
@@ -189,6 +201,7 @@ private fun CalendarContent(
                         regularEvents = uiState.events,
                         pickerState = pickerUiState,
                         onGridLongPress = onGridLongPress,
+                        onEventClick = { onEventSelected(it) },
                         onDragStarted = onPickerDragStarted,
                         onPreviewChanged = onPickerPreviewChanged,
                         onMoveCommitted = onPickerMoveCommitted,
@@ -253,7 +266,11 @@ private fun CalendarContent(
     }
 
     uiState.selectedEvent?.let { event ->
-        MeetingDetailDialog(event = event, onDismiss = { onEventSelected(null) })
+        MeetingDetailBottomSheet(
+            event = event,
+            onDismiss = { onEventSelected(null) },
+            onEdit = { onEditMeeting(event) }
+        )
     }
 }
 
@@ -616,105 +633,6 @@ private fun WeekView(
                     }
                 }
             }
-        }
-    }
-}
-
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-private fun MeetingDetailDialog(
-    event: MeetingEvent,
-    onDismiss: () -> Unit
-) {
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = Color.White,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(20.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Meeting details",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Close")
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(12.dp).clip(CircleShape).background(PurplePrimary))
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(text = event.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text(text = "Reserved", style = MaterialTheme.typography.bodySmall, color = Color(0xFF4CAF50))
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                DetailItem(
-                    icon = Icons.Outlined.Schedule,
-                    title = event.date.format(DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy")),
-                    subtitle = "${event.startTime.format(DateTimeFormatter.ofPattern("hh:mm a"))} - ${event.endTime.format(DateTimeFormatter.ofPattern("hh:mm a"))}"
-                )
-
-                DetailItem(
-                    icon = Icons.Outlined.Place,
-                    title = if(event.meetingRoom.isNotEmpty()) event.meetingRoom else "Unassigned",
-                    subtitle = "Meeting Room"
-                )
-
-                DetailItem(
-                    icon = Icons.Outlined.AccountCircle,
-                    title = "Organized by",
-                    subtitle = if(event.createdBy.isNotEmpty()) event.createdBy else "Unknown"
-                )
-
-                DetailItem(
-                    icon = Icons.Outlined.Group,
-                    title = "Attendees",
-                    subtitle = "${event.participants.size} people"
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Button(
-                    onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = PurplePrimary),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("Done")
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun DetailItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    subtitle: String
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        verticalAlignment = Alignment.Top
-    ) {
-        Icon(imageVector = icon, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(20.dp))
-        Spacer(modifier = Modifier.width(12.dp))
-        Column {
-            Text(text = title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-            Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
         }
     }
 }

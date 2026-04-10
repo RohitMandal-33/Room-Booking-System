@@ -71,7 +71,6 @@ fun ReportsAnalyticsScreen(vm: ReportsAnalyticsViewModel) {
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
         ) {
-            ScreenHeader()
             FilterChipStrip(vm)
             Spacer(modifier = Modifier.height(12.dp))
             ActivityTableCard(vm)
@@ -85,20 +84,3 @@ fun ReportsAnalyticsScreen(vm: ReportsAnalyticsViewModel) {
 }
 
  
-// Screen Header
- 
-@Composable
-private fun ScreenHeader() {
-    Column(
-        modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 4.dp)
-    ) {
-        Text(
-            text = "Reports & Analytics",
-            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 26.sp, color = ColorOnSurface)
-        )
-        Text(
-            text = "View and export reservation data",
-            style = TextStyle(fontWeight = FontWeight.Normal, fontSize = 14.sp, color = ColorOnSurfaceVar)
-        )
-    }
-}

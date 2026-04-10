@@ -179,7 +179,7 @@ private fun InternalParticipantsContent(
     ) {
         Row(
             modifier = Modifier
-                .align(Alignment.CenterHorizontally)
+                .fillMaxWidth()
                 .clip(RoundedCornerShape(CornerRadius.full))
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
                 .border(
@@ -198,6 +198,7 @@ private fun InternalParticipantsContent(
                 val isActive = groupBy == value
                 Box(
                     modifier = Modifier
+                        .weight(1f)
                         .clip(RoundedCornerShape(CornerRadius.full))
                         .clickable {
                             onGroupByChange(value)
@@ -569,11 +570,6 @@ private fun InternalParticipantsContent(
     }
 }
 
-/**
- * Toggles an individual participant in the People / Teams tab.
- * Deliberately does NOT touch [RoomBookingFormState.selectedGroupIds] — group selection
- * is fully independent and managed only through the Groups tab.
- */
 private fun toggleParticipant(
     formState: RoomBookingFormState,
     participant: InternalMember,

@@ -7,6 +7,8 @@ import com.swifttechnology.bookingsystem.core.model.Room
 import com.swifttechnology.bookingsystem.navigation.ScreenRoutes
 import com.swifttechnology.bookingsystem.shared.components.SidebarItem
 import com.swifttechnology.bookingsystem.shared.components.defaultSidebarItems
+import com.swifttechnology.bookingsystem.features.booking.data.dtos.InternalParticipantDTO
+import com.swifttechnology.bookingsystem.features.booking.data.dtos.ExternalParticipantDTO
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.YearMonth
@@ -29,16 +31,21 @@ enum class CalendarView { MONTH, WEEK, DAY }
 @RequiresApi(Build.VERSION_CODES.O)
 data class MeetingEvent(
     val id: Int,
+    val meetingId: Long? = null,
     val title: String,
     val date: LocalDate,
     val startTime: LocalTime,
     val endTime: LocalTime,
     val color: Color,
     val participants: List<String> = emptyList(),
+    val internalParticipants: List<InternalParticipantDTO> = emptyList(),
+    val externalParticipants: List<ExternalParticipantDTO> = emptyList(),
     val description: String = "",
     val meetingRoom: String = "",
+    val meetingType: String = "",
     val createdBy: String = "",
     val timeZone: String = "Time Zone",
-    val repeats: Boolean = false
+    val repeats: Boolean = false,
+    val meetingStatus: String? = null
 )
 

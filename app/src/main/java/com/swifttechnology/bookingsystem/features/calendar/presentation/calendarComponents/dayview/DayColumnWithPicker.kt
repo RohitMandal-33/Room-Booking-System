@@ -65,6 +65,7 @@ fun DayColumnWithPicker(
     regularEvents: List<MeetingEvent>,
     pickerState: DayPickerUiState,
     onGridLongPress: (Int) -> Unit,
+    onEventClick: (MeetingEvent) -> Unit = {},
     onDragStarted: () -> Unit,
     onPreviewChanged: (TimeRange) -> Unit,
     onMoveCommitted: (Int) -> Unit,
@@ -248,6 +249,12 @@ fun DayColumnWithPicker(
                                 .padding(horizontal = 2.dp, vertical = 1.dp)
                                 .clip(RoundedCornerShape(6.dp))
                                 .background(event.color.copy(alpha = 0.75f))
+                                .pointerInput(event) {
+                                    detectTapGestures(
+                                        onTap = { onEventClick(event) },
+                                        onLongPress = { onEventClick(event) }
+                                    )
+                                }
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Column {

@@ -129,16 +129,43 @@ class BookRoomViewModel @Inject constructor(
         }
     }
 
-    fun prefillBookingDetails(roomName: String, date: String, startTime: String, endTime: String) {
+    fun prefillBookingDetails(
+        roomName: String,
+        date: String,
+        startTime: String,
+        endTime: String,
+        meetingTitle: String = "",
+        meetingType: String = "",
+        description: String = "",
+        internalParticipantIds: List<Long> = emptyList(),
+        externalMembers: List<ExternalMember> = emptyList()
+    ) {
         _uiState.update { current ->
             val room = current.availableRooms.find { it.name == roomName }
+
+            // Map API meeting type (INTERNAL/CLIENT/EXECUTIVE) → display form (Internal/Client/Executive)
+            val displayType = when (meetingType.uppercase()) {
+                "INTERNAL"  -> "Internal"
+                "CLIENT"    -> "Client"
+                "EXECUTIVE" -> "Executive"
+                else        -> meetingType
+            }
+
+            // Match internal participants by id from current available participants
+            val prefillInternal = current.availableParticipants.filter { it.id in internalParticipantIds }
+
             current.copy(
                 formState = current.formState.copy(
-                    selectedRoom = roomName,
-                    selectedRoomId = room?.id,
-                    date = date,
-                    startTime = startTime,
-                    endTime = endTime
+                    meetingTitle    = meetingTitle,
+                    selectedRoom    = roomName,
+                    selectedRoomId  = room?.id,
+                    date            = date,
+                    startTime       = startTime,
+                    endTime         = endTime,
+                    meetingType     = displayType,
+                    description     = description,
+                    participants    = prefillInternal,
+                    externalMembers = externalMembers
                 )
             )
         }

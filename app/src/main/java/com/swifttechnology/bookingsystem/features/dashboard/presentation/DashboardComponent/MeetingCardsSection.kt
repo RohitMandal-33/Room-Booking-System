@@ -85,7 +85,7 @@ fun MeetingCardsSection(
     ) {
         Column(modifier = Modifier.padding(vertical = Spacing.ms)) {
 
-            // ── Section header ────────────────────────────────────────────────
+            //    Section header
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -108,7 +108,7 @@ fun MeetingCardsSection(
                     )
                 }
             }
-            // ─────────────────────────────────────────────────────────────────
+            //                                                                                                                                  
 
             when {
                 isLoading -> {
@@ -138,7 +138,7 @@ fun MeetingCardsSection(
                 }
 
                 meetings.isEmpty() -> {
-                    // ── Empty state ───────────────────────────────────────────
+                    //      Empty state                                                                                       
                     Column(
                         modifier              = Modifier
                             .fillMaxWidth()
@@ -163,7 +163,7 @@ fun MeetingCardsSection(
                             color = MaterialTheme.customColors.textBody.copy(alpha = 0.6f)
                         )
                     }
-                    // ─────────────────────────────────────────────────────────
+                    //                                                                                                                   
                 }
 
                 else -> {
@@ -205,7 +205,7 @@ fun MeetingCardsSection(
     }
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+//      Helpers                                                                                                                                       
 
 private fun meetingTypeColor(type: String?): Color = when (type) {
     "CLIENT"    -> OrangeAccent
@@ -265,7 +265,7 @@ private fun formatDateLabel(dateStr: String?): String {
     }
 }
 
-// ── UI Components ─────────────────────────────────────────────────────────────
+//      UI Components                                                                                                                           
 
 data class MeetingCard(
     val title: String,

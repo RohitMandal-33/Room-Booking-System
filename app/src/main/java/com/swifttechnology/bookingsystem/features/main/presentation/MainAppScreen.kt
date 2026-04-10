@@ -54,12 +54,21 @@ import com.swifttechnology.bookingsystem.core.model.Room
 import com.swifttechnology.bookingsystem.shared.layout.BottomSheetView
 import com.swifttechnology.bookingsystem.features.participants.domain.model.Participant
 import com.swifttechnology.bookingsystem.features.participants.domain.model.CustomGroup
+import com.swifttechnology.bookingsystem.features.calendar.presentation.MeetingEvent
+import com.swifttechnology.bookingsystem.features.booking.presentation.ExternalMember
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 data class PendingBookingDetails(
     val roomName: String,
     val date: String,
     val startTime: String,
-    val endTime: String
+    val endTime: String,
+    val meetingTitle: String = "",
+    val meetingType: String = "",
+    val description: String = "",
+    val internalParticipantIds: List<Long> = emptyList(),
+    val externalMembers: List<ExternalMember> = emptyList()
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -192,7 +201,26 @@ fun MainAppScreen(
             ScreenRoutes.CALENDAR -> {
                 CalendarScreen(
                     searchQuery = searchQuery,
-                    onNavigate = navigateTo
+                    onNavigate = navigateTo,
+                    onEditMeeting = { event ->
+                        // Pre-fill room name and date/time from the event
+                        pendingRoomName = event.meetingRoom.takeIf { it.isNotBlank() }
+                        val dateFmt = event.date.format(DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.getDefault()))
+                        val startFmt = event.startTime.format(DateTimeFormatter.ofPattern("hh:mm a", Locale.getDefault()))
+                        val endFmt   = event.endTime.format(DateTimeFormatter.ofPattern("hh:mm a", Locale.getDefault()))
+                        pendingBookingDetails = PendingBookingDetails(
+                            roomName               = event.meetingRoom,
+                            date                   = dateFmt,
+                            startTime              = startFmt,
+                            endTime                = endFmt,
+                            meetingTitle           = event.title,
+                            meetingType            = event.meetingType,
+                            description            = event.description,
+                            internalParticipantIds = event.internalParticipants.mapNotNull { it.id?.toLong() },
+                            externalMembers        = event.externalParticipants.map { ExternalMember(it.name ?: "", it.email ?: "") }
+                        )
+                        navigateTo(ScreenRoutes.BOOK_ROOM)
+                    }
                 )
             }
             ScreenRoutes.MEETING_ROOMS -> {
