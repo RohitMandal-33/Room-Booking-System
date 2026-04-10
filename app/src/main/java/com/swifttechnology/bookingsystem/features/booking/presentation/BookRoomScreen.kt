@@ -10,6 +10,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -136,6 +137,7 @@ fun BookRoomScreen(
     val formState = uiState.formState
 
     var showDatePicker by remember { mutableStateOf(false) }
+    var showEndDatePicker by remember { mutableStateOf(false) }
     var showMeetingTypeDropdown by remember { mutableStateOf(false) }
     var showRecurringDropdown by remember { mutableStateOf(false) }
     // Two separate bottom sheet flags
@@ -237,22 +239,23 @@ fun BookRoomScreen(
                     RoomInfoCard(room = it)
                 }
 
-                // Date
-                BookingClickableField(
-                    label = "Date",
-                    value = formState.date,
-                    placeholder = "Select date",
-                    isRequired = true,
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.DateRange,
-                            contentDescription = "Date",
-                            tint = Neutral700,
-                            modifier = Modifier.size(Spacing.lg)
-                        )
-                    },
-                    onClick = { showDatePicker = true }
-                )
+                AnimatedVisibility(visible = formState.recurringType == "Does not repeat") {
+                    BookingClickableField(
+                        label = "Date",
+                        value = formState.date,
+                        placeholder = "Select date",
+                        isRequired = true,
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.DateRange,
+                                contentDescription = "Date",
+                                tint = Neutral700,
+                                modifier = Modifier.size(Spacing.lg)
+                            )
+                        },
+                        onClick = { showDatePicker = true }
+                    )
+                }
 
                 // Start / End Time
                 Row(
@@ -351,6 +354,79 @@ fun BookRoomScreen(
                         showRecurringDropdown = false
                     }
                 )
+
+                AnimatedVisibility(visible = formState.recurringType == "Custom") {
+                    FlowRow(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Spacing.md),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+                    ) {
+                        listOf("Sun", "Mon", "Tues", "Wed", "Thu", "Fri", "Sat").forEach { day ->
+                            val isSelected = formState.selectedWeekDays.contains(day)
+                            Box(
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .background(if (isSelected) MaterialTheme.colorScheme.primary else Color(0xFFF3F4F6))
+                                    .clickable {
+                                        val newSet = if (isSelected) formState.selectedWeekDays - day else formState.selectedWeekDays + day
+                                        viewModel.onFormStateChanged(formState.copy(selectedWeekDays = newSet))
+                                    }
+                                    .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = day,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (isSelected) Color.White else Neutral700
+                                )
+                            }
+                        }
+                    }
+                }
+
+                AnimatedVisibility(visible = formState.recurringType != "Does not repeat") {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.xs),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.ms)
+                    ) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            BookingClickableField(
+                                label = "Start Date",
+                                value = formState.date,
+                                placeholder = "Start Date",
+                                isRequired = true,
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.DateRange,
+                                        contentDescription = "Start Date",
+                                        tint = Neutral700,
+                                        modifier = Modifier.size(Spacing.lg)
+                                    )
+                                },
+                                onClick = { showDatePicker = true }
+                            )
+                        }
+                        Box(modifier = Modifier.weight(1f)) {
+                            BookingClickableField(
+                                label = "End Date",
+                                value = formState.recurrenceEndDate,
+                                placeholder = "End Date",
+                                isRequired = true,
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.DateRange,
+                                        contentDescription = "End Date",
+                                        tint = Neutral700,
+                                        modifier = Modifier.size(Spacing.lg)
+                                    )
+                                },
+                                onClick = { showEndDatePicker = true }
+                            )
+                        }
+                    }
+                }
 
                 // Description
                 BookingTextField(
@@ -493,6 +569,32 @@ fun BookRoomScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancel", color = Neutral700)
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    //    End Date picker dialog                                                     
+    if (showEndDatePicker) {
+        val datePickerState = rememberDatePickerState()
+        DatePickerDialog(
+            onDismissRequest = { showEndDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val formatted = java.text.SimpleDateFormat(
+                            "dd MMM yyyy", java.util.Locale.getDefault()
+                        ).format(java.util.Date(millis))
+                        viewModel.onFormStateChanged(formState.copy(recurrenceEndDate = formatted))
+                    }
+                    showEndDatePicker = false
+                }) { Text("OK", color = MaterialTheme.colorScheme.primary) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEndDatePicker = false }) {
                     Text("Cancel", color = Neutral700)
                 }
             }

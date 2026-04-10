@@ -60,7 +60,7 @@ class ReportsAnalyticsViewModel @Inject constructor(
     }
 
     // Filter options
-    val dateOptions:       List<String> get() = listOf("All") + allEntries.map { it.date }.distinct().sorted()
+    val dateOptions:       List<String> get() = listOf("All", "Today", "7 Days", "30 Days", "Custom")
     val roomOptions:       List<String> get() = listOf("All") + allEntries.map { it.roomName }.distinct().sorted()
     // Using createdBy as a department/user substitute since the backend removed department
     val departmentOptions: List<String> get() = listOf("All") + allEntries.map { it.createdBy }.distinct().sorted()
@@ -68,9 +68,21 @@ class ReportsAnalyticsViewModel @Inject constructor(
 
     // Filter state
     var selectedDate       by mutableStateOf("All")
+    var customStartDate    by mutableStateOf<Long?>(null)
+    var customEndDate      by mutableStateOf<Long?>(null)
     var selectedRoom       by mutableStateOf("All")
     var selectedDepartment by mutableStateOf("All")
     var selectedSort       by mutableStateOf("Asc")
+    
+    fun clearFilters() {
+        selectedDate = "All"
+        customStartDate = null
+        customEndDate = null
+        selectedRoom = "All"
+        selectedDepartment = "All"
+        selectedSort = "Asc"
+        currentPage = 0
+    }
 
     // Pagination
     val pageSize = 7
@@ -79,7 +91,46 @@ class ReportsAnalyticsViewModel @Inject constructor(
     private val filteredEntries: List<ActivityEntry>
         get() {
             var list = allEntries
-            if (selectedDate != "All")       list = list.filter { it.date == selectedDate }
+            if (selectedDate != "All") {
+                val today = java.time.LocalDate.now()
+                val formatter = java.time.format.DateTimeFormatter.ISO_LOCAL_DATE // Assuming yyyy-MM-dd
+                
+                list = list.filter {
+                    val entryDate = try {
+                        java.time.LocalDate.parse(it.date, formatter)
+                    } catch (e: Exception) {
+                        try {
+                            java.time.LocalDate.parse(it.date) 
+                        } catch (e: Exception) {
+                            null
+                        }
+                    }
+
+                    if (entryDate == null) return@filter false
+
+                    when (selectedDate.lowercase()) {
+                        "today" -> entryDate.isEqual(today)
+                        "7 days" -> {
+                            val start = today.minusDays(7)
+                            !entryDate.isBefore(start) && !entryDate.isAfter(today)
+                        }
+                        "30 days" -> {
+                            val start = today.minusDays(30)
+                            !entryDate.isBefore(start) && !entryDate.isAfter(today)
+                        }
+                        "custom" -> {
+                            if (customStartDate != null && customEndDate != null) {
+                                val sDate = java.time.Instant.ofEpochMilli(customStartDate!!).atZone(java.time.ZoneId.of("UTC")).toLocalDate()
+                                val eDate = java.time.Instant.ofEpochMilli(customEndDate!!).atZone(java.time.ZoneId.of("UTC")).toLocalDate()
+                                !entryDate.isBefore(sDate) && !entryDate.isAfter(eDate)
+                            } else {
+                                true
+                            }
+                        }
+                        else -> false
+                    }
+                }
+            }
             if (selectedRoom != "All")       list = list.filter { it.roomName == selectedRoom }
             if (selectedDepartment != "All") list = list.filter { it.createdBy == selectedDepartment }
             

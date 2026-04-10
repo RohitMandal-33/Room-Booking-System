@@ -1,5 +1,7 @@
 package com.swifttechnology.bookingsystem.features.report.presentation
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -24,8 +26,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.swifttechnology.bookingsystem.features.report.presentation.ReportComponent.ActivityTableCard
 import com.swifttechnology.bookingsystem.features.report.presentation.ReportComponent.FilterChipStrip
+import com.swifttechnology.bookingsystem.features.report.presentation.ReportComponent.TablePagination
 
- 
+
 // Local design tokens
  
 private val ColorBackground    = Color(0xFFFFFFFF)
@@ -36,6 +39,7 @@ private val ColorOnSurfaceVar  = Color(0xFF5F5C70)
  
 // Entry-Point Screen (Hilt-wired)
  
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ReportScreen(
     searchQuery: String,
@@ -57,6 +61,7 @@ fun ReportScreen(
  
 // Analytics Screen
  
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ReportsAnalyticsScreen(vm: ReportsAnalyticsViewModel) {
     Scaffold(containerColor = ColorBackground) { padding ->
@@ -70,7 +75,11 @@ fun ReportsAnalyticsScreen(vm: ReportsAnalyticsViewModel) {
             FilterChipStrip(vm)
             Spacer(modifier = Modifier.height(12.dp))
             ActivityTableCard(vm)
-            Spacer(modifier = Modifier.height(32.dp))
+            
+            TablePagination(
+                vm = vm,
+                modifier = Modifier.padding(bottom = 32.dp)
+            )
         }
     }
 }

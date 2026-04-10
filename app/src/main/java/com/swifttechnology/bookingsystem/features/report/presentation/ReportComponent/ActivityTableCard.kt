@@ -1,5 +1,6 @@
 package com.swifttechnology.bookingsystem.features.report.presentation.ReportComponent
 
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -41,6 +42,7 @@ import com.swifttechnology.bookingsystem.features.report.presentation.ReportsAna
 import com.swifttechnology.bookingsystem.R
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.ui.platform.LocalContext
 
  
@@ -74,18 +76,10 @@ internal val allColumns = listOf(
  
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ActivityTableCard(vm: ReportsAnalyticsViewModel) {
-    val context = LocalContext.current
-    val exportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("text/csv")
-    ) { uri ->
-        if (uri != null) {
-            vm.saveExportToUri(context, uri)
-        }
-    }
-
     var showColumnsSheet by remember { mutableStateOf(false) }
     var visibleColumns by remember { mutableStateOf(allColumns.toSet()) }
     val activeColumns = allColumns.filter { visibleColumns.contains(it) }
@@ -97,14 +91,53 @@ fun ActivityTableCard(vm: ReportsAnalyticsViewModel) {
             .clip(RoundedCornerShape(20.dp))
             .background(ColorSurface)
     ) {
-        // Columns + Export toolbar
+        // Date Filter Text and Columns 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp, vertical = 14.dp),
-            horizontalArrangement = Arrangement.End,
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val today = java.time.LocalDate.now()
+            var startDate: java.time.LocalDate? = null
+            var endDate: java.time.LocalDate? = null
+
+            when (vm.selectedDate) {
+                "Today" -> { startDate = today; endDate = today }
+                "7 Days" -> { startDate = today.minusDays(7); endDate = today }
+                "30 Days" -> { startDate = today.minusDays(30); endDate = today }
+                "Custom" -> {
+                    if (vm.customStartDate != null && vm.customEndDate != null) {
+                        startDate = java.time.Instant.ofEpochMilli(vm.customStartDate!!).atZone(java.time.ZoneId.of("UTC")).toLocalDate()
+                        endDate = java.time.Instant.ofEpochMilli(vm.customEndDate!!).atZone(java.time.ZoneId.of("UTC")).toLocalDate()
+                    }
+                }
+            }
+
+            if (startDate != null && endDate != null) {
+                val formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(0.dp)
+                ) {
+                    Text(
+                        text = "Date From",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = ColorOnSurfaceVar.copy(alpha = 0.7f)
+                    )
+
+                    Text(
+                        text = "${startDate.format(formatter)} to ${endDate.format(formatter)}",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = ColorOnSurfaceVar
+                    )
+                }
+            } else {
+                Spacer(modifier = Modifier.weight(1f))
+            }
+
             Row(
                 modifier = Modifier
                     .clip(RoundedCornerShape(12.dp))
@@ -124,30 +157,6 @@ fun ActivityTableCard(vm: ReportsAnalyticsViewModel) {
                 Text(
                     "Columns", style = TextStyle(
                         fontSize = 14.sp, fontWeight = FontWeight.Medium, color = ColorPrimaryMedium
-                    )
-                )
-            }
-
-            Spacer(modifier = Modifier.width(10.dp))
-
-            Row(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(ColorPrimary)
-                    .clickable { exportLauncher.launch("Reports_Export.csv") }
-                    .padding(horizontal = 20.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.outline_download_24),
-                    contentDescription = "Export",
-                    tint = Color.White,
-                    modifier = Modifier.size(18.dp)
-                )
-                Text(
-                    "Export", style = TextStyle(
-                        fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color.White
                     )
                 )
             }

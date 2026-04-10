@@ -1,44 +1,106 @@
 package com.swifttechnology.bookingsystem.features.report.presentation.ReportComponent
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.material3.Text
+import com.swifttechnology.bookingsystem.R
 import com.swifttechnology.bookingsystem.features.report.presentation.ReportsAnalyticsViewModel
 
-// ─────────────────────────────────────────────
+
 // Pagination Footer
-// ─────────────────────────────────────────────
+
 @Composable
 fun TableFooter(vm: ReportsAnalyticsViewModel) {
-    Column(
+    val context = LocalContext.current
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("text/csv")
+    ) { uri ->
+        if (uri != null) {
+            vm.saveExportToUri(context, uri)
+        }
+    }
+
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        // Result count — left anchor
         Text(
             text = if (vm.totalResults == 0) "No results"
-            else "Showing ${vm.showingStart} of ${vm.totalResults} results",
-            style = TextStyle(fontSize = 13.sp, color = ColorOnSurfaceVar)
+            else "Showing ${vm.showingStart} of ${vm.totalResults}",
+            style = TextStyle(
+                fontSize = 12.sp,
+                color = ColorOnSurfaceVar.copy(alpha = 0.6f)
+            ),
+            modifier = Modifier.width(120.dp)
         )
 
+        // Export button — right anchor
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .width(120.dp),
+            horizontalArrangement = Arrangement.End
+        ) {
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(ColorPrimary)
+                    .clickable { exportLauncher.launch("Reports_Export.csv") }
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.outline_download_24),
+                    contentDescription = "Export",
+                    tint = Color.White,
+                    modifier = Modifier.size(13.dp)
+                )
+                Text(
+                    text = "Export",
+                    style = TextStyle(
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
+                    )
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun TablePagination(vm: ReportsAnalyticsViewModel, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Prev
             PaginationButton(
                 label = "Prev",
                 enabled = vm.canGoPrevious,
@@ -46,7 +108,6 @@ fun TableFooter(vm: ReportsAnalyticsViewModel) {
                 onClick = vm::onPreviousPage
             )
 
-            // Page numbers
             val visiblePages = buildList {
                 val start = maxOf(0, vm.currentPage - 1)
                 val end = minOf(vm.totalPages - 1, vm.currentPage + 1)
@@ -61,7 +122,6 @@ fun TableFooter(vm: ReportsAnalyticsViewModel) {
                 )
             }
 
-            // Next
             PaginationButton(
                 label = "Next",
                 enabled = vm.canGoNext,
@@ -72,9 +132,9 @@ fun TableFooter(vm: ReportsAnalyticsViewModel) {
     }
 }
 
-// ─────────────────────────────────────────────
+
 // Pagination Button
-// ─────────────────────────────────────────────
+
 @Composable
 fun PaginationButton(
     label: String,

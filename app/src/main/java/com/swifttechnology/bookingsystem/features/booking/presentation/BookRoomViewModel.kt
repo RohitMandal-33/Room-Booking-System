@@ -171,7 +171,12 @@ class BookRoomViewModel @Inject constructor(
                     ?.takeIf { it.isNotEmpty() },
                 externalParticipants = state.externalMembers
                     .takeIf { it.isNotEmpty() }
-                    ?.map { ExternalParticipantDTO(name = it.name, email = it.email) }
+                    ?.map { ExternalParticipantDTO(name = it.name, email = it.email) },
+                recurrenceType = mapRecurringType(state.recurringType),
+                recurrenceEndDate = if (state.recurringType != "Does not repeat") convertDisplayDateToApiDate(state.recurrenceEndDate) else null,
+                weekDays = if (state.recurringType == "Custom") {
+                    state.selectedWeekDays.map { mapWeekDay(it) }.toList()
+                } else null
             )
 
             bookingRepository.bookRoom(request)
@@ -246,6 +251,8 @@ class BookRoomViewModel @Inject constructor(
             state.startTime.isBlank() -> "Please select a start time"
             state.endTime.isBlank() -> "Please select an end time"
             state.meetingType.isBlank() -> "Please select a meeting type"
+            state.recurringType != "Does not repeat" && state.recurrenceEndDate.isBlank() -> "Please select an end date for recurrence"
+            state.recurringType == "Custom" && state.selectedWeekDays.isEmpty() -> "Please select at least one day for custom recurrence"
             else -> null
         }
     }
@@ -258,5 +265,31 @@ class BookRoomViewModel @Inject constructor(
         "Client" -> "CLIENT"
         "Executive" -> "EXECUTIVE"
         else -> if (displayType.isBlank()) null else "INTERNAL"
+    }
+
+    /**
+     * Maps display recurring type to API enum value.
+     */
+    private fun mapRecurringType(displayType: String): String = when (displayType) {
+        "Every weekday (Sun-Fri)" -> "WEEKDAY"
+        "Daily" -> "DAILY"
+        "Weekly" -> "WEEKLY"
+        "Monthly" -> "MONTHLY"
+        "Custom" -> "CUSTOM"
+        else -> "NONE"
+    }
+
+    /**
+     * Maps day abbreviation to API enum value.
+     */
+    private fun mapWeekDay(day: String): String = when (day) {
+        "Sun" -> "SUNDAY"
+        "Mon" -> "MONDAY"
+        "Tues" -> "TUESDAY"
+        "Wed" -> "WEDNESDAY"
+        "Thu" -> "THURSDAY"
+        "Fri" -> "FRIDAY"
+        "Sat" -> "SATURDAY"
+        else -> "MONDAY" // Fallback
     }
 }

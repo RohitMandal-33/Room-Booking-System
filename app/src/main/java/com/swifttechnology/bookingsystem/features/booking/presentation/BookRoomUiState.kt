@@ -23,7 +23,9 @@ data class RoomBookingFormState(
     val startTime: String = "",
     val endTime: String = "",
     val meetingType: String = "",
-    val recurringType: String = "",
+    val recurringType: String = "Does not repeat",
+    val recurrenceEndDate: String = "",
+    val selectedWeekDays: Set<String> = emptySet(),
     val description: String = "",
     val participants: List<InternalMember> = emptyList(),
     /** Tracks which custom-group IDs were explicitly selected via the Groups tab.

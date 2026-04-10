@@ -12,7 +12,10 @@ data class RoomBookingRequestDTO(
     val description: String? = null,
     val roomId: Long? = null,
     val internalParticipantIds: List<Long>? = null,
-    val externalParticipants: List<ExternalParticipantDTO>? = null
+    val externalParticipants: List<ExternalParticipantDTO>? = null,
+    val recurrenceEndDate: String? = null,
+    val recurrenceType: String? = null,
+    val weekDays: List<String>? = null
 )
 
 
