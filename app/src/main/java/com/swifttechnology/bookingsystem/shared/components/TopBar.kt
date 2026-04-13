@@ -1,5 +1,7 @@
 package com.swifttechnology.bookingsystem.shared.components
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -8,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,6 +28,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -32,7 +36,9 @@ import androidx.compose.ui.unit.sp
 import com.swifttechnology.bookingsystem.R
 import com.swifttechnology.bookingsystem.core.designsystem.MeetingRoomBookingTheme
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
+import java.time.LocalDate
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TopBar(
     title: String,
@@ -41,6 +47,8 @@ fun TopBar(
     trailingIcon: ImageVector? = null,
     showEditIcon: Boolean = false,
     isEditMode: Boolean = false,
+    showTodayIcon: Boolean = false,
+    onTodayClick: () -> Unit = {},
     onEditClick: () -> Unit = {},
     onBackClick: (() -> Unit)? = null
 ) {
@@ -123,6 +131,40 @@ fun TopBar(
                     )
                 }
             }
+        } else if (showTodayIcon) {
+            val today = LocalDate.now()
+            Box(
+                modifier = rightActionModifier.clickable { onTodayClick() },
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .border(1.5.dp, MaterialTheme.customColors.deepBlack, RoundedCornerShape(4.dp)),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    // Muted "tab" at the top of the calendar icon
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(4.dp)
+                            .background(MaterialTheme.customColors.deepBlack)
+                    )
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = today.dayOfMonth.toString(),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.customColors.deepBlack,
+                            lineHeight = 11.sp
+                        )
+                    }
+                }
+            }
         } else {
             Box(
                 modifier = rightActionModifier.clickable { /* Profile action */ },
@@ -139,6 +181,7 @@ fun TopBar(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true)
 @Composable
 private fun TopBarPreview() {

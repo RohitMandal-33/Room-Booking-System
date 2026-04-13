@@ -67,6 +67,7 @@ fun CalendarScreen(
     onNavigate: (String) -> Unit,
     onProceedWithDetails: (String, String, String, String) -> Unit = { _, _, _, _ -> },
     onEditMeeting: (MeetingEvent) -> Unit = {},
+    todayTrigger: Int = 0,
     viewModel: CalendarViewModel = hiltViewModel(),
     pickerViewModel: DayTimePickerViewModel = hiltViewModel()
 ) {
@@ -78,14 +79,35 @@ fun CalendarScreen(
         viewModel.onSearchQueryChanged(searchQuery)
     }
 
+    LaunchedEffect(todayTrigger) {
+        if (todayTrigger > 0) {
+            viewModel.onDateSelected(LocalDate.now())
+        }
+    }
+
     LaunchedEffect(uiState.selectedDate, uiState.selectedRoom, uiState.currentView) {
         val room = uiState.selectedRoom
-        val blockedSlots = if (room != null) {
+        val apiBlockedSlots = if (room != null) {
             viewModel.getBlockedSlotsForRoomAndDate(room.name, uiState.selectedDate)
         } else {
             viewModel.getBlockedSlotsForDate(uiState.selectedDate)
         }
-        pickerViewModel.setBlockedSlots(blockedSlots)
+
+        // Add past time as a blocked area
+        val now = LocalDate.now()
+        val pastBlocks = mutableListOf<TimeRange>()
+        if (uiState.selectedDate.isBefore(now)) {
+            // Entire past day is blocked
+            pastBlocks.add(TimeRange(0, 24 * 60))
+        } else if (uiState.selectedDate.isEqual(now)) {
+            // Block from midnight until now
+            val currentMinutes = LocalTime.now().let { it.hour * 60 + it.minute }
+            if (currentMinutes > 0) {
+                pastBlocks.add(TimeRange(0, currentMinutes))
+            }
+        }
+
+        pickerViewModel.setBlockedSlots(apiBlockedSlots, pastBlocks)
         // Reset picker when date, room, or view mode changes
         pickerViewModel.onCancelBooking()
     }
@@ -99,8 +121,11 @@ fun CalendarScreen(
         onNext = viewModel::onNext,
         onDateSelected = viewModel::onDateSelected,
         onMonthTileClick = { date ->
-            viewModel.onDateSelected(date)
-            viewModel.onViewChange(CalendarView.DAY)
+            if (uiState.selectedDate == date) {
+                viewModel.onViewChange(CalendarView.DAY)
+            } else {
+                viewModel.onDateSelected(date)
+            }
         },
         onEventSelected = viewModel::onEventSelected,
         onRoomSelected = viewModel::onRoomSelected,

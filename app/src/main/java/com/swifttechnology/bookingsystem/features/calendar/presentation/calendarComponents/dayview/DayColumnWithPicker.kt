@@ -195,7 +195,7 @@ fun DayColumnWithPicker(
                             .padding(start = TIME_LABEL_WIDTH_DP.dp)
                             .fillMaxWidth()
                             .height(overlayHeightY)
-                            .background(Color.Gray.copy(alpha = 0.15f))
+                            .background(Color(0xFFD0CCDD).copy(alpha = 0.5f))
                     )
                 }
 
@@ -228,7 +228,35 @@ fun DayColumnWithPicker(
                     )
                 }
 
-                // Regular events rendered on the day grid
+
+
+                // Past blocked slots (lilac-gray)
+                pickerState.pastBlockedSlots.forEach { slot ->
+                    Box(
+                        modifier = Modifier
+                            .padding(start = TIME_LABEL_WIDTH_DP.dp, end = 4.dp)
+                            .offset { IntOffset(0, (slot.startMinutes * minutePx).roundToInt()) }
+                            .fillMaxWidth()
+                            .height(with(density) { (slot.durationMinutes * minutePx).toDp() })
+                            .background(Color(0xFFD0CCDD).copy(alpha = 0.5f))
+                            .border(0.5.dp, Color(0xFFB0ACBD).copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+                    )
+                }
+
+                // Booked meeting slots (red)
+                pickerState.bookedBlockedSlots.forEach { slot ->
+                    Box(
+                        modifier = Modifier
+                            .padding(start = TIME_LABEL_WIDTH_DP.dp, end = 4.dp)
+                            .offset { IntOffset(0, (slot.startMinutes * minutePx).roundToInt()) }
+                            .fillMaxWidth()
+                            .height(with(density) { (slot.durationMinutes * minutePx).toDp() })
+                            .background(Color(0xFFFF7070))
+                            .border(0.5.dp, Color(0xFFCC5A5A), RoundedCornerShape(4.dp))
+                    )
+                }
+
+                // Regular events rendered on the day grid (on top of blocked areas)
                 regularEvents
                     .asSequence()
                     .filter { it.date == selectedDate }
@@ -278,19 +306,6 @@ fun DayColumnWithPicker(
                             }
                         }
                     }
-
-                // Blocked slot overlays
-                pickerState.blockedSlots.forEach { slot ->
-                    Box(
-                        modifier = Modifier
-                            .padding(start = TIME_LABEL_WIDTH_DP.dp, end = 4.dp)
-                            .offset { IntOffset(0, (slot.startMinutes * minutePx).roundToInt()) }
-                            .fillMaxWidth()
-                            .height(with(density) { (slot.durationMinutes * minutePx).toDp() })
-                            .background(Color(0x15FF3B30))
-                            .border(0.5.dp, Color(0x33FF3B30), RoundedCornerShape(4.dp))
-                    )
-                }
 
                 // Picker (draggable scheduling block)
                 if (pickerState.draggableEvent != null) {

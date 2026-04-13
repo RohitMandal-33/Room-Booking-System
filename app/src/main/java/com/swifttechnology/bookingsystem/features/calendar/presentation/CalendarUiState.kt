@@ -26,7 +26,7 @@ data class CalendarUiState(
     val events: List<MeetingEvent> = emptyList()
 )
 
-enum class CalendarView { MONTH, WEEK, DAY }
+enum class CalendarView { DAY, WEEK, MONTH }
 
 @RequiresApi(Build.VERSION_CODES.O)
 data class MeetingEvent(

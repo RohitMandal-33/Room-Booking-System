@@ -13,7 +13,9 @@ import kotlinx.coroutines.launch
 
 data class DayPickerUiState(
     val draggableEvent: DraggableEvent? = null,
-    val blockedSlots: List<TimeRange> = emptyList(),
+    val blockedSlots: List<TimeRange> = emptyList(),          // Combined for collision logic
+    val bookedBlockedSlots: List<TimeRange> = emptyList(),    // Specifically meetings
+    val pastBlockedSlots: List<TimeRange> = emptyList(),      // Specifically past time
     val previewRange: TimeRange? = null,
     val isDragging: Boolean = false
 )
@@ -126,8 +128,14 @@ class DayTimePickerViewModel @Inject constructor() : ViewModel() {
     fun onCancelBooking() =
         _uiState.update { it.copy(draggableEvent = null, isDragging = false, previewRange = null) }
 
-    fun setBlockedSlots(slots: List<TimeRange>) =
-        _uiState.update { it.copy(blockedSlots = slots) }
+    fun setBlockedSlots(booked: List<TimeRange>, past: List<TimeRange>) =
+        _uiState.update { 
+            it.copy(
+                bookedBlockedSlots = booked,
+                pastBlockedSlots = past,
+                blockedSlots = booked + past
+            )
+        }
 
     private fun scheduleAdjustedReset() {
         viewModelScope.launch {

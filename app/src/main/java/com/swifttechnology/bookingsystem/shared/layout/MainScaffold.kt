@@ -44,6 +44,8 @@ fun MainScaffold(
     showEditIcon: Boolean = false,
     isEditMode: Boolean = false,
     showTopBar: Boolean = true,
+    showTodayIcon: Boolean = false,
+    onTodayClick: () -> Unit = {},
     onEditClick: () -> Unit = {},
     onBackClick: (() -> Unit)? = null,
     content: @Composable () -> Unit
@@ -111,6 +113,8 @@ fun MainScaffold(
                         onMenuClick = { scope.launch { drawerState.open() } },
                         showEditIcon = showEditIcon,
                         isEditMode = isEditMode,
+                        showTodayIcon = showTodayIcon,
+                        onTodayClick = onTodayClick,
                         onEditClick = onEditClick,
                         onBackClick = onBackClick
                     )

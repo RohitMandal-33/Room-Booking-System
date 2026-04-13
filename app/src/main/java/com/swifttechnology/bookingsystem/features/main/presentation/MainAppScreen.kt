@@ -98,6 +98,7 @@ fun MainAppScreen(
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var isMeetingRoomsEditable by rememberSaveable { mutableStateOf(false) }
     var isParticipantsEditable by rememberSaveable { mutableStateOf(false) }
+    var todayTrigger by rememberSaveable { mutableStateOf(0) }
     var pendingRoomName by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingBookingDetails by remember { mutableStateOf<PendingBookingDetails?>(null) }
     var pendingParticipantToEdit by remember { mutableStateOf<Participant?>(null) }
@@ -182,6 +183,8 @@ fun MainAppScreen(
         showTopBar = currentRoute != ScreenRoutes.ROOM_CALENDAR &&
             currentRoute != ScreenRoutes.PARTICIPANT_ADD &&
             currentRoute != ScreenRoutes.CUSTOM_GROUP_ADD,
+        showTodayIcon = currentRoute == ScreenRoutes.CALENDAR,
+        onTodayClick = { todayTrigger++ },
         onEditClick = {
             if (currentRoute == ScreenRoutes.MEETING_ROOMS) {
                 isMeetingRoomsEditable = !isMeetingRoomsEditable
@@ -202,6 +205,7 @@ fun MainAppScreen(
                 CalendarScreen(
                     searchQuery = searchQuery,
                     onNavigate = navigateTo,
+                    todayTrigger = todayTrigger,
                     onProceedWithDetails = { room, date, start, end ->
                         pendingRoomName = room
                         pendingBookingDetails = PendingBookingDetails(

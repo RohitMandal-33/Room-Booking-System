@@ -109,9 +109,21 @@ fun RoomCalendarScreen(
 
     LaunchedEffect(calendarUiState.events, selectedDate, roomName) {
         if (roomName != null) {
-            pickerViewModel.setBlockedSlots(
-                calendarViewModel.getBlockedSlotsForRoomAndDate(roomName, selectedDate)
-            )
+            val apiBlocked = calendarViewModel.getBlockedSlotsForRoomAndDate(roomName, selectedDate)
+            
+            // Calculate past time block
+            val now = LocalDate.now()
+            val pastBlocks = mutableListOf<com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.shared.TimeRange>()
+            if (selectedDate.isBefore(now)) {
+                pastBlocks.add(com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.shared.TimeRange(0, 24 * 60))
+            } else if (selectedDate.isEqual(now)) {
+                val currentMinutes = java.time.LocalTime.now().let { it.hour * 60 + it.minute }
+                if (currentMinutes > 0) {
+                    pastBlocks.add(com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.shared.TimeRange(0, currentMinutes))
+                }
+            }
+            
+            pickerViewModel.setBlockedSlots(apiBlocked, pastBlocks)
         }
     }
 
