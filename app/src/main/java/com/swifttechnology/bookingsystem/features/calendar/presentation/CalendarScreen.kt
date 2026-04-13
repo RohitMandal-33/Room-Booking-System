@@ -77,8 +77,14 @@ fun CalendarScreen(
         viewModel.onSearchQueryChanged(searchQuery)
     }
 
-    LaunchedEffect(uiState.selectedDate, uiState.events) {
-        pickerViewModel.setBlockedSlots(viewModel.getBlockedSlotsForDate(uiState.selectedDate))
+    LaunchedEffect(uiState.selectedDate, uiState.events, uiState.selectedRoom) {
+        val room = uiState.selectedRoom
+        val blockedSlots = if (room != null) {
+            viewModel.getBlockedSlotsForRoomAndDate(room.name, uiState.selectedDate)
+        } else {
+            viewModel.getBlockedSlotsForDate(uiState.selectedDate)
+        }
+        pickerViewModel.setBlockedSlots(blockedSlots)
     }
 
     CalendarContent(
@@ -174,6 +180,15 @@ private fun CalendarContent(
             DayOfWeekHeader(withTimeColumn = false)
         }
 
+        val room = uiState.selectedRoom
+        val filteredEvents = remember(uiState.events, room) {
+            if (room != null) {
+                uiState.events.filter { it.meetingRoom.equals(room.name, ignoreCase = true) }
+            } else {
+                uiState.events
+            }
+        }
+
         AnimatedContent(
             targetState = uiState.currentView,
             transitionSpec = { fadeIn() togetherWith fadeOut() },
@@ -182,7 +197,7 @@ private fun CalendarContent(
             when (view) {
                 CalendarView.MONTH -> MonthView(
                     yearMonth = uiState.currentMonth,
-                    events = uiState.events,
+                    events = filteredEvents,
                     selectedDate = uiState.selectedDate,
                     onDateClick = onMonthTileClick,
                     onEventClick = { onEventSelected(it) }
@@ -190,7 +205,7 @@ private fun CalendarContent(
 
                 CalendarView.WEEK -> WeekView(
                     selectedDate = uiState.selectedDate,
-                    events = uiState.events,
+                    events = filteredEvents,
                     onDateClick = { onDateSelected(it) },
                     onEventClick = { onEventSelected(it) }
                 )
@@ -198,7 +213,7 @@ private fun CalendarContent(
                 CalendarView.DAY -> Column(modifier = Modifier.fillMaxSize()) {
                     DayColumnWithPicker(
                         selectedDate = uiState.selectedDate,
-                        regularEvents = uiState.events,
+                        regularEvents = filteredEvents,
                         pickerState = pickerUiState,
                         onGridLongPress = onGridLongPress,
                         onEventClick = { onEventSelected(it) },
@@ -302,10 +317,11 @@ private fun TopBar(
                 val isSelected = currentView == view
                 Box(
                     modifier = Modifier
+                        .width(72.dp)
                         .clip(CircleShape)
                         .background(if (isSelected) PurplePrimary else Color.Transparent)
                         .clickable { onViewChange(view) }
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                        .padding(vertical = 6.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
