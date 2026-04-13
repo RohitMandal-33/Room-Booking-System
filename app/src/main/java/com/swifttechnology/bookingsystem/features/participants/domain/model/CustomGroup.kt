@@ -5,5 +5,6 @@ data class CustomGroup(
     val name: String,
     val description: String,
     val memberCount: Int,
-    val memberIds: List<Long> = emptyList()
+    val memberIds: List<Long> = emptyList(),
+    val preResolvedMemberNames: Map<Long, String> = emptyMap()
 )

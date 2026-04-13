@@ -11,18 +11,35 @@ import kotlinx.coroutines.flow.update
 import com.swifttechnology.bookingsystem.shared.components.SidebarItem
 import androidx.lifecycle.viewModelScope
 import com.swifttechnology.bookingsystem.features.booking.domain.repository.BookingRepository
+import com.swifttechnology.bookingsystem.features.announcements.domain.repository.AnnouncementRepository
+import com.swifttechnology.bookingsystem.features.announcements.domain.model.Announcement
 import kotlinx.coroutines.launch
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val bookingRepository: BookingRepository
+    private val bookingRepository: BookingRepository,
+    private val announcementRepository: AnnouncementRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
     init {
         fetchUpcomingMeetings()
+        fetchAnnouncements()
+    }
+
+    private fun fetchAnnouncements() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingAnnouncements = true) }
+            val result = announcementRepository.getTargetedPinnedAnnouncements()
+            _uiState.update { 
+                it.copy(
+                    isLoadingAnnouncements = false,
+                    announcements = result.getOrDefault(emptyList()) // we'll update UI state to include this
+                )
+            }
+        }
     }
 
     private fun fetchUpcomingMeetings() {

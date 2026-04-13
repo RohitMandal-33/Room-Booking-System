@@ -99,6 +99,7 @@ fun MainAppScreen(
     var isMeetingRoomsEditable by rememberSaveable { mutableStateOf(false) }
     var isParticipantsEditable by rememberSaveable { mutableStateOf(false) }
     var todayTrigger by rememberSaveable { mutableStateOf(0) }
+    var isAnnouncementsEditMode by rememberSaveable { mutableStateOf(false) }
     var pendingRoomName by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingBookingDetails by remember { mutableStateOf<PendingBookingDetails?>(null) }
     var pendingParticipantToEdit by remember { mutableStateOf<Participant?>(null) }
@@ -175,11 +176,15 @@ fun MainAppScreen(
             pendingBookingDetails = null
             isMeetingRoomsEditable = false
             isParticipantsEditable = false
+            isAnnouncementsEditMode = false
         },
         onLogout = onLogout,
-        showEditIcon = currentRoute == ScreenRoutes.MEETING_ROOMS || currentRoute == ScreenRoutes.PARTICIPANTS,
+        showEditIcon = currentRoute == ScreenRoutes.MEETING_ROOMS ||
+            currentRoute == ScreenRoutes.PARTICIPANTS ||
+            currentRoute == ScreenRoutes.ANNOUNCEMENTS,
         isEditMode = (currentRoute == ScreenRoutes.MEETING_ROOMS && isMeetingRoomsEditable) ||
-            (currentRoute == ScreenRoutes.PARTICIPANTS && isParticipantsEditable),
+            (currentRoute == ScreenRoutes.PARTICIPANTS && isParticipantsEditable) ||
+            (currentRoute == ScreenRoutes.ANNOUNCEMENTS && isAnnouncementsEditMode),
         showTopBar = currentRoute != ScreenRoutes.ROOM_CALENDAR &&
             currentRoute != ScreenRoutes.PARTICIPANT_ADD &&
             currentRoute != ScreenRoutes.CUSTOM_GROUP_ADD,
@@ -190,6 +195,8 @@ fun MainAppScreen(
                 isMeetingRoomsEditable = !isMeetingRoomsEditable
             } else if (currentRoute == ScreenRoutes.PARTICIPANTS) {
                 isParticipantsEditable = !isParticipantsEditable
+            } else if (currentRoute == ScreenRoutes.ANNOUNCEMENTS) {
+                isAnnouncementsEditMode = !isAnnouncementsEditMode
             }
         },
         onBackClick = if (navigationStack.size > 1) navigateBack else null
@@ -284,7 +291,10 @@ fun MainAppScreen(
             ScreenRoutes.ANNOUNCEMENTS -> {
                 AnnouncementsScreen(
                     searchQuery = searchQuery,
-                    onNavigate = navigateTo
+                    isEditable = isAnnouncementsEditMode,
+                    onNavigate  = navigateTo,
+                    onEnterEditMode = { isAnnouncementsEditMode = true },
+                    onExitEditMode = { isAnnouncementsEditMode = false }
                 )
             }
             ScreenRoutes.REPORT -> {

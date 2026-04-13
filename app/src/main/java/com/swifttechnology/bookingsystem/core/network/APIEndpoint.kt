@@ -51,4 +51,14 @@ object APIEndpoint {
     const val REPORTS_GET_ALL = "api/v1/reports/get-all"
     const val REPORTS_FILTERED = "api/v1/reports"
     const val REPORTS_EXPORT   = "api/v1/reports/export"
+
+    // Announcements
+    const val ANNOUNCEMENT_LIST            = "api/v1/announcement/list"
+    const val ANNOUNCEMENT_PINNED_LIST     = "api/v1/announcement/pinned-list"
+    const val ANNOUNCEMENT_TARGETED        = "api/v1/get-Targeted-Audience-Announcement"
+    const val ANNOUNCEMENT_TARGETED_PINNED = "api/v1/get-Targeted-Audience-pinned-Announcement"
+    const val ANNOUNCEMENT_ADD             = "api/v1/announcement/add"
+    const val ANNOUNCEMENT_UPDATE          = "api/v1/announcement/{id}/update"
+    const val ANNOUNCEMENT_DELETE          = "api/v1/announcement/{id}/delete"
+    const val ANNOUNCEMENT_CHANGE_PIN      = "api/v1/announcement/{id}/change-pin-status"
 }

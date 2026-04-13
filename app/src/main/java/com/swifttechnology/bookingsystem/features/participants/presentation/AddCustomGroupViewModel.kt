@@ -78,11 +78,30 @@ class AddCustomGroupViewModel @Inject constructor(
     private fun tryResolvePendingMembers() {
         val ids = pendingMemberIds ?: return
         val available = _uiState.value.availableParticipants
-        if (available.isEmpty()) return
-        pendingMemberIds = null
-        val members = ids.mapNotNull { id -> available.find { it.id == id } }
-        _uiState.update {
-            it.copy(formState = it.formState.copy(participants = members))
+        
+        // Split IDs into those we already have and those we need to fetch
+        val knownMembers = available.filter { it.id in ids }
+        val missingIds = ids.filter { id -> available.none { it.id == id } }
+        
+        if (missingIds.isEmpty()) {
+            pendingMemberIds = null
+            _uiState.update {
+                it.copy(formState = it.formState.copy(participants = knownMembers))
+            }
+        } else {
+            // Fetch missing members
+            viewModelScope.launch {
+                participantRepository.getParticipantsByIds(missingIds).onSuccess { participants ->
+                    val missingMembers = participants.map { p ->
+                        InternalMember(id = p.id, name = p.name, email = p.email, department = p.department)
+                    }
+                    val allResolved = (knownMembers + missingMembers).distinctBy { it.id }
+                    pendingMemberIds = null
+                    _uiState.update {
+                        it.copy(formState = it.formState.copy(participants = allResolved))
+                    }
+                }
+            }
         }
     }
 

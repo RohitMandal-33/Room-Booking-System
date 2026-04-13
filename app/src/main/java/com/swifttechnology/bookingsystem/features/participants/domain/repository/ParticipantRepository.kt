@@ -6,4 +6,5 @@ import kotlinx.coroutines.flow.Flow
 interface ParticipantRepository {
     fun getParticipants(): Flow<List<Participant>>
     fun searchParticipants(query: String): Flow<List<Participant>>
+    suspend fun getParticipantsByIds(ids: List<Long>): Result<List<Participant>>
 }

@@ -41,36 +41,30 @@ import com.swifttechnology.bookingsystem.core.designsystem.Primary
 import com.swifttechnology.bookingsystem.core.designsystem.Spacing
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
 
-private data class AnnouncementItem(
-    val message: String,
-    val author: String,
-    val date: String,
-    val icon: ImageVector
-)
+import com.swifttechnology.bookingsystem.features.announcements.domain.model.Announcement
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.text.font.FontWeight
 
-private val announcements = listOf(
-    AnnouncementItem(
-        message = "Extremely Important Discussion that rivals the lord and all, my goodness very important and bla bla bla i gge ni...",
-        author  = "Oshin Joshi",
-        date    = "Mar 18",
-        icon    = Icons.Outlined.Error
-    ),
-    AnnouncementItem(
-        message = "System maintenance scheduled for this weekend. Please plan accordingly.",
-        author  = "Oshin Joshi",
-        date    = "Mar 19",
-        icon    = Icons.Outlined.NotificationsNone
-    ),
-    AnnouncementItem(
-        message = "New room booking policy effective next Monday.",
-        author  = "Oshin Joshi",
-        date    = "Mar 20",
-        icon    = Icons.Outlined.PushPin
-    )
-)
+@RequiresApi(Build.VERSION_CODES.O)
+private fun formatDateForCarousel(raw: String): String {
+    return runCatching {
+        val odt = OffsetDateTime.parse(raw)
+        odt.format(DateTimeFormatter.ofPattern("MMM d", Locale.getDefault()))
+    }.getOrDefault(raw)
+}
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AnnouncementSection(onView: () -> Unit) {
+fun AnnouncementSection(
+    announcements: List<Announcement>,
+    isLoading: Boolean,
+    onView: () -> Unit
+) {
     val pagerState = rememberPagerState(pageCount = { announcements.size })
 
     Column(
@@ -78,7 +72,19 @@ fun AnnouncementSection(onView: () -> Unit) {
             .fillMaxWidth()
             .padding(horizontal = Spacing.md, vertical = Spacing.ms)
     ) {
-        HorizontalPager(
+        if (isLoading) {
+            Box(modifier = Modifier.fillMaxWidth().height(150.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = Primary)
+            }
+        } else if (announcements.isEmpty()) {
+            Box(modifier = Modifier.fillMaxWidth().height(150.dp), contentAlignment = Alignment.Center) {
+                Text(
+                    text = "No current announcements",
+                    style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.customColors.textSecondary)
+                )
+            }
+        } else {
+            HorizontalPager(
             state    = pagerState,
             modifier = Modifier.fillMaxWidth()
         ) { page ->
@@ -107,7 +113,7 @@ fun AnnouncementSection(onView: () -> Unit) {
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector        = item.icon,
+                                imageVector        = if (item.priorityLevel == "HIGH") Icons.Outlined.Error else Icons.Outlined.NotificationsNone,
                                 contentDescription = null,
                                 tint               = Color.White,
                                 modifier           = Modifier.size(Spacing.ml)
@@ -116,15 +122,24 @@ fun AnnouncementSection(onView: () -> Unit) {
 
                         Spacer(modifier = Modifier.width(10.dp))
 
-                        Text(
-                            text     = item.message,
-                            color    = MaterialTheme.colorScheme.onSurface,
-                            style    = MaterialTheme.typography.bodyMedium,
-                            minLines = 3,
-                            maxLines = 3,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.fillMaxWidth(0.92f)
-                        )
+                        Column(modifier = Modifier.fillMaxWidth(0.92f)) {
+                            Text(
+                                text     = item.title,
+                                color    = MaterialTheme.colorScheme.onSurface,
+                                style    = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text     = item.message,
+                                color    = MaterialTheme.customColors.textSecondary,
+                                style    = MaterialTheme.typography.bodySmall,
+                                minLines = 2,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(14.dp))
@@ -135,7 +150,7 @@ fun AnnouncementSection(onView: () -> Unit) {
                         verticalAlignment     = Alignment.CenterVertically
                     ) {
                         Text(
-                            text     = item.author,
+                            text     = item.authorName,
                             color    = MaterialTheme.colorScheme.onSurface,
                             style    = MaterialTheme.typography.labelLarge,
                             maxLines = 1,
@@ -144,7 +159,7 @@ fun AnnouncementSection(onView: () -> Unit) {
                         )
                         Spacer(modifier = Modifier.width(Spacing.sm))
                         Text(
-                            text     = item.date,
+                            text     = formatDateForCarousel(item.createdAt),
                             color    = MaterialTheme.colorScheme.onSurface,
                             style    = MaterialTheme.typography.labelLarge,
                             maxLines = 1
@@ -170,7 +185,7 @@ fun AnnouncementSection(onView: () -> Unit) {
                     }
                 }
             }
-        }
+        } // ends HorizontalPager lambda
 
         Spacer(modifier = Modifier.height(10.dp))
 
@@ -190,5 +205,6 @@ fun AnnouncementSection(onView: () -> Unit) {
                 if (index < announcements.lastIndex) Spacer(modifier = Modifier.width(6.dp))
             }
         }
-    }
-}
+    } // ends else block
+} // ends Column
+} // ends AnnouncementSection

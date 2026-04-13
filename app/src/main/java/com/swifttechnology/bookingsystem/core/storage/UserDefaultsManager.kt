@@ -11,11 +11,7 @@ import kotlinx.coroutines.flow.map
 
 private val Context.userPrefsStore by preferencesDataStore(name = "user_defaults")
 
-/**
- * General-purpose key-value store for non-sensitive user preferences.
- * Equivalent to iOS UserDefaultsManager.
- * Use for theme, locale, onboarding flags — NOT for tokens (use TokenDataStore).
- */
+
 class UserDefaultsManager(private val context: Context) {
 
     // ── Theme ──────────────────────────────────────────────────────────────

@@ -41,7 +41,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -142,9 +144,13 @@ private fun InternalParticipantsContent(
     val apiDepartments by viewModel.departments.collectAsStateWithLifecycle()
     val customGroups by viewModel.customGroups.collectAsStateWithLifecycle()
     
+    val scope = rememberCoroutineScope()
     var departmentDropdownExpanded by remember { mutableStateOf(false) }
     var selectedDepartment by remember { mutableStateOf<String?>(null) }
     var expandedGroupIds by remember { mutableStateOf(setOf<Long>()) }
+
+    // local cache of resolved names for groups to avoid "User #123" flicker
+    var locallyResolvedNames by remember { mutableStateOf(mapOf<Long, String>()) }
 
     val departments = remember(apiDepartments, filteredParticipants) {
         if (apiDepartments.isNotEmpty()) apiDepartments else filteredParticipants.map { it.department }.distinct().sorted()
@@ -273,14 +279,16 @@ private fun InternalParticipantsContent(
                                     // Select all visible groups:
                                     // Add all their IDs to selectedGroupIds and merge their members.
                                     val newGroupIds = filteredGroups.map { it.id }.toSet()
-                                    val allToSelect = filteredGroups.flatMap { group ->
-                                        filteredParticipants.filter { it.id in group.memberIds }
-                                    }.distinctBy { it.id }
-                                    val merged = (formState.participants + allToSelect).distinctBy { it.id }
-                                    onFormStateChanged(formState.copy(
-                                        participants = merged,
-                                        selectedGroupIds = formState.selectedGroupIds + newGroupIds
-                                    ))
+                                    val allMemberIds = filteredGroups.flatMap { it.memberIds }.distinct()
+                                    
+                                    scope.launch {
+                                        val resolvedMembers = viewModel.resolveParticipantsByIds(allMemberIds)
+                                        val merged = (formState.participants + resolvedMembers).distinctBy { it.id }
+                                        onFormStateChanged(formState.copy(
+                                            participants = merged,
+                                            selectedGroupIds = formState.selectedGroupIds + newGroupIds
+                                        ))
+                                    }
                                 } else {
                                     // People / Teams: add visible members to participants only
                                     val merged = (formState.participants + displayList).distinctBy { it.id }
@@ -494,12 +502,11 @@ private fun InternalParticipantsContent(
                     }
                     GroupBy.GROUPS -> {
                         items(filteredGroups, key = { it.id }) { group ->
-                            val groupMembers = filteredParticipants.filter { it.id in group.memberIds }
-                            // isSelected is purely driven by selectedGroupIds — independent of
-                            // whether individual members were added/removed via People / Teams tab.
                             val isGroupSelected = group.id in formState.selectedGroupIds
                             val memberNames = group.memberIds.map { id ->
-                                filteredParticipants.find { it.id == id }?.name ?: "User #$id"
+                                filteredParticipants.find { it.id == id }?.name 
+                                    ?: locallyResolvedNames[id] 
+                                    ?: "User #$id"
                             }
 
                             CustomGroupCard(
@@ -507,25 +514,35 @@ private fun InternalParticipantsContent(
                                 isExpanded = expandedGroupIds.contains(group.id),
                                 memberDisplayNames = memberNames,
                                 onMembersRowClick = {
-                                    expandedGroupIds = if (expandedGroupIds.contains(group.id)) {
-                                        expandedGroupIds - group.id
+                                    val isExploring = !expandedGroupIds.contains(group.id)
+                                    if (isExploring) {
+                                        expandedGroupIds = expandedGroupIds + group.id
+                                        // Auto-resolve names when expanding if they look like "User #ID"
+                                        val missingIds = group.memberIds.filter { id ->
+                                            filteredParticipants.none { it.id == id } && !locallyResolvedNames.containsKey(id)
+                                        }
+                                        if (missingIds.isNotEmpty()) {
+                                            scope.launch {
+                                                val resolved = viewModel.resolveParticipantsByIds(missingIds)
+                                                locallyResolvedNames = locallyResolvedNames + resolved.associate { it.id to it.name }
+                                            }
+                                        }
                                     } else {
-                                        expandedGroupIds + group.id
+                                        expandedGroupIds = expandedGroupIds - group.id
                                     }
                                 },
                                 isEditable = true,
                                 isSelected = isGroupSelected,
                                 onSelectionChange = { selected ->
                                     if (selected) {
-                                        // Add group ID to selectedGroupIds and merge any new
-                                        // members into participants (skip already-present ones).
-                                        val toAdd = groupMembers.filterNot { gm ->
-                                            formState.participants.any { it.id == gm.id }
+                                        scope.launch {
+                                            val resolvedGroupMembers = viewModel.resolveParticipantsByIds(group.memberIds)
+                                            val merged = (formState.participants + resolvedGroupMembers).distinctBy { it.id }
+                                            onFormStateChanged(formState.copy(
+                                                participants = merged,
+                                                selectedGroupIds = formState.selectedGroupIds + group.id
+                                            ))
                                         }
-                                        onFormStateChanged(formState.copy(
-                                            participants = (formState.participants + toAdd).distinctBy { it.id },
-                                            selectedGroupIds = formState.selectedGroupIds + group.id
-                                        ))
                                     } else {
                                         // Remove group ID from selectedGroupIds.
                                         // Only remove members whose IDs are NOT present in any

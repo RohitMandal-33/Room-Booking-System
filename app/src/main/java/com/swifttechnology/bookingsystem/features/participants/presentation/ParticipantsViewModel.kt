@@ -58,7 +58,16 @@ class ParticipantsViewModel @Inject constructor(
     private fun fetchCustomGroups() {
         customGroupRepository.getCustomGroups()
             .onEach { groups ->
-                _uiState.update { it.copy(customGroups = groups) }
+                _uiState.update { state ->
+                    val newNames = groups.fold(mutableMapOf<Long, String>()) { acc, group ->
+                        acc.putAll(group.preResolvedMemberNames)
+                        acc
+                    }
+                    state.copy(
+                        customGroups = groups,
+                        resolvedUserNames = state.resolvedUserNames + newNames
+                    )
+                }
             }
             .catch { }
             .launchIn(viewModelScope)
@@ -99,15 +108,12 @@ class ParticipantsViewModel @Inject constructor(
         }
         if (missingIds.isEmpty()) return
         viewModelScope.launch {
-            val updates = mutableMapOf<Long, String>()
-            for (id in missingIds) {
-                userRepository.getUserById(id).onSuccess { dto ->
-                    updates[id] = dto.displayName()
-                }
-            }
-            if (updates.isNotEmpty()) {
-                _uiState.update { s ->
-                    s.copy(resolvedUserNames = s.resolvedUserNames + updates)
+            participantRepository.getParticipantsByIds(missingIds).onSuccess { participants ->
+                val updates = participants.associate { it.id to it.name }
+                if (updates.isNotEmpty()) {
+                    _uiState.update { s ->
+                        s.copy(resolvedUserNames = s.resolvedUserNames + updates)
+                    }
                 }
             }
         }

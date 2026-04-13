@@ -12,10 +12,7 @@ import kotlinx.coroutines.flow.first
 
 private val Context.tokenDataStore by preferencesDataStore(name = "auth_tokens")
 
-/**
- * DataStore-backed implementation of [TokenStorage].
- * Shared across all features via Hilt.
- */
+
 class TokenDataStore(
     private val context: Context,
     private val refreshTokenApi: RefreshTokenApi
@@ -66,11 +63,7 @@ class TokenDataStore(
         context.tokenDataStore.edit { it.clear() }
     }
 
-    /**
-     * Exchanges the stored refresh token for a new access token via the API.
-     * On success, persists and returns the new access token.
-     * On failure (403 / invalid), clears all tokens and returns null (force re-login).
-     */
+
     override suspend fun refreshToken(): String? {
         val storedRefreshToken = getRefreshToken()
         if (storedRefreshToken.isNullOrBlank()) {

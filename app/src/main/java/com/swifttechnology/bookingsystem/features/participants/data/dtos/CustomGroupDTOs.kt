@@ -13,33 +13,40 @@ data class CustomGroupRequestDTO(
     val member: List<Long>
 )
 
-/**
- * Parses member lists whether the API sends IDs as numbers, strings, or embedded user objects
- * (`{ "id": 1 }`). Also supports alternate JSON keys via [SerializedName] on [member].
- */
-class MemberIdsDeserializer : JsonDeserializer<List<Long>> {
+data class GroupMemberDetailDTO(
+    val id: Long,
+    val name: String? = null
+)
+
+class MembersDeserializer : JsonDeserializer<List<GroupMemberDetailDTO>> {
     override fun deserialize(
         json: JsonElement?,
         typeOfT: Type?,
         context: JsonDeserializationContext?
-    ): List<Long> {
+    ): List<GroupMemberDetailDTO> {
         if (json == null || json.isJsonNull) return emptyList()
         if (!json.isJsonArray) return emptyList()
         return json.asJsonArray.mapNotNull { element ->
             when {
                 element.isJsonPrimitive && element.asJsonPrimitive.isNumber ->
-                    element.asLong
+                    GroupMemberDetailDTO(id = element.asLong)
                 element.isJsonPrimitive && element.asJsonPrimitive.isString ->
-                    element.asString.toLongOrNull()
+                    element.asString.toLongOrNull()?.let { GroupMemberDetailDTO(id = it) }
                 element.isJsonObject -> {
                     val obj = element.asJsonObject
-                    when {
-                        obj.has("id") && obj.get("id").isJsonPrimitive && obj.get("id").asJsonPrimitive.isNumber ->
-                            obj.get("id").asLong
-                        obj.has("id") && obj.get("id").isJsonPrimitive && obj.get("id").asJsonPrimitive.isString ->
-                            obj.get("id").asString.toLongOrNull()
+                    val id = when {
+                        obj.has("id") && obj.get("id").isJsonPrimitive && obj.get("id").asJsonPrimitive.isNumber -> obj.get("id").asLong
+                        obj.has("id") && obj.get("id").isJsonPrimitive && obj.get("id").asJsonPrimitive.isString -> obj.get("id").asString.toLongOrNull()
+                        obj.has("memberId") && obj.get("memberId").isJsonPrimitive && obj.get("memberId").asJsonPrimitive.isNumber -> obj.get("memberId").asLong
+                        obj.has("memberId") && obj.get("memberId").isJsonPrimitive && obj.get("memberId").asJsonPrimitive.isString -> obj.get("memberId").asString.toLongOrNull()
                         else -> null
                     }
+                    val name = when {
+                        obj.has("memberName") && obj.get("memberName").isJsonPrimitive && obj.get("memberName").asJsonPrimitive.isString -> obj.get("memberName").asString
+                        obj.has("name") && obj.get("name").isJsonPrimitive && obj.get("name").asJsonPrimitive.isString -> obj.get("name").asString
+                        else -> null
+                    }
+                    if (id != null) GroupMemberDetailDTO(id = id, name = name) else null
                 }
                 else -> null
             }
@@ -52,9 +59,9 @@ data class CustomGroupResponseDTO(
     @SerializedName(value = "groupName", alternate = ["name"])
     val groupName: String? = null,
     val description: String? = null,
-    @JsonAdapter(MemberIdsDeserializer::class)
+    @JsonAdapter(MembersDeserializer::class)
     @SerializedName(value = "member", alternate = ["members", "memberIds", "userIds"])
-    val member: List<Long>? = null,
+    val membersInfo: List<GroupMemberDetailDTO>? = null,
     /** Some backends expose only a count in list responses. */
     @SerializedName(value = "memberCount", alternate = ["membersCount", "member_count"])
     val memberCount: Int? = null

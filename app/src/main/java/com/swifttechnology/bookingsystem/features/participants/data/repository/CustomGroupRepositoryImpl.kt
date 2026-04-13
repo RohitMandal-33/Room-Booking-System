@@ -18,18 +18,21 @@ class CustomGroupRepositoryImpl @Inject constructor(
         
         val content = response.data
         val groups = content.map { dto ->
-            val ids = dto.member ?: emptyList()
+            val membersInfo = dto.membersInfo ?: emptyList()
+            val ids = membersInfo.map { it.id }
             val count = when {
                 ids.isNotEmpty() -> ids.size
                 dto.memberCount != null && dto.memberCount > 0 -> dto.memberCount
                 else -> 0
             }
+            val namesMap = membersInfo.filter { it.name != null }.associate { it.id to it.name!! }
             CustomGroup(
                 id = dto.id ?: 0,
                 name = dto.groupName ?: "Unknown Group",
                 description = dto.description ?: "",
                 memberCount = count,
-                memberIds = ids
+                memberIds = ids,
+                preResolvedMemberNames = namesMap
             )
         }
         emit(groups)
@@ -50,18 +53,21 @@ class CustomGroupRepositoryImpl @Inject constructor(
                 memberIds = memberIds
             )
         }
-        val idsCreate = dto.member ?: emptyList()
+        val membersInfo = dto.membersInfo ?: emptyList()
+        val idsCreate = membersInfo.map { it.id }
         val countCreate = when {
             idsCreate.isNotEmpty() -> idsCreate.size
             dto.memberCount != null && dto.memberCount > 0 -> dto.memberCount
             else -> 0
         }
+        val namesMapCreate = membersInfo.filter { it.name != null }.associate { it.id to it.name!! }
         CustomGroup(
             id = dto.id ?: 0,
             name = dto.groupName ?: "Unknown Group",
             description = dto.description ?: "",
             memberCount = countCreate,
-            memberIds = idsCreate
+            memberIds = idsCreate,
+            preResolvedMemberNames = namesMapCreate
         )
     }
 
@@ -80,18 +86,21 @@ class CustomGroupRepositoryImpl @Inject constructor(
                 memberIds = memberIds
             )
         }
-        val idsUpdate = dto.member ?: emptyList()
+        val membersInfo = dto.membersInfo ?: emptyList()
+        val idsUpdate = membersInfo.map { it.id }
         val countUpdate = when {
             idsUpdate.isNotEmpty() -> idsUpdate.size
             dto.memberCount != null && dto.memberCount > 0 -> dto.memberCount
             else -> 0
         }
+        val namesMapUpdate = membersInfo.filter { it.name != null }.associate { it.id to it.name!! }
         CustomGroup(
             id = dto.id ?: 0,
             name = dto.groupName ?: "Unknown Group",
             description = dto.description ?: "",
             memberCount = countUpdate,
-            memberIds = idsUpdate
+            memberIds = idsUpdate,
+            preResolvedMemberNames = namesMapUpdate
         )
     }
 

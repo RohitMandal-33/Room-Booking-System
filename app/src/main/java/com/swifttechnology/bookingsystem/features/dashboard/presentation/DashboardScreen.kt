@@ -80,6 +80,8 @@ fun DashboardScreen(
 
             // 2. Announcement carousel
             AnnouncementSection(
+                announcements = uiState.announcements,
+                isLoading = uiState.isLoadingAnnouncements,
                 onView = { onNavigate(ScreenRoutes.ANNOUNCEMENTS) }
             )
 

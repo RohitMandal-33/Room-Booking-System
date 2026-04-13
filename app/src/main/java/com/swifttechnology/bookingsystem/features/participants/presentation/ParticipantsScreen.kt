@@ -354,6 +354,7 @@ private fun memberDisplayNamesForGroup(
 ): List<String> =
     group.memberIds.map { id ->
         participants.find { it.id == id }?.name
+            ?: group.preResolvedMemberNames[id]
             ?: resolvedUserNames[id]
             ?: "User #$id"
     }

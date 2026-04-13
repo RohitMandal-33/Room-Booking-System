@@ -21,27 +21,7 @@ class ParticipantRepositoryImpl @Inject constructor(
         )
         val content = response.getOrThrow().content ?: emptyList()
 
-        val participants = content.map { dto ->
-            val fullName = listOfNotNull(dto.firstname, dto.lastname)
-                .joinToString(" ")
-                .takeIf { it.isNotBlank() } ?: dto.email
-
-            Participant(
-                id = dto.id,
-                name = fullName,
-                role = dto.role ?: "Unknown Role",
-                email = dto.email,
-                phone = dto.phoneNo?.trim()?.takeIf { it.isNotEmpty() } ?: "N/A",
-                meetingCount = 0,
-                department = dto.department ?: "Unknown Department",
-                status = dto.status ?: "UNKNOWN",
-                position = dto.position ?: "N/A",
-                firstname = dto.firstname?.trim()?.takeIf { it.isNotEmpty() },
-                lastname = dto.lastname?.trim()?.takeIf { it.isNotEmpty() },
-                departmentId = dto.departmentId,
-                roleId = dto.roleId
-            )
-        }
+        val participants = content.map { it.toParticipant() }
 
         // Emit the results. Since we passed the query to the API, 
         // we might not need extra local filtering, but it doesn't hurt 
@@ -56,5 +36,36 @@ class ParticipantRepositoryImpl @Inject constructor(
             }
             emit(filtered)
         }
+    }
+
+    override suspend fun getParticipantsByIds(ids: List<Long>): Result<List<Participant>> = runCatching {
+        if (ids.isEmpty()) return@runCatching emptyList()
+        
+        // If there's no batch API, we fetch individually (or from a cached list if we had one)
+        ids.map { id ->
+            userRepository.getUserById(id).getOrThrow().toParticipant()
+        }
+    }
+
+    private fun com.swifttechnology.bookingsystem.features.user.data.dtos.UserDetailsDTO.toParticipant(): Participant {
+        val fullName = listOfNotNull(firstname, lastname)
+            .joinToString(" ")
+            .takeIf { it.isNotBlank() } ?: email
+
+        return Participant(
+            id = id,
+            name = fullName,
+            role = role ?: "Unknown Role",
+            email = email,
+            phone = phoneNo?.trim()?.takeIf { it.isNotEmpty() } ?: "N/A",
+            meetingCount = 0,
+            department = department ?: "Unknown Department",
+            status = status ?: "UNKNOWN",
+            position = position ?: "N/A",
+            firstname = firstname?.trim()?.takeIf { it.isNotEmpty() },
+            lastname = lastname?.trim()?.takeIf { it.isNotEmpty() },
+            departmentId = departmentId,
+            roleId = roleId
+        )
     }
 }

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.swifttechnology.bookingsystem.features.department.domain.repository.DepartmentRepository
 import com.swifttechnology.bookingsystem.features.participants.domain.model.CustomGroup
 import com.swifttechnology.bookingsystem.features.participants.domain.repository.CustomGroupRepository
+import com.swifttechnology.bookingsystem.features.participants.domain.repository.ParticipantRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -17,7 +18,8 @@ import javax.inject.Inject
 @HiltViewModel
 class ParticipantsSheetViewModel @Inject constructor(
     private val departmentRepository: DepartmentRepository,
-    private val customGroupRepository: CustomGroupRepository
+    private val customGroupRepository: CustomGroupRepository,
+    private val participantRepository: ParticipantRepository
 ) : ViewModel() {
 
     private val _departments = MutableStateFlow<List<String>>(emptyList())
@@ -40,5 +42,18 @@ class ParticipantsSheetViewModel @Inject constructor(
                 _departments.value = result.map { it.departmentName }.sorted()
             }
         }
+    }
+
+    suspend fun resolveParticipantsByIds(ids: List<Long>): List<com.swifttechnology.bookingsystem.features.booking.presentation.InternalMember> {
+        return participantRepository.getParticipantsByIds(ids).map { participants ->
+            participants.map { p ->
+                com.swifttechnology.bookingsystem.features.booking.presentation.InternalMember(
+                    id = p.id,
+                    name = p.name,
+                    email = p.email,
+                    department = p.department
+                )
+            }
+        }.getOrDefault(emptyList())
     }
 }
