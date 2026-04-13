@@ -65,6 +65,7 @@ private val PurpleLight = Color(0xFFEDE9FF)
 fun CalendarScreen(
     searchQuery: String,
     onNavigate: (String) -> Unit,
+    onProceedWithDetails: (String, String, String, String) -> Unit = { _, _, _, _ -> },
     onEditMeeting: (MeetingEvent) -> Unit = {},
     viewModel: CalendarViewModel = hiltViewModel(),
     pickerViewModel: DayTimePickerViewModel = hiltViewModel()
@@ -77,7 +78,7 @@ fun CalendarScreen(
         viewModel.onSearchQueryChanged(searchQuery)
     }
 
-    LaunchedEffect(uiState.selectedDate, uiState.events, uiState.selectedRoom) {
+    LaunchedEffect(uiState.selectedDate, uiState.selectedRoom, uiState.currentView) {
         val room = uiState.selectedRoom
         val blockedSlots = if (room != null) {
             viewModel.getBlockedSlotsForRoomAndDate(room.name, uiState.selectedDate)
@@ -85,6 +86,8 @@ fun CalendarScreen(
             viewModel.getBlockedSlotsForDate(uiState.selectedDate)
         }
         pickerViewModel.setBlockedSlots(blockedSlots)
+        // Reset picker when date, room, or view mode changes
+        pickerViewModel.onCancelBooking()
     }
 
     CalendarContent(
@@ -109,7 +112,18 @@ fun CalendarScreen(
         onPickerResizeBottomCommitted = pickerViewModel::onResizeBottomCommitted,
         onPickerDragCancelled = pickerViewModel::onDragCancelled,
         onPickerCancelBooking = pickerViewModel::onCancelBooking,
-        onProceed = { onNavigate(ScreenRoutes.BOOK_ROOM) },
+        onProceed = {
+            val draggable = pickerUiState.draggableEvent
+            if (draggable != null) {
+                val roomName = uiState.selectedRoom?.name ?: ""
+                val dateStr = uiState.selectedDate.format(DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.getDefault()))
+                val startTime = IntervalUtils.formatMinutes(draggable.timeRange.startMinutes)
+                val endTime   = IntervalUtils.formatMinutes(draggable.timeRange.endMinutes)
+                onProceedWithDetails(roomName, dateStr, startTime, endTime)
+            } else {
+                onNavigate(ScreenRoutes.BOOK_ROOM)
+            }
+        },
         onTimePickerConfirm = pickerViewModel::initializePicker,
         onEditMeeting = { event ->
             onEditMeeting(event)

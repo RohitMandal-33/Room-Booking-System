@@ -202,6 +202,16 @@ fun MainAppScreen(
                 CalendarScreen(
                     searchQuery = searchQuery,
                     onNavigate = navigateTo,
+                    onProceedWithDetails = { room, date, start, end ->
+                        pendingRoomName = room
+                        pendingBookingDetails = PendingBookingDetails(
+                            roomName = room,
+                            date = date,
+                            startTime = start,
+                            endTime = end
+                        )
+                        navigateTo(ScreenRoutes.BOOK_ROOM)
+                    },
                     onEditMeeting = { event ->
                         // Pre-fill room name and date/time from the event
                         pendingRoomName = event.meetingRoom.takeIf { it.isNotBlank() }

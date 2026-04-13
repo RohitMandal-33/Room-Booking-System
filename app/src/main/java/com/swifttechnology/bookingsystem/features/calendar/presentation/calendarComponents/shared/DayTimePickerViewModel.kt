@@ -31,10 +31,22 @@ class DayTimePickerViewModel @Inject constructor() : ViewModel() {
         _uiState.update { it.copy(previewRange = preview) }
 
     fun onTimeSlotLongPressed(startMinutes: Int) = _uiState.update { state ->
+        // Check if the pressed slot is already in an unavailable grey area
+        val isBlocked = state.blockedSlots.any { startMinutes >= it.startMinutes && startMinutes < it.endMinutes }
+        if (isBlocked) return@update state
+
         val duration = 60
+        // Resolve a valid starting location to ensure it doesn't overlap into blocked areas
+        val resolvedStart = IntervalUtils.resolveMove(
+            proposedStart = startMinutes,
+            duration = duration,
+            blocked = state.blockedSlots,
+            previousStart = startMinutes
+        )
+
         state.copy(
             draggableEvent = DraggableEvent(
-                timeRange = TimeRange(startMinutes, startMinutes + duration)
+                timeRange = TimeRange(resolvedStart, resolvedStart + duration)
             )
         )
     }
