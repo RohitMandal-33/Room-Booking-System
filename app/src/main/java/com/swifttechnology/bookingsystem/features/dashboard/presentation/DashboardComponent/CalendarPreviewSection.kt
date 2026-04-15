@@ -173,12 +173,6 @@ fun CalendarPreviewSection(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
-
-                TabPills(
-                    tabs          = listOf(/*"Day", "Week",*/ "Month"),
-                    selectedTab   = selectedTab,
-                    onTabSelected = { selectedTab = it }
-                )
             }
 
             Spacer(Modifier.height(Spacing.md))

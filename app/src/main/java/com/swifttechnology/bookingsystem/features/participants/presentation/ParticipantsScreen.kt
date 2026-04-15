@@ -244,7 +244,12 @@ fun ParticipantsScreen(
                             .weight(1f)
                             .height(50.dp),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007AFF))
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFEBEBF5),
+                            contentColor = Color(0xFF1C1C1E),
+                            disabledContainerColor = Color(0xFFF2F2F7),
+                            disabledContentColor = Color(0xFF3C3C43).copy(alpha = 0.3f)
+                        )
                     ) {
                         Icon(Icons.Outlined.Edit, contentDescription = "Edit", modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
@@ -264,7 +269,12 @@ fun ParticipantsScreen(
                             .weight(1f)
                             .height(50.dp),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF3B30))
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFFFD4D4),
+                            contentColor = Color(0xFF1C1C1E),
+                            disabledContainerColor = Color(0xFFF2F2F7),
+                            disabledContentColor = Color(0xFF3C3C43).copy(alpha = 0.3f)
+                        )
                     ) {
                         Icon(Icons.Outlined.Delete, contentDescription = "Delete", modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))

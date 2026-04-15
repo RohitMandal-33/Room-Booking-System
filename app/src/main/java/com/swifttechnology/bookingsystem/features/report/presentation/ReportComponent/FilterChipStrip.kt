@@ -8,21 +8,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Business
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.MeetingRoom
-import androidx.compose.material.icons.filled.SwapVert
-import androidx.compose.material3.Button
-import androidx.compose.material3.DateRangePicker
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDateRangePickerState
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,9 +21,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.swifttechnology.bookingsystem.features.report.presentation.ReportsAnalyticsViewModel
+import java.text.SimpleDateFormat
+import java.util.*
 
 
-// Dropdown Filter Strip
+//     Quick-select presets
+
+private val quickPresets = listOf("Today", "This week", "This month", "Last 30 days", "Custom")
+
+
+//     Filter Chip Strip
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,8 +47,12 @@ fun FilterChipStrip(vm: ReportsAnalyticsViewModel) {
             horizontalArrangement = Arrangement.End
         ) {
             Text(
-                text = "Clear Filters",
-                style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = ColorPrimary),
+                text = "Clear filters",
+                style = TextStyle(
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = ColorPrimary
+                ),
                 modifier = Modifier
                     .clickable { vm.clearFilters() }
                     .padding(bottom = 10.dp)
@@ -69,14 +67,13 @@ fun FilterChipStrip(vm: ReportsAnalyticsViewModel) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             DropdownFilterChip(
-                icon = Icons.Default.CalendarToday, label = "Date",
-                selected = vm.selectedDate, options = vm.dateOptions,
-                onSelect = { 
-                    if (it == "Custom") {
-                        showCustomDateSheet = true
-                    } else {
-                        vm.onDateSelected(it) 
-                    }
+                icon = Icons.Default.CalendarToday,
+                label = "Date",
+                selected = vm.selectedDate,
+                options = vm.dateOptions,
+                onSelect = {
+                    if (it == "Custom") showCustomDateSheet = true
+                    else vm.onDateSelected(it)
                 }
             )
             DropdownFilterChip(
@@ -98,53 +95,21 @@ fun FilterChipStrip(vm: ReportsAnalyticsViewModel) {
     }
 
     if (showCustomDateSheet) {
-        val dateRangePickerState = rememberDateRangePickerState()
-
-        ModalBottomSheet(
-            onDismissRequest = { showCustomDateSheet = false },
-            modifier = Modifier.fillMaxHeight(0.85f)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-            ) {
-                DateRangePicker(
-                    state = dateRangePickerState,
-                    modifier = Modifier.weight(1f)
-                )
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp, bottom = 16.dp),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(
-                        onClick = { showCustomDateSheet = false },
-                        modifier = Modifier.padding(end = 8.dp)
-                    ) {
-                        Text("Cancel")
-                    }
-                    Button(
-                        onClick = {
-                            vm.customStartDate = dateRangePickerState.selectedStartDateMillis
-                            vm.customEndDate = dateRangePickerState.selectedEndDateMillis
-                            vm.onDateSelected("Custom")
-                            showCustomDateSheet = false
-                        },
-                        enabled = dateRangePickerState.selectedStartDateMillis != null && dateRangePickerState.selectedEndDateMillis != null
-                    ) {
-                        Text("Apply")
-                    }
-                }
+        DateRangeSheet(
+            initialStartMillis = vm.customStartDate,
+            initialEndMillis = vm.customEndDate,
+            onDismiss = { showCustomDateSheet = false },
+            onApply = { start, end ->
+                vm.customStartDate = start
+                vm.customEndDate = end
+                vm.onDateSelected("Custom")
+                showCustomDateSheet = false
             }
-        }
+        )
     }
 }
 
-
-// Individual Dropdown Filter Chip
+//     Individual Dropdown Filter Chip
 
 @Composable
 fun DropdownFilterChip(
@@ -163,11 +128,11 @@ fun DropdownFilterChip(
             modifier = Modifier
                 .clip(RoundedCornerShape(20.dp))
                 .border(
-                    1.dp,
-                    if (isActive) ColorPrimaryMedium else ColorChipBorder,
+                    0.5.dp,
+                    if (isActive) Color(0xFFAFA9EC) else ColorChipBorder,
                     RoundedCornerShape(20.dp)
                 )
-                .background(if (isActive) ColorPrimaryLight else Color.White)
+                .background(if (isActive) Color(0xFFEEEDFE) else Color.White)
                 .clickable { expanded = !expanded }
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -177,14 +142,14 @@ fun DropdownFilterChip(
                 imageVector = icon,
                 contentDescription = null,
                 modifier = Modifier.size(15.dp),
-                tint = if (isActive) ColorPrimaryMedium else ColorOnSurfaceVar
+                tint = if (isActive) Color(0xFF534AB7) else ColorOnSurfaceVar
             )
             Text(
                 text = displayText,
                 style = TextStyle(
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
-                    color = if (isActive) ColorPrimaryMedium else ColorOnSurface
+                    color = if (isActive) Color(0xFF534AB7) else ColorOnSurface
                 ),
                 maxLines = 1
             )
@@ -192,7 +157,7 @@ fun DropdownFilterChip(
                 imageVector = Icons.Default.KeyboardArrowDown,
                 contentDescription = null,
                 modifier = Modifier.size(15.dp),
-                tint = if (isActive) ColorPrimaryMedium else ColorOnSurfaceVar
+                tint = if (isActive) Color(0xFF534AB7) else ColorOnSurfaceVar
             )
         }
 
@@ -212,12 +177,12 @@ fun DropdownFilterChip(
                             style = TextStyle(
                                 fontSize = 14.sp,
                                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                color = if (isSelected) ColorPrimary else ColorOnSurface
+                                color = if (isSelected) Color(0xFF534AB7) else ColorOnSurface
                             )
                         )
                     },
                     onClick = { onSelect(option); expanded = false },
-                    modifier = Modifier.background(if (isSelected) ColorPrimaryLight else Color.White)
+                    modifier = Modifier.background(if (isSelected) Color(0xFFEEEDFE) else Color.White)
                 )
             }
         }

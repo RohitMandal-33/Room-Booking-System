@@ -29,7 +29,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -322,7 +322,7 @@ private fun EditModeActionBar(
                 .weight(1f)
                 .height(50.dp)
                 .clip(RoundedCornerShape(CornerRadius.lg))
-                .background(Primary)
+                .background(if (hasSelection) Color(0xFFEBEBF5) else Color(0xFFF2F2F7))
                 .clickable(enabled = hasSelection, onClick = onEdit),
             contentAlignment = Alignment.Center
         ) {
@@ -333,10 +333,10 @@ private fun EditModeActionBar(
                 Icon(
                     imageVector = Icons.Outlined.Edit,
                     contentDescription = "Edit",
-                    tint = Color.White,
+                    tint = if (hasSelection) Color(0xFF1C1C1E) else Color(0xFF3C3C43).copy(alpha = 0.3f),
                     modifier = Modifier.size(18.dp)
                 )
-                Text("Edit", color = Color.White, fontWeight = FontWeight.SemiBold)
+                Text("Edit", color = if (hasSelection) Color(0xFF1C1C1E) else Color(0xFF3C3C43).copy(alpha = 0.3f), fontWeight = FontWeight.SemiBold)
             }
         }
 
@@ -346,7 +346,7 @@ private fun EditModeActionBar(
                 .weight(1f)
                 .height(50.dp)
                 .clip(RoundedCornerShape(CornerRadius.lg))
-                .background(Color(0xFFE53935))
+                .background(if (hasSelection) Color(0xFFFFD4D4) else Color(0xFFF2F2F7))
                 .clickable(enabled = hasSelection, onClick = onDelete),
             contentAlignment = Alignment.Center
         ) {
@@ -355,12 +355,12 @@ private fun EditModeActionBar(
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Default.Delete,
+                    imageVector = Icons.Outlined.Delete,
                     contentDescription = "Delete",
-                    tint = Color.White,
+                    tint = if (hasSelection) Color(0xFF1C1C1E) else Color(0xFF3C3C43).copy(alpha = 0.3f),
                     modifier = Modifier.size(18.dp)
                 )
-                Text("Delete", color = Color.White, fontWeight = FontWeight.SemiBold)
+                Text("Delete", color = if (hasSelection) Color(0xFF1C1C1E) else Color(0xFF3C3C43).copy(alpha = 0.3f), fontWeight = FontWeight.SemiBold)
             }
         }
     }
