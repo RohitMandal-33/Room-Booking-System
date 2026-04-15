@@ -1,50 +1,55 @@
 package com.swifttechnology.bookingsystem.features.announcements.presentation.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.swifttechnology.bookingsystem.core.designsystem.CornerRadius
-import com.swifttechnology.bookingsystem.core.designsystem.Primary
+import com.swifttechnology.bookingsystem.core.designsystem.Neutral700
 import com.swifttechnology.bookingsystem.core.designsystem.Spacing
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.features.announcements.data.dtos.AnnouncementRequestDTO
 import com.swifttechnology.bookingsystem.features.announcements.domain.model.Announcement
+import com.swifttechnology.bookingsystem.features.booking.presentation.components.BookingClickableField
+import com.swifttechnology.bookingsystem.features.booking.presentation.components.BookingTextField
+import com.swifttechnology.bookingsystem.shared.components.PrimaryButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,208 +76,240 @@ fun AddEditAnnouncementSheet(
     var pinned by rememberSaveable(editingAnnouncement) {
         mutableStateOf(editingAnnouncement?.pinned ?: false)
     }
+    var startDate by rememberSaveable(editingAnnouncement) {
+        mutableStateOf(editingAnnouncement?.startDate ?: "")
+    }
+    var endDate by rememberSaveable(editingAnnouncement) {
+        mutableStateOf(editingAnnouncement?.endDate ?: "")
+    }
     var allUser by rememberSaveable { mutableStateOf(true) }
 
-    val titleError = title.isBlank()
-    val messageError = message.isBlank()
-    val canSave = !titleError && !messageError
+    var showStartDatePicker by remember { mutableStateOf(false) }
+    var showEndDatePicker by remember { mutableStateOf(false) }
+
+    val canSave = title.isNotBlank() && startDate.isNotBlank() && endDate.isNotBlank()
 
     ModalBottomSheet(
         sheetState = sheetState,
         onDismissRequest = onDismiss,
-        containerColor = colors.neutral100,
-        dragHandle = {
-            Box(
-                modifier = Modifier
-                    .padding(top = 12.dp, bottom = 8.dp)
-                    .size(width = 36.dp, height = 4.dp)
-                    .clip(RoundedCornerShape(CornerRadius.full))
-                    .background(colors.neutral300)
-            )
-        }
+        containerColor = Color.White,
+        dragHandle = null
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = Spacing.md)
+                .fillMaxHeight()
                 .navigationBarsPadding()
                 .imePadding()
                 .padding(bottom = Spacing.lg)
         ) {
-            // Header
-            Text(
-                text = if (isEdit) "Edit Announcement" else "New Announcement",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = colors.deepBlack
-                )
-            )
-            Spacer(Modifier.height(Spacing.md))
-
-            // Title field
-            SheetLabel("Title *")
-            OutlinedTextField(
-                value = title,
-                onValueChange = { if (it.length <= 100) title = it },
-                placeholder = { Text("Enter announcement title", color = colors.textHint) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                isError = title.isNotEmpty() && title.isBlank(),
-                shape = RoundedCornerShape(CornerRadius.lg),
-                colors = outlinedColors(colors)
-            )
-            Text(
-                text = "${title.length}/100",
-                style = MaterialTheme.typography.labelSmall.copy(color = colors.textHint),
-                modifier = Modifier.align(Alignment.End)
-            )
-
-            Spacer(Modifier.height(Spacing.ms))
-
-            // Message field
-            SheetLabel("Message *")
-            OutlinedTextField(
-                value = message,
-                onValueChange = { if (it.length <= 500) message = it },
-                placeholder = { Text("Enter announcement message", color = colors.textHint) },
+            // Header with title and close button
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp),
-                maxLines = 6,
-                isError = message.isNotEmpty() && message.isBlank(),
-                shape = RoundedCornerShape(CornerRadius.lg),
-                colors = outlinedColors(colors)
-            )
-            Text(
-                text = "${message.length}/500",
-                style = MaterialTheme.typography.labelSmall.copy(color = colors.textHint),
-                modifier = Modifier.align(Alignment.End)
-            )
-
-            Spacer(Modifier.height(Spacing.ms))
-
-            // Priority toggle
-            SheetLabel("Priority")
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                listOf("NORMAL", "HIGH").forEach { level ->
-                    val selected = priorityLevel == level
-                    Box(
-                        modifier = Modifier
-                            .height(40.dp)
-                            .clip(RoundedCornerShape(CornerRadius.lg))
-                            .background(if (selected) Primary else Color.Transparent)
-                            .border(
-                                1.dp,
-                                if (selected) Primary else colors.neutral300,
-                                RoundedCornerShape(CornerRadius.lg)
-                            )
-                            .clickable { priorityLevel = level }
-                            .padding(horizontal = Spacing.md),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = level,
-                            color = if (selected) Color.White else colors.textSecondary,
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold)
-                        )
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(Spacing.ms))
-
-            // Pinned toggle
-            SheetLabel("Pin Announcement")
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                listOf(true to "Yes", false to "No").forEach { (value, label) ->
-                    val selected = pinned == value
-                    Box(
-                        modifier = Modifier
-                            .height(40.dp)
-                            .clip(RoundedCornerShape(CornerRadius.lg))
-                            .background(if (selected) Primary else Color.Transparent)
-                            .border(
-                                1.dp,
-                                if (selected) Primary else colors.neutral300,
-                                RoundedCornerShape(CornerRadius.lg)
-                            )
-                            .clickable { pinned = value }
-                            .padding(horizontal = Spacing.md),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = label,
-                            color = if (selected) Color.White else colors.textSecondary,
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold)
-                        )
-                    }
+                Text(
+                    text = "Announcement",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = colors.deepBlack
+                    )
+                )
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Close",
+                        tint = colors.deepBlack
+                    )
                 }
             }
 
-            Spacer(Modifier.height(Spacing.xl))
-
-            // Save button
-            Button(
-                onClick = {
-                    if (canSave) {
-                        onSave(
-                            AnnouncementRequestDTO(
-                                title         = title.trim(),
-                                message       = message.trim(),
-                                priorityLevel = priorityLevel,
-                                pinned        = pinned,
-                                allUser       = allUser,
-                                authorId      = authorId
-                            )
-                        )
-                    }
-                },
-                enabled = canSave,
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(CornerRadius.lg),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Primary,
-                    disabledContainerColor = Primary.copy(alpha = 0.4f)
-                )
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = Spacing.md),
+                verticalArrangement = Arrangement.spacedBy(Spacing.ml)
             ) {
-                Text(
-                    text = if (isEdit) "Update Announcement" else "Add Announcement",
-                    color = Color.White,
-                    fontWeight = FontWeight.SemiBold
+                // Meeting Title
+                BookingTextField(
+                    label = "Meeting Title",
+                    value = title,
+                    placeholder = "Enter meeting title",
+                    isRequired = true,
+                    onValueChange = { title = it }
                 )
+
+                // Description
+                BookingTextField(
+                    label = "Description",
+                    value = message,
+                    placeholder = "Enter Details",
+                    isRequired = false,
+                    singleLine = false,
+                    minLines = 4,
+                    onValueChange = { message = it }
+                )
+
+                // Dates row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.ms)
+                ) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        BookingClickableField(
+                            label = "Start Date",
+                            value = startDate,
+                            placeholder = "Start Date",
+                            isRequired = true,
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.DateRange,
+                                    contentDescription = null,
+                                    tint = Neutral700,
+                                    modifier = Modifier.size(Spacing.lg)
+                                )
+                            },
+                            onClick = { showStartDatePicker = true }
+                        )
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        BookingClickableField(
+                            label = "End Date",
+                            value = endDate,
+                            placeholder = "End Date",
+                            isRequired = true,
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.DateRange,
+                                    contentDescription = null,
+                                    tint = Neutral700,
+                                    modifier = Modifier.size(Spacing.lg)
+                                )
+                            },
+                            onClick = { showEndDatePicker = true }
+                        )
+                    }
+                }
+
+                // Pinned toggle
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Pinned",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            color = colors.deepBlack
+                        )
+                    )
+                    Switch(
+                        checked = pinned,
+                        onCheckedChange = { pinned = it },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = MaterialTheme.colorScheme.primary,
+                            uncheckedThumbColor = Color.White,
+                            uncheckedTrackColor = colors.neutral300
+                        )
+                    )
+                }
+
+                Spacer(Modifier.height(Spacing.xl))
+
+                // Footer section
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+                ) {
+                    PrimaryButton(
+                        text = if (isEdit) "Update Announcement" else "Post Announcement",
+                        onClick = {
+                            if (canSave) {
+                                onSave(
+                                    AnnouncementRequestDTO(
+                                        title         = title.trim(),
+                                        message       = message.trim(),
+                                        priorityLevel = priorityLevel,
+                                        pinned        = pinned,
+                                        allUser       = allUser,
+                                        authorId      = authorId,
+                                        startDate     = startDate,
+                                        endDate       = endDate
+                                    )
+                                )
+                            }
+                        },
+                        enabled = canSave
+                    )
+                    
+                    Text(
+                        text = "Please fill in all required fields (*)",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = colors.textSecondary,
+                            fontSize = 12.sp
+                        )
+                    )
+                }
             }
         }
     }
-}
 
-@Composable
-private fun SheetLabel(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.labelMedium.copy(
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.customColors.textSecondary
-        ),
-        modifier = Modifier.padding(bottom = 4.dp)
-    )
-}
+    // Start Date Picker
+    if (showStartDatePicker) {
+        val datePickerState = rememberDatePickerState()
+        DatePickerDialog(
+            onDismissRequest = { showStartDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val formatted = java.text.SimpleDateFormat(
+                            "dd MMM yyyy", java.util.Locale.getDefault()
+                        ).format(java.util.Date(millis))
+                        startDate = formatted
+                    }
+                    showStartDatePicker = false
+                }) { Text("OK", color = MaterialTheme.colorScheme.primary) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showStartDatePicker = false }) {
+                    Text("Cancel", color = Neutral700)
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
 
-@Composable
-private fun outlinedColors(
-    colors: com.swifttechnology.bookingsystem.core.designsystem.CustomColors
-) = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor       = Primary,
-    unfocusedBorderColor     = colors.neutral300,
-    focusedContainerColor    = colors.neutral100,
-    unfocusedContainerColor  = colors.neutral100,
-    cursorColor              = Primary,
-    focusedTextColor         = colors.deepBlack,
-    unfocusedTextColor       = colors.deepBlack
-)
+    // End Date Picker
+    if (showEndDatePicker) {
+        val datePickerState = rememberDatePickerState()
+        DatePickerDialog(
+            onDismissRequest = { showEndDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val formatted = java.text.SimpleDateFormat(
+                            "dd MMM yyyy", java.util.Locale.getDefault()
+                        ).format(java.util.Date(millis))
+                        endDate = formatted
+                    }
+                    showEndDatePicker = false
+                }) { Text("OK", color = MaterialTheme.colorScheme.primary) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEndDatePicker = false }) {
+                    Text("Cancel", color = Neutral700)
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+}

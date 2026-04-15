@@ -27,8 +27,8 @@ fun ReusableAlertDialog(
     confirmText: String,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
-    dismissText: String = "Cancel",
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    dismissText: String = "Cancel"
 ) {
     val (icon, iconTint) = when (style) {
         DialogStyle.WARNING -> Icons.Outlined.ErrorOutline to Color(0xFFD32F2F)

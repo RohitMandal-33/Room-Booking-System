@@ -1,7 +1,5 @@
 package com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.dayview
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -58,12 +56,12 @@ private const val HOUR_HEIGHT_DP = 60
 private const val TIME_LABEL_WIDTH_DP = 64
 private const val MIN_BLOCK_HEIGHT_DP = 20
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun DayColumnWithPicker(
     selectedDate: LocalDate,
     regularEvents: List<MeetingEvent>,
     pickerState: DayPickerUiState,
+    modifier: Modifier = Modifier,
     onGridLongPress: (Int) -> Unit,
     onEventClick: (MeetingEvent) -> Unit = {},
     onDragStarted: () -> Unit,
@@ -71,8 +69,7 @@ fun DayColumnWithPicker(
     onMoveCommitted: (Int) -> Unit,
     onResizeTopCommitted: (Int) -> Unit,
     onResizeBottomCommitted: (Int) -> Unit,
-    onDragCancelled: () -> Unit,
-    modifier: Modifier = Modifier
+    onDragCancelled: () -> Unit
 ) {
     val density = LocalDensity.current
     val hourHeightPx = with(density) { HOUR_HEIGHT_DP.dp.toPx() }

@@ -10,7 +10,9 @@ data class AnnouncementRequestDTO(
     @SerializedName("roleId") val roleId: Long? = null,
     @SerializedName("groupId") val groupId: Long? = null,
     @SerializedName("allUser") val allUser: Boolean? = null,
-    @SerializedName("authorId") val authorId: Long
+    @SerializedName("authorId") val authorId: Long,
+    @SerializedName("startDate") val startDate: String? = null,
+    @SerializedName("endDate") val endDate: String? = null
 )
 
 /**
@@ -29,7 +31,9 @@ data class AnnouncementDTO(
     @SerializedName("groupId") val groupId: Long? = null,
     @SerializedName("allUser") val allUser: Boolean? = null,
     @SerializedName("createdAt") val createdAt: String? = null,
-    @SerializedName("updatedAt") val updatedAt: String? = null
+    @SerializedName("updatedAt") val updatedAt: String? = null,
+    @SerializedName("startDate") val startDate: String? = null,
+    @SerializedName("endDate") val endDate: String? = null
 )
 
 /**

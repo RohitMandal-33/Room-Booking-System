@@ -26,6 +26,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 private val PurplePrimary = Color(0xFF6C3EE8)
 
@@ -161,7 +162,7 @@ fun TimePickerBottomSheet(
                         WheelColumn(
                             items = minutes,
                             state = minuteState,
-                            displayText = { String.format("%02d", it) },
+                            displayText = { String.format(Locale.getDefault(), "%02d", it) },
                             modifier = Modifier.weight(1f)
                         )
                         WheelColumn(
@@ -257,9 +258,12 @@ private fun <T> WheelColumn(
         }
         items(items) { item ->
             val itemIdx = items.indexOf(item)
-            val visibleCenter = state.firstVisibleItemIndex +
-                    if (state.firstVisibleItemScrollOffset > 22) 1 else 0
-            val isSelected = itemIdx == visibleCenter + 0
+            val visibleCenter by remember {
+                derivedStateOf {
+                    state.firstVisibleItemIndex + if (state.firstVisibleItemScrollOffset > 22) 1 else 0
+                }
+            }
+            val isSelected = itemIdx == visibleCenter
 
             Box(
                 contentAlignment = Alignment.Center,

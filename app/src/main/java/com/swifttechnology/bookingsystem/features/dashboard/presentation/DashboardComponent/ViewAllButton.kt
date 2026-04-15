@@ -17,9 +17,9 @@ import com.swifttechnology.bookingsystem.core.designsystem.customColors
 
 @Composable
 fun ViewAllButton(
+    modifier: Modifier = Modifier,
     text: String = "View All",
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onClick: () -> Unit
 ) {
     OutlinedButton(
         onClick        = onClick,

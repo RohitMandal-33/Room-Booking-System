@@ -1,9 +1,7 @@
 package com.swifttechnology.bookingsystem.features.main.presentation
 
 import android.app.Activity
-import android.os.Build
 import androidx.activity.compose.BackHandler
-import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -22,6 +20,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -72,7 +71,6 @@ data class PendingBookingDetails(
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MainAppScreen(
     navController: NavHostController,
@@ -98,7 +96,7 @@ fun MainAppScreen(
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var isMeetingRoomsEditable by rememberSaveable { mutableStateOf(false) }
     var isParticipantsEditable by rememberSaveable { mutableStateOf(false) }
-    var todayTrigger by rememberSaveable { mutableStateOf(0) }
+    var todayTrigger by rememberSaveable { mutableIntStateOf(0) }
     var isAnnouncementsEditMode by rememberSaveable { mutableStateOf(false) }
     var pendingRoomName by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingBookingDetails by remember { mutableStateOf<PendingBookingDetails?>(null) }

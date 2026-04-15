@@ -9,5 +9,7 @@ data class Announcement(
     val authorName: String,
     val authorPosition: String,
     val authorId: Long?,
-    val createdAt: String       // raw ISO string, formatted in UI
+    val createdAt: String,       // raw ISO string, formatted in UI
+    val startDate: String? = null,
+    val endDate: String? = null
 )

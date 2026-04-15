@@ -1,7 +1,5 @@
 package com.swifttechnology.bookingsystem.features.announcements.presentation.components
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.AnimatedVisibility
@@ -53,7 +51,6 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /** Formats an ISO date string to "Feb 7, 2026" */
-@RequiresApi(Build.VERSION_CODES.O)
 private fun formatDate(raw: String): String {
     return runCatching {
         val odt = OffsetDateTime.parse(raw)
@@ -61,17 +58,15 @@ private fun formatDate(raw: String): String {
     }.getOrDefault(raw)
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AnnouncementCard(
     announcement: Announcement,
     isEditMode: Boolean,
     isSelected: Boolean,
-    showAccentBar: Boolean = true,         // false on Pinned tab
+    modifier: Modifier = Modifier,
+    showAccentBar: Boolean = true,         // true on Pinned tab, false on All tab
     onTap: () -> Unit,
-    onLongPress: () -> Unit,
-    modifier: Modifier = Modifier
+    onLongPress: () -> Unit
 ) {
     val colors = MaterialTheme.customColors
 
@@ -132,7 +127,7 @@ fun AnnouncementCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Left accent bar (only on All tab, not Pinned tab)
+                // Left accent bar
                 if (showAccentBar) {
                     Box(
                         modifier = Modifier

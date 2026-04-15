@@ -1,6 +1,7 @@
 package com.swifttechnology.bookingsystem.features.report.presentation
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -86,7 +87,7 @@ class ReportsAnalyticsViewModel @Inject constructor(
 
     // Pagination
     val pageSize = 7
-    var currentPage by mutableStateOf(0)
+    var currentPage by mutableIntStateOf(0)
 
     private val filteredEntries: List<ActivityEntry>
         get() {
@@ -141,10 +142,10 @@ class ReportsAnalyticsViewModel @Inject constructor(
 
     val totalResults:  Int      get() = filteredEntries.size
     val totalPages:    Int      get() = maxOf(1, (totalResults + pageSize - 1) / pageSize)
-    val showingStart:  Int      get() = if (totalResults == 0) 0 else currentPage * pageSize + 1
-    val showingEnd:    Int      get() = minOf((currentPage + 1) * pageSize, totalResults)
+    val showingStart:  Int      get() = if (totalResults == 0) 0 else (currentPage * pageSize + 1)
+    val showingEnd:    Int      get() = minOf(((currentPage + 1) * pageSize), totalResults)
     val canGoPrevious: Boolean  get() = currentPage > 0
-    val canGoNext:     Boolean  get() = currentPage + 1 < totalPages
+    val canGoNext:     Boolean  get() = (currentPage + 1) < totalPages
 
     val visibleEntries: List<ActivityEntry>
         get() {

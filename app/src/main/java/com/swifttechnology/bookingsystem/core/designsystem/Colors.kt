@@ -94,3 +94,4 @@ val LoginBtnBgDark = Color(0xFF6B4BB5)
 
 val LoginBtnBorder = Color(0xFF9466FF)
 val LoginBtnBorderDark = Color(0xFFB392FF)
+

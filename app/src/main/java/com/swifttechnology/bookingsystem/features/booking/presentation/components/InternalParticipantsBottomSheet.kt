@@ -76,8 +76,8 @@ fun InternalParticipantsBottomSheet(
     onClose: () -> Unit,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
-    isSearching: Boolean = false,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isSearching: Boolean = false
 ) {
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     var groupBy by remember { mutableStateOf(GroupBy.PEOPLE) }
@@ -137,9 +137,9 @@ private fun InternalParticipantsContent(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     filteredParticipants: List<InternalMember>,
+    modifier: Modifier = Modifier,
     isSearching: Boolean = false,
-    viewModel: ParticipantsSheetViewModel = hiltViewModel(),
-    modifier: Modifier = Modifier
+    viewModel: ParticipantsSheetViewModel = hiltViewModel()
 ) {
     val apiDepartments by viewModel.departments.collectAsStateWithLifecycle()
     val customGroups by viewModel.customGroups.collectAsStateWithLifecycle()

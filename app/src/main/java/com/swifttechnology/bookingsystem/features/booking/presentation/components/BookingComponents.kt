@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -93,7 +94,10 @@ fun BookingTextField(
     onValueChange: (String) -> Unit,
     trailingIcon: (@Composable () -> Unit)? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    singleLine: Boolean = true,
+    maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
+    minLines: Int = 1
 ) {
     var isFocused by remember { mutableStateOf(false) }
     val primaryColor = MaterialTheme.colorScheme.primary
@@ -111,7 +115,7 @@ fun BookingTextField(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp)
+                .then(if (singleLine) Modifier.height(56.dp) else Modifier.heightIn(min = 56.dp))
                 .onFocusChanged { isFocused = it.isFocused }
                 .shadow(
                     elevation = if (isFocused) 12.dp else 0.dp,
@@ -131,7 +135,9 @@ fun BookingTextField(
                 unfocusedTextColor = MaterialTheme.customColors.bookRoomLabel,
                 cursorColor = MaterialTheme.colorScheme.primary
             ),
-            singleLine = true,
+            singleLine = singleLine,
+            maxLines = maxLines,
+            minLines = minLines,
             trailingIcon = trailingIcon,
             visualTransformation = visualTransformation,
             keyboardOptions = keyboardOptions

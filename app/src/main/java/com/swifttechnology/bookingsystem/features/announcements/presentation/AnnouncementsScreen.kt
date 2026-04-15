@@ -150,7 +150,7 @@ fun AnnouncementsScreen(
                                 announcement  = announcement,
                                 isEditMode    = isEditable,
                                 isSelected    = announcement.id in selectedIds,
-                                showAccentBar = uiState.selectedTab == AnnouncementTab.ALL,
+                                showAccentBar = uiState.selectedTab == AnnouncementTab.PINNED,
                                 onTap = {
                                     if (isEditable) {
                                         selectedIds = if (announcement.id in selectedIds) {

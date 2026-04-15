@@ -58,6 +58,8 @@ class AnnouncementRepositoryImpl @Inject constructor(
         authorName = authorName.orEmpty(),
         authorPosition = authorPosition.orEmpty(),
         authorId = authorId,
-        createdAt = createdAt.orEmpty()
+        createdAt = createdAt.orEmpty(),
+        startDate = startDate,
+        endDate = endDate
     )
 }

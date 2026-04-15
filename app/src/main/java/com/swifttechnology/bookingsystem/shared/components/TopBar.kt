@@ -1,7 +1,5 @@
 package com.swifttechnology.bookingsystem.shared.components
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -38,7 +36,6 @@ import com.swifttechnology.bookingsystem.core.designsystem.MeetingRoomBookingThe
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import java.time.LocalDate
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TopBar(
     title: String,
@@ -181,7 +178,6 @@ fun TopBar(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true)
 @Composable
 private fun TopBarPreview() {
