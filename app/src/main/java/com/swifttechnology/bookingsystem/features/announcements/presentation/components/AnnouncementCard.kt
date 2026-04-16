@@ -104,7 +104,7 @@ fun AnnouncementCard(
         ) {
             Checkbox(
                 checked = isSelected,
-                onCheckedChange = { /* Tap handled by outer row */ },
+                onCheckedChange = { onTap() },
                 colors = CheckboxDefaults.colors(
                     checkedColor = Primary
                 ),

@@ -63,6 +63,7 @@ private val PurpleLight = Color(0xFFEDE9FF)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarScreen(
+
     searchQuery: String,
     onNavigate: (String) -> Unit,
     onProceedWithDetails: (String, String, String, String) -> Unit = { _, _, _, _ -> },
@@ -127,6 +128,8 @@ fun CalendarScreen(
                 viewModel.onDateSelected(date)
             }
         },
+
+
         onEventSelected = viewModel::onEventSelected,
         onRoomSelected = viewModel::onRoomSelected,
         onGridLongPress = pickerViewModel::onTimeSlotLongPressed,
@@ -456,7 +459,9 @@ private fun NavigationHeader(
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.customColors.textPrimary
         )
-        Row {
+
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onPrev) {
                 Icon(Icons.Default.ChevronLeft, contentDescription = "Previous")
             }
@@ -464,6 +469,7 @@ private fun NavigationHeader(
                 Icon(Icons.Default.ChevronRight, contentDescription = "Next")
             }
         }
+
     }
 }
 
@@ -477,7 +483,9 @@ fun DayOfWeekHeader(withTimeColumn: Boolean = false) {
         if (withTimeColumn) {
             Spacer(modifier = Modifier.width(50.dp))
         }
-        val days = listOf("SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT")
+        val days = listOf("SUN", "MON", "TUE", "WED", "THUR", "FRI", "SAT")
+
+
         days.forEach { day ->
             Text(
                 text = day,
@@ -490,204 +498,3 @@ fun DayOfWeekHeader(withTimeColumn: Boolean = false) {
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-private fun MonthView(
-    yearMonth: YearMonth,
-    events: List<MeetingEvent>,
-    selectedDate: LocalDate,
-    onDateClick: (LocalDate) -> Unit,
-    onEventClick: (MeetingEvent) -> Unit
-) {
-    val today = LocalDate.now()
-    val firstDayOfMonth = yearMonth.atDay(1)
-    val firstDayOfWeek = firstDayOfMonth.dayOfWeek.value % 7 // Sunday = 0
-    val daysInMonth = yearMonth.lengthOfMonth()
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-    ) {
-        for (row in 0 until 6) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp)
-            ) {
-                for (col in 0 until 7) {
-                    val dayIndex = row * 7 + col - firstDayOfWeek + 1
-                    if (dayIndex in 1..daysInMonth) {
-                        val date = yearMonth.atDay(dayIndex)
-                        val isSelected = date == selectedDate
-                        val isToday = date == today
-                        val dayEvents = events.filter { it.date == date }
-                        val visibleEvents = dayEvents.take(3)
-                        val overflowCount = dayEvents.size - visibleEvents.size
-
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .border(
-                                    width = if (isSelected) 1.5.dp else 0.5.dp,
-                                    color = if (isSelected) PurplePrimary else MaterialTheme.customColors.divider
-                                )
-                                .clickable { onDateClick(date) }
-                                .padding(horizontal = 3.dp, vertical = 3.dp)
-                        ) {
-                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                // Day number with today highlight
-                                Row(modifier = Modifier.fillMaxWidth()) {
-                                    if (isToday) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(22.dp)
-                                                .clip(CircleShape)
-                                                .background(PurplePrimary),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = dayIndex.toString(),
-                                                style = MaterialTheme.typography.labelSmall,
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 11.sp,
-                                                color = Color.White
-                                            )
-                                        }
-                                    } else {
-                                        Text(
-                                            text = dayIndex.toString(),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                            color = if (isSelected) PurplePrimary else MaterialTheme.customColors.textPrimary,
-                                            modifier = Modifier.padding(start = 2.dp)
-                                        )
-                                    }
-                                }
-
-                                // Event pills
-                                visibleEvents.forEach { event ->
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(16.dp)
-                                            .clip(CircleShape)
-                                            .background(event.color.copy(alpha = 0.85f))
-                                            .clickable { onEventClick(event) }
-                                    )
-                                }
-
-                                // Overflow chip
-                                if (overflowCount > 0) {
-                                    Box(
-                                        modifier = Modifier
-                                            .wrapContentSize()
-                                            .border(1.dp, MaterialTheme.customColors.divider, CircleShape)
-                                            .padding(horizontal = 5.dp, vertical = 1.dp)
-                                    ) {
-                                        Text(
-                                            text = "More",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontSize = 9.sp,
-                                            color = MaterialTheme.customColors.textSecondary
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        // Overflow days from adjacent months — muted
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .border(0.5.dp, MaterialTheme.customColors.divider)
-                        ) {
-                            val overflowDay = if (dayIndex < 1) {
-                                val prevMonth = yearMonth.minusMonths(1)
-                                prevMonth.lengthOfMonth() + dayIndex
-                            } else {
-                                dayIndex - daysInMonth
-                            }
-                            Text(
-                                text = overflowDay.toString(),
-                                modifier = Modifier.padding(4.dp),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.customColors.textSecondary.copy(alpha = 0.4f)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-private fun WeekView(
-    selectedDate: LocalDate,
-    events: List<MeetingEvent>,
-    onEventClick: (MeetingEvent) -> Unit
-) {
-    val startOfWeek = selectedDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
-    
-    Column(modifier = Modifier.fillMaxSize()) {
-        DayOfWeekHeader(withTimeColumn = true)
-        
-        Row(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-            Column(modifier = Modifier.width(50.dp)) {
-                for (hour in 0..23) {
-                    Box(modifier = Modifier.height(60.dp).padding(start = 8.dp)) {
-                        Text(
-                            text = String.format("%02d:00", hour),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.customColors.textSecondary
-                        )
-                    }
-                }
-            }
-            
-            for (i in 0..6) {
-                val date = startOfWeek.plusDays(i.toLong())
-                val dayEvents = events.filter { it.date == date }
-                
-                Column(modifier = Modifier.weight(1f).border(0.5.dp, MaterialTheme.customColors.divider)) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        Column {
-                            for (hour in 0..23) {
-                                Box(modifier = Modifier.fillMaxWidth().height(60.dp).border(0.2.dp, MaterialTheme.customColors.divider.copy(alpha = 0.5f)))
-                            }
-                        }
-                        
-                        dayEvents.forEach { event ->
-                            val startMinutes = event.startTime.hour * 60 + event.startTime.minute
-                            val endMinutes = event.endTime.hour * 60 + event.endTime.minute
-                            val duration = endMinutes - startMinutes
-                            
-                            Box(
-                                modifier = Modifier
-                                    .padding(horizontal = 1.dp)
-                                    .fillMaxWidth()
-                                    .height((duration * 1.0).dp)
-                                    .offset(y = (startMinutes * 1.0).dp)
-                                    .background(PurplePrimary.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
-                                    .border(1.dp, PurplePrimary, RoundedCornerShape(4.dp))
-                                    .clickable { onEventClick(event) }
-                                    .padding(4.dp)
-                            ) {
-                                Text(
-                                    text = event.title,
-                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}

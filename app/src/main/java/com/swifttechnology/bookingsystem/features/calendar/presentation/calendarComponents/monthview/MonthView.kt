@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
@@ -26,7 +27,8 @@ import java.time.LocalDate
 import java.time.YearMonth
 
 private val PurplePrimary = Color(0xFF6C3EE8)
-private val MaxVisibleEvents = 3
+private val MaxVisibleEvents = 4
+private val TileCornerRadius = 10.dp
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -46,13 +48,15 @@ fun MonthView(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
+            .background(Color.White)
     ) {
         for (row in 0 until 6) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(100.dp)
+                    .height(95.dp)
             ) {
+
                 for (col in 0 until 7) {
                     val dayIndex = row * 7 + col - firstDayOfWeek + 1
                     if (dayIndex in 1..daysInMonth) {
@@ -68,28 +72,37 @@ fun MonthView(
                             events = dayEvents,
                             modifier = Modifier
                                 .weight(1f)
-                                .fillMaxHeight(),
+                                .fillMaxHeight()
+                                .padding(2.dp),
                             onClick = { onDateClick(date) },
                             onEventClick = onEventClick
                         )
                     } else {
-                        // Empty cell for days outside this month
+                        // Empty cell or overflow day for adjacent months
+                        val date = if (dayIndex < 1) {
+                            val prevMonth = yearMonth.minusMonths(1)
+                            prevMonth.atDay(prevMonth.lengthOfMonth() + dayIndex)
+                        } else {
+                            val nextMonth = yearMonth.plusMonths(1)
+                            nextMonth.atDay(dayIndex - daysInMonth)
+                        }
+                        
                         Box(
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxHeight()
-                                .border(0.5.dp, MaterialTheme.customColors.divider)
+                                .padding(2.dp)
+                                .clip(RoundedCornerShape(TileCornerRadius))
+                                .border(
+                                    0.5.dp,
+                                    MaterialTheme.customColors.divider,
+                                    RoundedCornerShape(TileCornerRadius)
+                                )
+                                .clickable { onDateClick(date) }
                         ) {
-                            // Show overflow day number in muted grey
-                            val overflowDay = if (dayIndex < 1) {
-                                val prevMonth = yearMonth.minusMonths(1)
-                                prevMonth.lengthOfMonth() + dayIndex
-                            } else {
-                                dayIndex - daysInMonth
-                            }
                             Text(
-                                text = overflowDay.toString(),
-                                modifier = Modifier.padding(4.dp),
+                                text = date.dayOfMonth.toString(),
+                                modifier = Modifier.padding(6.dp),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.customColors.textSecondary.copy(alpha = 0.4f)
                             )
@@ -117,21 +130,26 @@ private fun MonthDayTile(
 
     Box(
         modifier = modifier
+            .clip(RoundedCornerShape(TileCornerRadius))
+            .background(Color.White)
             .border(
                 width = if (isSelected) 1.5.dp else 0.5.dp,
                 color = if (isSelected) PurplePrimary else MaterialTheme.customColors.divider,
-                shape = if (isSelected) RoundedCornerShape(0.dp) else RoundedCornerShape(0.dp)
+                shape = RoundedCornerShape(TileCornerRadius)
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = 3.dp, vertical = 3.dp)
+            .padding(4.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            // Day number badge
-            Row(modifier = Modifier.fillMaxWidth()) {
-                if (isToday) {
+            // Day number highlight
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.TopCenter
+            ) {
+                if (isToday || isSelected) {
                     Box(
                         modifier = Modifier
-                            .size(22.dp)
+                            .size(24.dp)
                             .clip(CircleShape)
                             .background(PurplePrimary),
                         contentAlignment = Alignment.Center
@@ -140,7 +158,7 @@ private fun MonthDayTile(
                             text = dayNumber.toString(),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 11.sp,
+                            fontSize = 12.sp,
                             color = Color.White
                         )
                     }
@@ -148,9 +166,9 @@ private fun MonthDayTile(
                     Text(
                         text = dayNumber.toString(),
                         style = MaterialTheme.typography.bodySmall,
-                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (isSelected) PurplePrimary else MaterialTheme.customColors.textPrimary,
-                        modifier = Modifier.padding(start = 2.dp)
+                        fontWeight = FontWeight.Normal,
+                        color = MaterialTheme.customColors.textPrimary,
+                        modifier = Modifier.padding(top = 2.dp)
                     )
                 }
             }
@@ -159,26 +177,21 @@ private fun MonthDayTile(
             visibleEvents.forEach { event ->
                 EventPill(
                     event = event,
-                    onClick = { onEventClick(event) }
+                    onClick = onClick
                 )
             }
 
-            // Overflow chip
+            // Overflow indicator (+N)
             if (overflowCount > 0) {
-                Box(
-                    modifier = Modifier
-                        .wrapContentSize()
-                        .border(1.dp, MaterialTheme.customColors.divider, RoundedCornerShape(50))
-                        .padding(horizontal = 5.dp, vertical = 1.dp)
-                ) {
-                    Text(
-                        text = "More",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontSize = 9.sp,
-                        color = MaterialTheme.customColors.textSecondary
-                    )
-                }
+                Text(
+                    text = "+$overflowCount",
+                    color = PurplePrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp,
+                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 2.dp)
+                )
             }
+
         }
     }
 }
@@ -192,13 +205,20 @@ private fun EventPill(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(16.dp)
-            .clip(RoundedCornerShape(50))
-            .background(event.color.copy(alpha = 0.85f))
+            .height(18.dp)
+            .clip(RoundedCornerShape(4.dp))
+            .background(event.color.copy(alpha = 0.9f))
             .clickable(onClick = onClick)
-            .padding(horizontal = 5.dp),
+            .padding(horizontal = 4.dp),
         contentAlignment = Alignment.CenterStart
     ) {
-        // Intentionally left blank — pills are color-only indicators like the reference image
+        Text(
+            text = event.title,
+            style = MaterialTheme.typography.labelSmall,
+            fontSize = 9.sp,
+            color = Color.White,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
