@@ -70,6 +70,37 @@ class DashboardViewModel @Inject constructor(
         _uiState.update { it.copy(searchQuery = query) }
     }
 
+    fun onDateRangeSelected(start: Long, end: Long) {
+        _uiState.update { it.copy(customStartDate = start, customEndDate = end) }
+        // If we want to filter the meetings based on this range
+        filterMeetings()
+    }
+
+    fun clearDateFilter() {
+        _uiState.update { it.copy(customStartDate = null, customEndDate = null) }
+        fetchUpcomingMeetings() // Reset by fetching again (or just filterMeetings() with nulls)
+    }
+
+    private fun filterMeetings() {
+        val start = _uiState.value.customStartDate
+        val end = _uiState.value.customEndDate
+        if (start == null || end == null) return
+
+        val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+        val filtered = _uiState.value.upcomingMeetings.filter { meeting ->
+            meeting.date?.let { dateStr ->
+                try {
+                    val date = sdf.parse(dateStr)
+                    val time = date?.time ?: 0L
+                    time in start..end
+                } catch (e: Exception) {
+                    true // keep if parse fails?
+                }
+            } ?: true
+        }
+        _uiState.update { it.copy(upcomingMeetings = filtered) }
+    }
+
     suspend fun logout() {
         authRepository.logout()
     }

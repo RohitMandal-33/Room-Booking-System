@@ -14,6 +14,8 @@ data class DashboardUiState(
     val upcomingMeetings: List<BookingResponseDTO> = emptyList(),
     val isLoadingAnnouncements: Boolean = false,
     val announcements: List<Announcement> = emptyList(),
+    val customStartDate: Long? = null,
+    val customEndDate: Long? = null,
     val error: String? = null
 )
 

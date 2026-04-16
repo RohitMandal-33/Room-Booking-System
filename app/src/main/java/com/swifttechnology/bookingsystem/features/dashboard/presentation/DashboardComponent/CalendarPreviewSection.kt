@@ -2,13 +2,14 @@ package com.swifttechnology.bookingsystem.features.dashboard.presentation.Dashbo
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -25,15 +27,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.outlined.CalendarToday
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -51,6 +53,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.swifttechnology.bookingsystem.core.designsystem.CornerRadius as AppCornerRadius
 import com.swifttechnology.bookingsystem.core.designsystem.Elevation
@@ -60,12 +63,12 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle
 import java.util.Locale
 
- 
+
+  
 //  Data models
- 
+  
 
 private data class CalendarEvent(
     val title: String,
@@ -77,12 +80,6 @@ private data class CalendarEvent(
     val date: LocalDate
 )
 
-private data class WeekDay(
-    val label: String,
-    val meetingCount: Int,
-    val isToday: Boolean = false
-)
-
 private data class CalendarDayCell(
     val date: LocalDate,
     val isCurrentMonth: Boolean,
@@ -90,61 +87,133 @@ private data class CalendarDayCell(
     val events: List<CalendarEvent>
 )
 
- 
-//  Accent colours
- 
+/** Preset quick-pick ranges shown as pills above the calendar. */
+enum class DateRangePreset { TODAY, THIS_WEEK, THIS_MONTH, LAST_30_DAYS, CUSTOM }
+
+private data class DateRange(
+    val start: LocalDate,
+    val end: LocalDate
+)
+
+  
+//  Accent colours  (aligned to brand palette)
+  
 
 private val PurpleAccent = Color(0xFF7C3AED)
 private val OrangeAccent = Color(0xFFF97316)
 private val BlueAccent   = Color(0xFF3B82F6)
 
- 
-//  Sample data  (using current local date)
- 
+  
+//  Preset helpers
+  
 
 @RequiresApi(Build.VERSION_CODES.O)
-private val today = LocalDate.now()
+private fun DateRangePreset.toRange(today: LocalDate): DateRange? = when (this) {
+    DateRangePreset.TODAY        -> DateRange(today, today)
+    DateRangePreset.THIS_WEEK    -> {
+        val startOfWeek = today.with(DayOfWeek.MONDAY)
+        DateRange(startOfWeek, startOfWeek.plusDays(6))
+    }
+    DateRangePreset.THIS_MONTH   -> DateRange(
+        today.withDayOfMonth(1),
+        today.withDayOfMonth(today.lengthOfMonth())
+    )
+    DateRangePreset.LAST_30_DAYS -> DateRange(today.minusDays(29), today)
+    DateRangePreset.CUSTOM       -> null   // user picks manually on the grid
+}
 
-@RequiresApi(Build.VERSION_CODES.O)
-private val sampleEvents = listOf(
-    CalendarEvent("Q1 Financial Review",  "09:00 AM", "Executive Room 3A",  "executive", PurpleAccent, PurpleAccent, today),
-    CalendarEvent("Client Presentation",  "11:00 AM", "Conference Room 2B", "client",    OrangeAccent, OrangeAccent, today),
-    CalendarEvent("Sprint Planning",      "02:00 PM", "Meeting Room 1C",    "internal",  BlueAccent,   BlueAccent,   today),
-    CalendarEvent("Design Review",        "10:00 AM", "Studio B",           "internal",  BlueAccent,   BlueAccent,   today.plusDays(2)),
-    CalendarEvent("Vendor Call",          "03:00 PM", "Conf Room 4A",       "client",    OrangeAccent, OrangeAccent, today.plusDays(4)),
-    CalendarEvent("Board Meeting",        "09:30 AM", "Boardroom",          "executive", PurpleAccent, PurpleAccent, today.plusDays(7)),
-    CalendarEvent("Team Standup",         "09:00 AM", "Zoom",               "internal",  BlueAccent,   BlueAccent,   today.plusDays(9)),
-    CalendarEvent("Budget Review",        "01:00 PM", "Finance Room",       "executive", PurpleAccent, PurpleAccent, today.plusDays(9)),
-    CalendarEvent("Product Demo",         "11:00 AM", "Demo Suite",         "client",    OrangeAccent, OrangeAccent, today.plusDays(14)),
-    CalendarEvent("Retrospective",        "04:00 PM", "Meeting Room 2",     "internal",  BlueAccent,   BlueAccent,   today.plusDays(17)),
-)
+private val DateRangePreset.label: String
+    get() = when (this) {
+        DateRangePreset.TODAY        -> "Today"
+        DateRangePreset.THIS_WEEK    -> "This week"
+        DateRangePreset.THIS_MONTH   -> "This month"
+        DateRangePreset.LAST_30_DAYS -> "Last 30 days"
+        DateRangePreset.CUSTOM       -> "Custom"
+    }
 
-private val weekDays = listOf(
-    WeekDay("Today",  3, isToday = true),
-    WeekDay("Tomorrow",  0),
-    WeekDay("In 2 days", 1),
-    WeekDay("In 3 days", 0),
-    WeekDay("In 4 days", 1),
-    WeekDay("In 5 days", 0),
-    WeekDay("In 6 days", 0)
-)
-
- 
+  
 //  Public composable
- 
+  
 
+@OptIn(ExperimentalLayoutApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CalendarPreviewSection(
+    events: List<com.swifttechnology.bookingsystem.features.booking.data.dtos.BookingResponseDTO> = emptyList(),
     onOpenFullCalendar: () -> Unit = {}
 ) {
-    var selectedTab by remember { mutableStateOf("Month") }
+    // Stable today reference inside composition
+    val today = remember { LocalDate.now() }
 
+    //      Range state                                                                                                                     
+    var activePreset       by remember { mutableStateOf(DateRangePreset.TODAY) }
+    var rangeStart         by remember { mutableStateOf<LocalDate?>(today) }
+    var rangeEnd           by remember { mutableStateOf<LocalDate?>(today) }
+    var customPickingStart by remember { mutableStateOf(true) }
+
+    // Which month the calendar grid is showing
+    var monthOffset    by remember { mutableIntStateOf(0) }
+    val displayYearMonth = YearMonth.from(today).plusMonths(monthOffset.toLong())
+
+    //      Map incoming events                                                                                                     
+    val calendarEvents = remember(events) { events.mapNotNull { it.toCalendarEvent() } }
+
+    //      Derive events that fall within the current range                                           
+    val rangeEvents = remember(rangeStart, rangeEnd, calendarEvents) {
+        val s = rangeStart ?: return@remember emptyList()
+        val e = rangeEnd   ?: s
+        calendarEvents
+            .filter { it.date in s..e }
+            .sortedBy { it.date }
+    }
+
+    //      Helper: apply a preset                                                                                               
+    fun applyPreset(preset: DateRangePreset) {
+        activePreset = preset
+        val range = preset.toRange(today)
+        if (range != null) {
+            rangeStart  = range.start
+            rangeEnd    = range.end
+            monthOffset = YearMonth.from(range.start)
+                .let { it.year * 12 + it.monthValue } -
+                    YearMonth.from(today).let { it.year * 12 + it.monthValue }
+        } else {
+            rangeStart         = null
+            rangeEnd           = null
+            customPickingStart = true
+        }
+    }
+
+    //      Handle a tap on a grid day                                                                                       
+    fun handleDayTap(tapped: LocalDate) {
+        if (activePreset != DateRangePreset.CUSTOM) {
+            rangeStart         = tapped
+            rangeEnd           = tapped
+            activePreset       = DateRangePreset.CUSTOM
+            customPickingStart = false
+            return
+        }
+        if (customPickingStart) {
+            rangeStart         = tapped
+            rangeEnd           = null
+            customPickingStart = false
+        } else {
+            if (tapped < (rangeStart ?: tapped)) {
+                rangeEnd   = rangeStart
+                rangeStart = tapped
+            } else {
+                rangeEnd = tapped
+            }
+            customPickingStart = true
+        }
+    }
+
+    //      UI                                                                                                                                       
     Card(
         modifier  = Modifier
             .fillMaxWidth()
             .padding(horizontal = Spacing.md, vertical = Spacing.sm),
-        shape     = RoundedCornerShape(AppCornerRadius.lg),
+        shape     = RoundedCornerShape(AppCornerRadius.xl),
         colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(Elevation.sm)
     ) {
@@ -153,102 +222,168 @@ fun CalendarPreviewSection(
                 .fillMaxWidth()
                 .padding(Spacing.md)
         ) {
-            //    Header row                               
+
+            //      Header                                                                                                               
             Row(
                 modifier              = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment     = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector        = Icons.Outlined.CalendarToday,
-                        contentDescription = null,
-                        tint               = MaterialTheme.colorScheme.onSurface,
-                        modifier           = Modifier.size(20.dp)
-                    )
-                    Spacer(Modifier.width(Spacing.sm))
-                    Text(
-                        text  = "Calendar Preview",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface
+                Icon(
+                    imageVector        = Icons.Outlined.CalendarMonth,
+                    contentDescription = null,
+                    tint               = MaterialTheme.colorScheme.primary,
+                    modifier           = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(Spacing.sm))
+                Text(
+                    text       = "Calendar Preview",
+                    style      = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color      = MaterialTheme.colorScheme.onSurface,
+                    modifier   = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(Modifier.height(Spacing.md))
+
+            //      Preset pills                                                                                                   
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                verticalArrangement   = Arrangement.spacedBy(Spacing.sm),
+                modifier              = Modifier.fillMaxWidth()
+            ) {
+                DateRangePreset.entries.forEach { preset ->
+                    RangePill(
+                        label    = preset.label,
+                        isActive = preset == activePreset,
+                        onClick  = { applyPreset(preset) }
                     )
                 }
             }
 
-            Spacer(Modifier.height(Spacing.md))
-
-            //    Tab content                              
-            when (selectedTab) {
-                // "Day"   -> DayView()
-                // "Week"  -> WeekView()
-                "Month" -> MonthView()
+            //      Inline range label                                                                                         
+            val rangeText = buildRangeLabel(rangeStart, rangeEnd, activePreset)
+            if (rangeText.isNotEmpty()) {
+                Spacer(Modifier.height(Spacing.sm))
+                Text(
+                    text  = rangeText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Medium
+                )
             }
 
             Spacer(Modifier.height(Spacing.md))
 
-            //    Open Full Calendar button                 
-            OutlinedButton(
+            //      Month calendar                                                                                                 
+            MonthView(
+                today          = today,
+                events         = calendarEvents,
+                displayYearMonth = displayYearMonth,
+                rangeStart     = rangeStart,
+                rangeEnd       = rangeEnd,
+                onDayTap       = { handleDayTap(it) },
+                onPrevMonth    = { monthOffset-- },
+                onNextMonth    = { monthOffset++ }
+            )
+
+            Spacer(Modifier.height(Spacing.sm))
+            HorizontalDivider(
+                color     = MaterialTheme.customColors.divider,
+                thickness = 1.dp
+            )
+            Spacer(Modifier.height(Spacing.sm))
+
+            //      Range event list                                                                                             
+            RangeEventPanel(
+                rangeStart = rangeStart,
+                rangeEnd   = rangeEnd,
+                events     = rangeEvents
+            )
+
+            Spacer(Modifier.height(Spacing.md))
+
+            //      Open full calendar CTA                                                                                 
+            FilledTonalButton(
                 onClick  = onOpenFullCalendar,
                 modifier = Modifier.fillMaxWidth(),
-                shape    = RoundedCornerShape(AppCornerRadius.md),
-                border   = BorderStroke(1.dp, MaterialTheme.customColors.divider),
-                colors   = ButtonDefaults.outlinedButtonColors(containerColor = Color.Transparent)
+                shape    = RoundedCornerShape(AppCornerRadius.lg),
+                colors   = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.customColors.primaryLight,
+                    contentColor   = MaterialTheme.colorScheme.primary
+                )
             ) {
+                Icon(
+                    imageVector        = Icons.Outlined.CalendarMonth,
+                    contentDescription = null,
+                    modifier           = Modifier.size(16.dp)
+                )
+                Spacer(Modifier.width(Spacing.sm))
                 Text(
-                    text  = "Open Full Calendar",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurface
+                    text       = "Open Full Calendar",
+                    style      = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         }
     }
 }
 
- 
-//  Tab pills  (Day / Week / Month)
- 
+  
+//  Preset pill chip
+  
 
 @Composable
-private fun TabPills(
-    tabs: List<String>,
-    selectedTab: String,
-    onTabSelected: (String) -> Unit
+private fun RangePill(
+    label: String,
+    isActive: Boolean,
+    onClick: () -> Unit
 ) {
-    Row(
+    val bg     = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
+    val fg     = if (isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.customColors.textBody
+    val border = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.customColors.divider
+
+    Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(AppCornerRadius.md))
-            .background(MaterialTheme.customColors.dashboardBg)
-            .padding(Spacing.xxs)
+            .clip(RoundedCornerShape(50))
+            .background(bg)
+            .border(1.dp, border, RoundedCornerShape(50))
+            .clickable { onClick() }
+            .padding(horizontal = Spacing.ms, vertical = Spacing.xs + 2.dp),
+        contentAlignment = Alignment.Center
     ) {
-        tabs.forEach { tab ->
-            val isSelected = tab == selectedTab
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(AppCornerRadius.md))
-                    .background(
-                        if (isSelected) MaterialTheme.colorScheme.surface else Color.Transparent
-                    )
-                    .clickable { onTabSelected(tab) }
-                    .padding(horizontal = Spacing.ms, vertical = Spacing.xs),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text       = tab,
-                    style      = MaterialTheme.typography.labelMedium,
-                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                    color      = if (isSelected)
-                        MaterialTheme.colorScheme.onSurface
-                    else
-                        MaterialTheme.customColors.textBody
-                )
-            }
-        }
+        Text(
+            text       = label,
+            style      = MaterialTheme.typography.labelMedium,
+            fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal,
+            color      = fg
+        )
     }
 }
 
- 
-//  Shared nav row
- 
+  
+//  Range label text helper
+  
+
+@RequiresApi(Build.VERSION_CODES.O)
+private fun buildRangeLabel(
+    start: LocalDate?,
+    end: LocalDate?,
+    preset: DateRangePreset
+): String {
+    val fmt = DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.getDefault())
+    return when {
+        preset == DateRangePreset.CUSTOM && start == null -> "Tap a start date on the calendar"
+        preset == DateRangePreset.CUSTOM && end == null   -> "From ${start!!.format(fmt)} — tap an end date"
+        start == null                                     -> ""
+        end == null || start == end                       -> start.format(fmt)
+        else -> "${start.format(fmt)}  –  ${end.format(fmt)}"
+    }
+}
+
+  
+//  Navigation row
+  
 
 @Composable
 private fun NavigationRow(
@@ -259,14 +394,21 @@ private fun NavigationRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(AppCornerRadius.md))
+            .clip(RoundedCornerShape(AppCornerRadius.lg))
             .background(MaterialTheme.customColors.dashboardBg)
             .padding(vertical = Spacing.xs),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment     = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onPrevious, modifier = Modifier.size(Spacing.xl)) {
-            Icon(Icons.Default.ChevronLeft, contentDescription = "Previous", tint = MaterialTheme.customColors.textBody)
+        IconButton(
+            onClick  = onPrevious,
+            modifier = Modifier.size(40.dp)
+        ) {
+            Icon(
+                imageVector        = Icons.Default.ChevronLeft,
+                contentDescription = "Previous month",
+                tint               = MaterialTheme.colorScheme.onSurface
+            )
         }
         Text(
             text       = label,
@@ -274,123 +416,44 @@ private fun NavigationRow(
             fontWeight = FontWeight.Bold,
             color      = MaterialTheme.colorScheme.onSurface
         )
-        IconButton(onClick = onNext, modifier = Modifier.size(Spacing.xl)) {
-            Icon(Icons.Default.ChevronRight, contentDescription = "Next", tint = MaterialTheme.customColors.textBody)
+        IconButton(
+            onClick  = onNext,
+            modifier = Modifier.size(40.dp)
+        ) {
+            Icon(
+                imageVector        = Icons.Default.ChevronRight,
+                contentDescription = "Next month",
+                tint               = MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }
 
- 
-//  Day view
- 
-
-/*
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-private fun DayView() {
-    var dayOffset by remember { mutableIntStateOf(0) }
-    val currentDate = today.plusDays(dayOffset.toLong())
-
-    val label = when (dayOffset) {
-        0    -> "Today"
-        1    -> "Tomorrow"
-        -1   -> "Yesterday"
-        else -> if (dayOffset > 0) "In $dayOffset days" else "${-dayOffset} days ago"
-    }
-
-    val dayEvents = sampleEvents.filter { it.date == currentDate }
-
-    NavigationRow(
-        label      = label,
-        onPrevious = { dayOffset-- },
-        onNext     = { dayOffset++ }
-    )
-
-    Spacer(Modifier.height(Spacing.ms))
-
-    if (dayEvents.isEmpty()) {
-        EmptyState("No events for this day")
-    } else {
-        dayEvents.forEach { event ->
-            EventCard(event)
-            Spacer(Modifier.height(Spacing.ms))
-        }
-    }
-}
-*/
-
- 
-//  Week view
- 
-
-/*
-@Composable
-private fun WeekView() {
-    var weekOffset by remember { mutableIntStateOf(0) }
-
-    val weekLabel = when (weekOffset) {
-        0    -> "Week of Feb 8–14, 2026"
-        else -> if (weekOffset > 0) "Week +$weekOffset" else "Week $weekOffset"
-    }
-
-    NavigationRow(
-        label      = weekLabel,
-        onPrevious = { weekOffset-- },
-        onNext     = { weekOffset++ }
-    )
-
-    Spacer(Modifier.height(Spacing.ms))
-
-    weekDays.forEach { day ->
-        WeekDayRow(day)
-        Spacer(Modifier.height(Spacing.sm))
-    }
-
-    Spacer(Modifier.height(Spacing.sm))
-
-    Text(
-        text       = "Today's Meetings",
-        style      = MaterialTheme.typography.titleSmall,
-        fontWeight = FontWeight.Bold,
-        color      = MaterialTheme.colorScheme.onSurface
-    )
-
-    Spacer(Modifier.height(Spacing.sm))
-
-    val todayEvents = sampleEvents.filter { it.date == today }
-    if (todayEvents.isEmpty()) {
-        EmptyState("No meetings today")
-    } else {
-        todayEvents.forEach { event ->
-            WeekMeetingRow(event)
-            Spacer(Modifier.height(Spacing.sm))
-        }
-    }
-}
-*/
-
- 
-//  Month view
- 
+  
+//  Month grid view
+  
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-private fun MonthView() {
-    var monthOffset by remember { mutableIntStateOf(0) }
-    var selectedDate by remember { mutableStateOf(today) }
-
-    val displayYearMonth = YearMonth.from(today).plusMonths(monthOffset.toLong())
-    val monthLabel = displayYearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault()))
-
-    NavigationRow(
-        label      = monthLabel,
-        onPrevious = { monthOffset-- },
-        onNext     = { monthOffset++ }
+private fun MonthView(
+    today: LocalDate,
+    events: List<CalendarEvent>,
+    displayYearMonth: YearMonth,
+    rangeStart: LocalDate?,
+    rangeEnd: LocalDate?,
+    onDayTap: (LocalDate) -> Unit,
+    onPrevMonth: () -> Unit,
+    onNextMonth: () -> Unit
+) {
+    val monthLabel = displayYearMonth.format(
+        DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
     )
 
-    Spacer(Modifier.height(Spacing.ms))
+    NavigationRow(label = monthLabel, onPrevious = onPrevMonth, onNext = onNextMonth)
 
-    //    Day-of-week header                       
+    Spacer(Modifier.height(Spacing.sm))
+
+    // Day-of-week header
     val dayHeaders = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
     Row(modifier = Modifier.fillMaxWidth()) {
         dayHeaders.forEach { day ->
@@ -398,7 +461,8 @@ private fun MonthView() {
                 text      = day,
                 modifier  = Modifier.weight(1f),
                 textAlign = TextAlign.Center,
-                style     = MaterialTheme.typography.labelSmall,
+                style     = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
                 color     = MaterialTheme.customColors.textBody
             )
         }
@@ -406,124 +470,88 @@ private fun MonthView() {
 
     Spacer(Modifier.height(Spacing.xs))
 
-    //    Build day cells                          
-    val cells = buildMonthCells(displayYearMonth)
+    val cells = buildMonthCells(today, displayYearMonth, events)
 
     LazyVerticalGrid(
-        columns             = GridCells.Fixed(7),
-        modifier            = Modifier
+        columns               = GridCells.Fixed(7),
+        modifier              = Modifier
             .fillMaxWidth()
-            .height(230.dp),          // fixed height so the grid doesn't grow unbounded
+            .height(240.dp),
         verticalArrangement   = Arrangement.spacedBy(2.dp),
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        horizontalArrangement = Arrangement.spacedBy(0.dp),
         userScrollEnabled     = false
     ) {
         items(cells) { cell ->
             MonthDayCell(
-                cell         = cell,
-                isSelected   = cell.date == selectedDate,
-                onDaySelected = { selectedDate = it }
+                cell       = cell,
+                rangeStart = rangeStart,
+                rangeEnd   = rangeEnd,
+                onDayTap   = onDayTap
             )
         }
     }
-
-    Spacer(Modifier.height(Spacing.md))
-
-    HorizontalDivider(color = MaterialTheme.customColors.divider, thickness = 1.dp)
-
-    Spacer(Modifier.height(Spacing.md))
-
-    //    Day detail panel                          
-    DayDetailPanel(selectedDate = selectedDate)
 }
 
- 
-//  Build month cells helper
- 
-
-@RequiresApi(Build.VERSION_CODES.O)
-private fun buildMonthCells(yearMonth: YearMonth): List<CalendarDayCell> {
-    val firstOfMonth = yearMonth.atDay(1)
-    val firstDow     = firstOfMonth.dayOfWeek          // e.g. SUNDAY
-    // How many days to show from the previous month
-    val prefixDays   = (firstDow.value % 7)            // Sun=0, Mon=1, …, Sat=6
-
-    val cells = mutableListOf<CalendarDayCell>()
-
-    // Previous month tail
-    val prevMonth = yearMonth.minusMonths(1)
-    val prevLen   = prevMonth.lengthOfMonth()
-    for (i in prefixDays downTo 1) {
-        val date = prevMonth.atDay(prevLen - i + 1)
-        cells += CalendarDayCell(date, false, false, emptyList())
-    }
-
-    // Current month
-    for (d in 1..yearMonth.lengthOfMonth()) {
-        val date     = yearMonth.atDay(d)
-        val isToday  = date == today
-        val dayEvs   = sampleEvents.filter { it.date == date }
-        cells += CalendarDayCell(date, true, isToday, dayEvs)
-    }
-
-    // Next month head  (fill out to complete the last row)
-    val remainder = (7 - (cells.size % 7)) % 7
-    val nextMonth = yearMonth.plusMonths(1)
-    for (d in 1..remainder) {
-        cells += CalendarDayCell(nextMonth.atDay(d), false, false, emptyList())
-    }
-
-    return cells
-}
-
- 
-//  Month day cell
- 
+  
+//  Month day cell  (range-aware)
+  
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun MonthDayCell(
     cell: CalendarDayCell,
-    isSelected: Boolean,
-    onDaySelected: (LocalDate) -> Unit
+    rangeStart: LocalDate?,
+    rangeEnd: LocalDate?,
+    onDayTap: (LocalDate) -> Unit
 ) {
+    val effectiveEnd = rangeEnd ?: rangeStart
+
+    val isStart   = rangeStart != null && cell.date == rangeStart
+    val isEnd     = effectiveEnd != null && cell.date == effectiveEnd
+    val isInRange = rangeStart != null && effectiveEnd != null &&
+            cell.date > rangeStart && cell.date < effectiveEnd
+
+    val primaryLight = MaterialTheme.customColors.primaryLight
+
     val bgColor = when {
-        cell.isToday   -> MaterialTheme.colorScheme.primary
-        isSelected     -> MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-        else           -> Color.Transparent
+        isStart || isEnd -> MaterialTheme.colorScheme.primary
+        cell.isToday     -> primaryLight
+        isInRange        -> MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+        else             -> Color.Transparent
     }
 
     val textColor = when {
-        cell.isToday        -> MaterialTheme.colorScheme.onPrimary
-        !cell.isCurrentMonth -> MaterialTheme.customColors.textBody.copy(alpha = 0.4f)
-        else                -> MaterialTheme.colorScheme.onSurface
+        isStart || isEnd     -> MaterialTheme.colorScheme.onPrimary
+        !cell.isCurrentMonth -> MaterialTheme.customColors.textBody.copy(alpha = 0.3f)
+        cell.isToday         -> MaterialTheme.colorScheme.primary
+        else                 -> MaterialTheme.colorScheme.onSurface
     }
 
-    val shape = if (cell.isToday) CircleShape else RoundedCornerShape(AppCornerRadius.sm)
+    val shape = when {
+        isStart || isEnd -> CircleShape
+        isInRange        -> RoundedCornerShape(0.dp)
+        else             -> RoundedCornerShape(AppCornerRadius.sm)
+    }
 
     Column(
         modifier = Modifier
             .aspectRatio(1f)
             .clip(shape)
             .background(bgColor)
-            .then(
-                if (isSelected && !cell.isToday)
-                    Modifier.border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f), shape)
-                else Modifier
-            )
-            .clickable(enabled = cell.isCurrentMonth) { onDaySelected(cell.date) }
+            .clickable(enabled = cell.isCurrentMonth) { onDayTap(cell.date) }
             .padding(2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text      = cell.date.dayOfMonth.toString(),
-            style     = MaterialTheme.typography.labelSmall,
-            color     = textColor,
-            textAlign = TextAlign.Center
+            text       = cell.date.dayOfMonth.toString(),
+            style      = MaterialTheme.typography.labelSmall,
+            fontWeight = if (isStart || isEnd || cell.isToday) FontWeight.Bold else FontWeight.Normal,
+            color      = textColor,
+            textAlign  = TextAlign.Center
         )
 
-        // Event dots (max 3)
+        // Event dots (up to 3)
         if (cell.events.isNotEmpty() && cell.isCurrentMonth) {
             Spacer(Modifier.height(2.dp))
             Row(
@@ -536,7 +564,7 @@ private fun MonthDayCell(
                             .size(4.dp)
                             .clip(CircleShape)
                             .background(
-                                if (cell.isToday) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+                                if (isStart || isEnd) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
                                 else ev.accentColor
                             )
                     )
@@ -546,18 +574,28 @@ private fun MonthDayCell(
     }
 }
 
- 
-//  Day detail panel  (used in Month view)
- 
+  
+//  Range event panel
+  
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-private fun DayDetailPanel(selectedDate: LocalDate) {
-    val dayEvents = sampleEvents.filter { it.date == selectedDate }
+private fun RangeEventPanel(
+    rangeStart: LocalDate?,
+    rangeEnd: LocalDate?,
+    events: List<CalendarEvent>
+) {
+    if (rangeStart == null) {
+        EmptyState("Select a date or range to see events")
+        return
+    }
 
-    val dateLabel = selectedDate.format(
-        DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.getDefault())
-    )
+    val effectiveEnd = rangeEnd ?: rangeStart
+    val fmt          = DateTimeFormatter.ofPattern("MMM d", Locale.getDefault())
+    val headerLabel  = if (rangeStart == effectiveEnd)
+        rangeStart.format(DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.getDefault()))
+    else
+        "${rangeStart.format(fmt)} – ${effectiveEnd.format(fmt)}"
 
     Row(
         modifier              = Modifier.fillMaxWidth(),
@@ -565,223 +603,229 @@ private fun DayDetailPanel(selectedDate: LocalDate) {
         verticalAlignment     = Alignment.CenterVertically
     ) {
         Text(
-            text       = dateLabel,
+            text       = headerLabel,
             style      = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
-            color      = MaterialTheme.colorScheme.onSurface
+            color      = MaterialTheme.colorScheme.onSurface,
+            modifier   = Modifier.weight(1f),
+            maxLines   = 1,
+            overflow   = TextOverflow.Ellipsis
         )
-        if (dayEvents.isNotEmpty()) {
-            Text(
-                text  = "${dayEvents.size} event${if (dayEvents.size != 1) "s" else ""}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.customColors.textBody
-            )
+        if (events.isNotEmpty()) {
+            Spacer(Modifier.width(Spacing.sm))
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(MaterialTheme.customColors.primaryLight)
+                    .padding(horizontal = Spacing.sm, vertical = 2.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text      = "${events.size} event${if (events.size != 1) "s" else ""}",
+                    style     = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color     = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 
     Spacer(Modifier.height(Spacing.sm))
 
-    if (dayEvents.isEmpty()) {
-        EmptyState("No events scheduled")
+    if (events.isEmpty()) {
+        EmptyState("No events in this range")
     } else {
-        dayEvents.forEach { event ->
-            EventCard(event)
-            Spacer(Modifier.height(Spacing.ms))
+        events.forEach { event ->
+            EventRow(event, showDate = rangeStart != effectiveEnd)
+            Spacer(Modifier.height(Spacing.sm))
         }
     }
 }
 
- 
-//  Event card  (Day view & Month detail)
- 
+  
+//  Event row  (flat — avoids nested Card visual noise)
+  
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-private fun EventCard(event: CalendarEvent) {
-    val accent = event.accentColor
+private fun EventRow(event: CalendarEvent, showDate: Boolean = false) {
+    val accent    = event.accentColor
+    val dateBadge = if (showDate)
+        event.date.format(DateTimeFormatter.ofPattern("EEE, MMM d", Locale.getDefault()))
+    else null
 
-    Card(
-        modifier  = Modifier.fillMaxWidth(),
-        shape     = RoundedCornerShape(AppCornerRadius.lg),
-        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(Elevation.sm)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(AppCornerRadius.lg))
+            .background(MaterialTheme.customColors.dashboardBg)
+            .drawBehind {
+                // Left accent bar — full height minus corner inset
+                val barWidth    = 4.dp.toPx()
+                val cornerInset = AppCornerRadius.lg.toPx()
+                drawRoundRect(
+                    color        = accent,
+                    topLeft      = Offset(0f, cornerInset),
+                    size         = Size(barWidth, size.height - cornerInset * 2),
+                    cornerRadius = CornerRadius(2.dp.toPx())
+                )
+            }
+            .padding(
+                start  = Spacing.md,
+                end    = Spacing.sm,
+                top    = Spacing.sm,
+                bottom = Spacing.sm
+            ),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .drawBehind {
-                    drawRoundRect(
-                        color        = accent,
-                        topLeft      = Offset(0f, 8.dp.toPx()),
-                        size         = Size(4.dp.toPx(), size.height - 16.dp.toPx()),
-                        cornerRadius = CornerRadius(2.dp.toPx())
-                    )
-                }
-                .padding(start = Spacing.md, end = Spacing.md, top = Spacing.md, bottom = Spacing.md),
-            verticalAlignment = Alignment.Top
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text       = event.title,
-                    style      = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color      = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(Modifier.height(Spacing.xs))
-                Text(
-                    text  = event.time,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.customColors.textBody
-                )
-                Text(
-                    text  = event.room,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.customColors.textBody
-                )
-            }
-
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(AppCornerRadius.sm))
-                    .background(event.tagColor.copy(alpha = 0.1f))
-                    .padding(horizontal = Spacing.sm, vertical = Spacing.xxs)
-            ) {
-                Text(
-                    text  = event.tag,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = event.tagColor
-                )
-            }
-        }
-    }
-}
-
- 
-//  Week day row
- 
-
-/*
-@Composable
-private fun WeekDayRow(day: WeekDay) {
-    val bgColor = if (day.isToday)
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
-    else
-        MaterialTheme.colorScheme.surface
-
-    Card(
-        modifier  = Modifier.fillMaxWidth(),
-        shape     = RoundedCornerShape(AppCornerRadius.md),
-        colors    = CardDefaults.cardColors(containerColor = bgColor),
-        elevation = CardDefaults.cardElevation(Elevation.none),
-        border    = if (day.isToday)
-            BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
-        else
-            BorderStroke(1.dp, MaterialTheme.customColors.divider)
-    ) {
-        Row(
-            modifier              = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = Spacing.md, vertical = Spacing.ms),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment     = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(
-                    text       = day.label,
-                    style      = MaterialTheme.typography.bodyMedium,
-                    fontWeight = if (day.isToday) FontWeight.Bold else FontWeight.Medium,
-                    color      = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text  = "${day.meetingCount} meeting${if (day.meetingCount != 1) "s" else ""}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.customColors.textBody
-                )
-            }
-
-            if (day.meetingCount > 0) {
-                Box(
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clip(RoundedCornerShape(AppCornerRadius.sm))
-                        .background(MaterialTheme.customColors.dashboardBg),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text       = "${day.meetingCount}",
-                        style      = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color      = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            }
-        }
-    }
-}
-*/
-
- 
-//  Week meeting row  (today's meetings in week view)
- 
-
-/*
-@Composable
-private fun WeekMeetingRow(event: CalendarEvent) {
-    Card(
-        modifier  = Modifier.fillMaxWidth(),
-        shape     = RoundedCornerShape(AppCornerRadius.md),
-        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(Elevation.none),
-        border    = BorderStroke(1.dp, MaterialTheme.customColors.divider)
-    ) {
-        Row(
-            modifier          = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = Spacing.md, vertical = Spacing.ms),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .clip(CircleShape)
-                    .background(event.accentColor)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text       = event.title,
+                style      = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color      = MaterialTheme.colorScheme.onSurface,
+                maxLines   = 1,
+                overflow   = TextOverflow.Ellipsis
             )
-            Spacer(Modifier.width(Spacing.sm))
-            Column(modifier = Modifier.weight(1f)) {
+            if (dateBadge != null) {
+                Spacer(Modifier.height(2.dp))
                 Text(
-                    text       = event.title,
-                    style      = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color      = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text  = event.time,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.customColors.textBody
+                    text  = dateBadge,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = accent,
+                    fontWeight = FontWeight.Medium
                 )
             }
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text  = buildEventSubtitle(event),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.customColors.textBody,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        Spacer(Modifier.width(Spacing.sm))
+
+        // Tag badge
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(AppCornerRadius.md))
+                .background(accent.copy(alpha = 0.12f))
+                .padding(horizontal = Spacing.sm, vertical = Spacing.xxs + 1.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text       = event.tag,
+                style      = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+                color      = accent
+            )
         }
     }
 }
-*/
 
- 
+/** Combines time + room into a single subtitle line. */
+private fun buildEventSubtitle(event: CalendarEvent): String {
+    val parts = listOfNotNull(
+        event.time.takeIf { it.isNotEmpty() },
+        event.room.takeIf { it.isNotEmpty() && it != "No Room" }
+    )
+    return parts.joinToString("  ·  ")
+}
+
+  
+//  Build month cells helper
+  
+
+@RequiresApi(Build.VERSION_CODES.O)
+private fun buildMonthCells(
+    today: LocalDate,
+    yearMonth: YearMonth,
+    events: List<CalendarEvent>
+): List<CalendarDayCell> {
+    val firstOfMonth = yearMonth.atDay(1)
+    val prefixDays   = firstOfMonth.dayOfWeek.value % 7   // Sun=0 … Sat=6
+
+    val cells = mutableListOf<CalendarDayCell>()
+
+    val prevMonth = yearMonth.minusMonths(1)
+    val prevLen   = prevMonth.lengthOfMonth()
+    for (i in prefixDays downTo 1) {
+        val date = prevMonth.atDay(prevLen - i + 1)
+        cells += CalendarDayCell(date, false, false, emptyList())
+    }
+
+    for (d in 1..yearMonth.lengthOfMonth()) {
+        val date   = yearMonth.atDay(d)
+        val dayEvs = events.filter { it.date == date }
+        cells += CalendarDayCell(date, true, date == today, dayEvs)
+    }
+
+    val remainder = (7 - (cells.size % 7)) % 7
+    val nextMonth = yearMonth.plusMonths(1)
+    for (d in 1..remainder) {
+        cells += CalendarDayCell(nextMonth.atDay(d), false, false, emptyList())
+    }
+
+    return cells
+}
+
+  
+//  Mapper
+  
+
+@RequiresApi(Build.VERSION_CODES.O)
+private fun com.swifttechnology.bookingsystem.features.booking.data.dtos.BookingResponseDTO.toCalendarEvent(): CalendarEvent? {
+    val dateStr = this.date ?: return null
+    return try {
+        val ld        = LocalDate.parse(dateStr)
+        val timeLabel = when (val st = this.startTime) {
+            is String -> st
+            is com.swifttechnology.bookingsystem.features.booking.data.dtos.LocalTimeDTO ->
+                "${st.hour}:${st.minute.toString().padStart(2, '0')}"
+            else -> ""
+        }
+        val color = when (this.meetingType?.uppercase()) {
+            "EXECUTIVE" -> PurpleAccent
+            "CLIENT"    -> OrangeAccent
+            else        -> BlueAccent
+        }
+        CalendarEvent(
+            title       = this.meetingTitle ?: "Unnamed Meeting",
+            time        = timeLabel,
+            room        = this.room?.roomName ?: "No Room",
+            tag         = this.meetingType  ?: "INTERNAL",
+            tagColor    = color,
+            accentColor = color,
+            date        = ld
+        )
+    } catch (e: Exception) {
+        null
+    }
+}
+
+  
 //  Empty state
- 
+  
 
 @Composable
 private fun EmptyState(message: String) {
     Box(
-        modifier         = Modifier
+        modifier = Modifier
             .fillMaxWidth()
-            .height(80.dp)
-            .clip(RoundedCornerShape(AppCornerRadius.md))
-            .background(MaterialTheme.customColors.dashboardBg),
+            .wrapContentHeight()
+            .clip(RoundedCornerShape(AppCornerRadius.lg))
+            .background(MaterialTheme.customColors.dashboardBg)
+            .padding(vertical = Spacing.lg),
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text  = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.customColors.textBody
+            text      = message,
+            style     = MaterialTheme.typography.bodyMedium,
+            color     = MaterialTheme.customColors.textBody,
+            textAlign = TextAlign.Center
         )
     }
 }
