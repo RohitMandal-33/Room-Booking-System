@@ -25,4 +25,15 @@ interface BookingApiService {
 
     @GET(APIEndpoint.UPCOMING_MEETING)
     suspend fun getUpcomingMeetings(): GlobalResponse<List<BookingResponseDTO>>
+
+    @PATCH(APIEndpoint.BOOKED_ROOM_CHANGE_STATUS)
+    suspend fun changeBookedRoomStatus(
+        @Path("roomBookingId") roomBookingId: Long,
+        @Body request: com.swifttechnology.bookingsystem.features.meetingrooms.data.dtos.StatusChangeRequestDTO
+    ): GlobalResponse<Unit>
+
+    @GET(APIEndpoint.BOOKED_ROOM_BY_ID)
+    suspend fun getBookedRoomById(
+        @Path("roomBookingId") roomBookingId: Long
+    ): GlobalResponse<BookingResponseDTO>
 }

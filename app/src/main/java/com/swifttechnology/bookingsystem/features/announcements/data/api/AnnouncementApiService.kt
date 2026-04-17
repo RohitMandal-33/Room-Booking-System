@@ -62,4 +62,27 @@ interface AnnouncementApiService {
     suspend fun changePinStatus(
         @Path("id") id: Long
     ): GlobalResponse<Any>
+    /** POST /api/v1/announcement/get */
+    @POST(APIEndpoint.ANNOUNCEMENT_GET)
+    suspend fun getAnnouncementsByPinStatus(
+        @Body request: com.swifttechnology.bookingsystem.features.announcements.data.dtos.AnnouncementPinStatusRequestDTO
+    ): GlobalResponse<AnnouncementPageDTO>
+
+    /** GET /api/v1/announcement/{id} */
+    @GET(APIEndpoint.ANNOUNCEMENT_BY_ID)
+    suspend fun getAnnouncementById(
+        @Path("id") id: Long
+    ): GlobalResponse<AnnouncementDTO>
+
+    /** PATCH /api/v1/announcement/{id}/mark-as-read */
+    @PATCH(APIEndpoint.ANNOUNCEMENT_MARK_READ)
+    suspend fun markAnnouncementAsRead(
+        @Path("id") id: Long
+    ): GlobalResponse<Any>
+
+    /** HTTP DELETE /api/v1/announcements/batch (Retrofit doesn't support body with @DELETE annotation natively) */
+    @retrofit2.http.HTTP(method = "DELETE", path = APIEndpoint.ANNOUNCEMENT_BATCH_DELETE, hasBody = true)
+    suspend fun deleteBulkAnnouncements(
+        @Body request: List<Long>
+    ): GlobalResponse<Any>
 }

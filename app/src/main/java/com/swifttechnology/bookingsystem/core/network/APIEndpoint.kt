@@ -36,6 +36,8 @@ object APIEndpoint {
     const val MY_BOOKINGS = "api/v1/get-booked-room"
     const val ALL_BOOKINGS = "api/v1/get-all-booked-room"
     const val UPCOMING_MEETING = "api/v1/upcoming-meeting"
+    const val BOOKED_ROOM_CHANGE_STATUS = "api/v1/booked-room/{roomBookingId}/change-status"
+    const val BOOKED_ROOM_BY_ID = "api/v1/get-booked-room/{roomBookingId}"
 
     // Department
     const val DEPARTMENT_ADD = "api/v1/department/add"
@@ -54,6 +56,10 @@ object APIEndpoint {
 
     // Announcements
     const val ANNOUNCEMENT_LIST            = "api/v1/announcement/list"
+    const val ANNOUNCEMENT_GET             = "api/v1/announcement/get"
+    const val ANNOUNCEMENT_BY_ID           = "api/v1/announcement/{id}"
+    const val ANNOUNCEMENT_MARK_READ       = "api/v1/announcement/{id}/mark-as-read"
+    const val ANNOUNCEMENT_BATCH_DELETE    = "api/v1/announcements/batch"
     const val ANNOUNCEMENT_PINNED_LIST     = "api/v1/announcement/pinned-list"
     const val ANNOUNCEMENT_TARGETED        = "api/v1/get-Targeted-Audience-Announcement"
     const val ANNOUNCEMENT_TARGETED_PINNED = "api/v1/get-Targeted-Audience-pinned-Announcement"

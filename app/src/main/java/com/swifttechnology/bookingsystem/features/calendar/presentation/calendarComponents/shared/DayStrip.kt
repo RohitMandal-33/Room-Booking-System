@@ -112,36 +112,27 @@ fun DayStrip(
                         .clickable { onDateClick(day) }
                         .padding(horizontal = 4.dp, vertical = 2.dp)
                 ) {
+                    val isToday = day == LocalDate.now()
                     Text(
                         text = day.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)
                             .take(3),
                         fontSize = 10.sp,
                         color = Color(0xFF888888),
-                        fontWeight = FontWeight.Normal
+                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Box(
                         modifier = Modifier
                             .size(30.dp)
                             .clip(CircleShape)
-                            .background(if (isSelected) PurplePrimary else Color.Transparent),
+                            .background(if (isSelected && isToday) PurplePrimary else if (isSelected) Color.Black else Color.Transparent),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = day.dayOfMonth.toString(),
                             fontSize = 13.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            color = if (isSelected) Color.White else Color(0xFF111111)
-                        )
-                    }
-                    // Dot indicator for today
-                    if (day == LocalDate.now()) {
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Box(
-                            modifier = Modifier
-                                .size(4.dp)
-                                .clip(CircleShape)
-                                .background(if (isSelected) Color.White else PurplePrimary)
+                            fontWeight = if (isSelected || day == LocalDate.now()) FontWeight.Bold else FontWeight.Normal,
+                            color = if (isSelected) Color.White else if (day == LocalDate.now()) PurplePrimary else Color(0xFF111111)
                         )
                     }
                 }

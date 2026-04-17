@@ -2,6 +2,14 @@ package com.swifttechnology.bookingsystem.features.announcements.data.dtos
 
 import com.google.gson.annotations.SerializedName
 
+data class AnnouncementPinStatusRequestDTO(
+    @SerializedName("pageNo") val pageNo: Int? = null,
+    @SerializedName("pageSize") val pageSize: Int? = null,
+    @SerializedName("sortBy") val sortBy: String? = null,
+    @SerializedName("sortDir") val sortDir: String? = null,
+    @SerializedName("pinStatus") val pinStatus: Boolean
+)
+
 data class AnnouncementRequestDTO(
     @SerializedName("title") val title: String,
     @SerializedName("message") val message: String,

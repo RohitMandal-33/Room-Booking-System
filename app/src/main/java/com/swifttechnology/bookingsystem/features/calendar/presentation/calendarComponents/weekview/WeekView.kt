@@ -123,7 +123,7 @@ private fun DayCell(
         Text(
             text = dayOfWeekLabel.take(3),
             fontSize = 10.sp,
-            fontWeight = FontWeight.Normal,
+            fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
             color = if (isToday) PurplePrimary else MaterialTheme.customColors.textSecondary,
             textAlign = TextAlign.Center
         )
@@ -135,28 +135,29 @@ private fun DayCell(
             contentAlignment = Alignment.Center
         ) {
             if (isLeftSelected || isRightSelected) {
-                val shape = when {
-                    isLeftSelected && date.dayOfWeek == DayOfWeek.SATURDAY -> CircleShape
-                    isRightSelected && date.dayOfWeek == DayOfWeek.SUNDAY -> CircleShape
-                    isLeftSelected -> RoundedCornerShape(topStartPercent = 50, bottomStartPercent = 50)
-                    isRightSelected -> RoundedCornerShape(topEndPercent = 50, bottomEndPercent = 50)
-                    else -> RoundedCornerShape(0.dp)
+                Row(modifier = Modifier.fillMaxWidth().height(30.dp)) {
+                    // Left half (connects to left side if this is the right day)
+                    Box(modifier = Modifier.weight(1f).fillMaxHeight().background(
+                        if (isRightSelected && date.dayOfWeek != DayOfWeek.SUNDAY) pillBgColor else Color.Transparent
+                    ))
+                    // Right half (connects to right side if this is the left day)
+                    Box(modifier = Modifier.weight(1f).fillMaxHeight().background(
+                        if (isLeftSelected && date.dayOfWeek != DayOfWeek.SATURDAY) pillBgColor else Color.Transparent
+                    ))
                 }
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .background(pillBgColor, shape)
-                )
+                // Center circle to round the grey background at the day's position
+                Box(modifier = Modifier.size(30.dp).background(pillBgColor, CircleShape))
             }
 
             val circleColor = when {
+                isLeftSelected && isToday -> PurplePrimary
                 isLeftSelected -> Color.Black
-                isToday -> PurplePrimary
                 else -> Color.Transparent
             }
             
             val textColor = when {
-                isLeftSelected || isToday -> Color.White
+                isLeftSelected -> Color.White
+                isToday -> PurplePrimary
                 isRightSelected -> Color.Black
                 else -> MaterialTheme.customColors.textPrimary
             }

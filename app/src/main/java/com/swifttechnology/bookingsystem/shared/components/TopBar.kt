@@ -136,8 +136,8 @@ fun TopBar(
             ) {
                 Column(
                     modifier = Modifier
-                        .size(24.dp)
-                        .border(1.5.dp, MaterialTheme.customColors.deepBlack, RoundedCornerShape(4.dp)),
+                        .size(20.dp)
+                        .border(1.25.dp, MaterialTheme.customColors.deepBlack, RoundedCornerShape(3.dp)),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {

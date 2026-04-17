@@ -146,12 +146,12 @@ private fun MonthDayTile(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.TopCenter
             ) {
-                if (isToday || isSelected) {
+                if (isSelected) {
                     Box(
                         modifier = Modifier
                             .size(24.dp)
                             .clip(CircleShape)
-                            .background(PurplePrimary),
+                            .background(if (isToday) PurplePrimary else Color.Black),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -166,8 +166,8 @@ private fun MonthDayTile(
                     Text(
                         text = dayNumber.toString(),
                         style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Normal,
-                        color = MaterialTheme.customColors.textPrimary,
+                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
+                        color = if (isToday) PurplePrimary else MaterialTheme.customColors.textPrimary,
                         modifier = Modifier.padding(top = 2.dp)
                     )
                 }

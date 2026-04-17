@@ -149,7 +149,7 @@ class CalendarViewModel @Inject constructor(
                         selectedDate = newMonth.atDay(newDay)
                     )
                 }
-                CalendarView.WEEK -> state.copy(selectedDate = state.selectedDate.minusDays(2))
+                CalendarView.WEEK -> state.copy(selectedDate = state.selectedDate.minusDays(1))
                 CalendarView.DAY -> state.copy(selectedDate = state.selectedDate.minusDays(1))
             }
         }
@@ -167,7 +167,7 @@ class CalendarViewModel @Inject constructor(
                         selectedDate = newMonth.atDay(newDay)
                     )
                 }
-                CalendarView.WEEK -> state.copy(selectedDate = state.selectedDate.plusDays(2))
+                CalendarView.WEEK -> state.copy(selectedDate = state.selectedDate.plusDays(1))
                 CalendarView.DAY -> state.copy(selectedDate = state.selectedDate.plusDays(1))
             }
         }

@@ -11,6 +11,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -28,6 +29,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -219,7 +221,8 @@ private fun CalendarContent(
         }
 
         if (uiState.currentView == CalendarView.MONTH) {
-            DayOfWeekHeader(withTimeColumn = false)
+            val isCurrentMonth = uiState.currentMonth == YearMonth.now()
+            DayOfWeekHeader(withTimeColumn = false, isCurrentMonth = isCurrentMonth)
         }
 
         val room = uiState.selectedRoom
@@ -236,7 +239,28 @@ private fun CalendarContent(
             transitionSpec = { fadeIn() togetherWith fadeOut() },
             label = "CalendarViewSwitch"
         ) { view ->
-            when (view) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(view) {
+                        var dragAccumulator = 0f
+                        detectHorizontalDragGestures(
+                            onDragEnd = {
+                                if (dragAccumulator > 150f) {
+                                    onPrev()
+                                } else if (dragAccumulator < -150f) {
+                                    onNext()
+                                }
+                                dragAccumulator = 0f
+                            },
+                            onHorizontalDrag = { change, dragAmount ->
+                                change.consume()
+                                dragAccumulator += dragAmount
+                            }
+                        )
+                    }
+            ) {
+                when (view) {
                 CalendarView.MONTH -> MonthView(
                     yearMonth = uiState.currentMonth,
                     events = filteredEvents,
@@ -282,6 +306,7 @@ private fun CalendarContent(
                         )
                     }
                 }
+            }
             }
         }
     }
@@ -460,21 +485,11 @@ private fun NavigationHeader(
             color = MaterialTheme.customColors.textPrimary
         )
 
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onPrev) {
-                Icon(Icons.Default.ChevronLeft, contentDescription = "Previous")
-            }
-            IconButton(onClick = onNext) {
-                Icon(Icons.Default.ChevronRight, contentDescription = "Next")
-            }
-        }
-
     }
 }
 
 @Composable
-fun DayOfWeekHeader(withTimeColumn: Boolean = false) {
+fun DayOfWeekHeader(withTimeColumn: Boolean = false, isCurrentMonth: Boolean = true) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -484,15 +499,17 @@ fun DayOfWeekHeader(withTimeColumn: Boolean = false) {
             Spacer(modifier = Modifier.width(50.dp))
         }
         val days = listOf("SUN", "MON", "TUE", "WED", "THUR", "FRI", "SAT")
-
+        val todayStr = java.time.LocalDate.now().dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.ENGLISH).uppercase()
 
         days.forEach { day ->
+            val isToday = isCurrentMonth && day.take(3) == todayStr.take(3)
             Text(
                 text = day,
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.customColors.textSecondary
+                fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
+                color = if (isToday) PurplePrimary else MaterialTheme.customColors.textSecondary
             )
         }
     }
