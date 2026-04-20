@@ -3,6 +3,7 @@ package com.swifttechnology.bookingsystem.features.booking.data.api
 import com.swifttechnology.bookingsystem.core.network.APIEndpoint
 import com.swifttechnology.bookingsystem.core.network.GlobalResponse
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.BookingResponseDTO
+import com.swifttechnology.bookingsystem.features.booking.data.dtos.CalenderRequestDTO
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.RoomBookingRequestDTO
 import retrofit2.http.*
 
@@ -36,4 +37,13 @@ interface BookingApiService {
     suspend fun getBookedRoomById(
         @Path("roomBookingId") roomBookingId: Long
     ): GlobalResponse<BookingResponseDTO>
+
+    @POST(APIEndpoint.CALENDAR_WEEK)
+    suspend fun getCalendarWeek(@Body request: CalenderRequestDTO): GlobalResponse<List<BookingResponseDTO>>
+
+    @POST(APIEndpoint.CALENDAR_MONTH)
+    suspend fun getCalendarMonth(@Body request: CalenderRequestDTO): GlobalResponse<List<BookingResponseDTO>>
+
+    @POST(APIEndpoint.CALENDAR_DAY)
+    suspend fun getCalendarDay(@Body request: CalenderRequestDTO): GlobalResponse<List<BookingResponseDTO>>
 }

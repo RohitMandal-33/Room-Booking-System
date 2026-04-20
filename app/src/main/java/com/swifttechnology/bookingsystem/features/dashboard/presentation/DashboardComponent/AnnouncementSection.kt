@@ -63,7 +63,7 @@ private fun formatDateForCarousel(raw: String): String {
 fun AnnouncementSection(
     announcements: List<Announcement>,
     isLoading: Boolean,
-    onView: () -> Unit
+    onView: (Announcement) -> Unit
 ) {
     val pagerState = rememberPagerState(pageCount = { announcements.size })
 
@@ -169,7 +169,7 @@ fun AnnouncementSection(
                     Spacer(modifier = Modifier.height(Spacing.ms))
 
                     OutlinedButton(
-                        onClick  = onView,
+                        onClick  = { onView(item) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(40.dp),

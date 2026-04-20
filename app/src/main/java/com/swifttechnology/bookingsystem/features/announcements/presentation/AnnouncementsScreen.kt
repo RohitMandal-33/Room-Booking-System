@@ -75,6 +75,9 @@ fun AnnouncementsScreen(
     val colors  = MaterialTheme.customColors
 
     var selectedIds by remember { androidx.compose.runtime.mutableStateOf(emptySet<Long>()) }
+    var viewingAnnouncement by remember { 
+        androidx.compose.runtime.mutableStateOf<com.swifttechnology.bookingsystem.features.announcements.domain.model.Announcement?>(null) 
+    }
 
     // Clear selection when exiting edit mode
     LaunchedEffect(isEditable) {
@@ -159,7 +162,7 @@ fun AnnouncementsScreen(
                                             selectedIds + announcement.id
                                         }
                                     } else {
-                                        viewModel.openEditSheet(announcement)
+                                        viewingAnnouncement = announcement
                                     }
                                 },
                                 onLongPress = {
@@ -247,11 +250,19 @@ fun AnnouncementsScreen(
         }
     }
 
+    //     Viewing dialog (Details)                                               
+    viewingAnnouncement?.let { announcement ->
+        com.swifttechnology.bookingsystem.features.announcements.presentation.components.AnnouncementDetailDialog(
+            announcement = announcement,
+            onDismiss = { viewingAnnouncement = null },
+            onMoreOptions = { /* Handle more options if needed */ }
+        )
+    }
+
     //     Add / Edit bottom sheet                                                
     if (uiState.showAddEditSheet) {
         AddEditAnnouncementSheet(
             editingAnnouncement = uiState.editingAnnouncement,
-            authorId            = 1L,   // TODO: replace with userId from TokenStorage/session
             sheetState          = sheetState,
             onDismiss           = viewModel::dismissSheet,
             onSave              = viewModel::saveAnnouncement

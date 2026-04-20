@@ -7,6 +7,7 @@ import com.swifttechnology.bookingsystem.core.model.RoomAmenity
 import com.swifttechnology.bookingsystem.core.model.RoomStatus
 import com.swifttechnology.bookingsystem.features.auth.domain.repository.AuthRepository
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.ExternalParticipantDTO
+import com.swifttechnology.bookingsystem.features.booking.data.dtos.LocalTimeDTO
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.RoomBookingRequestDTO
 import com.swifttechnology.bookingsystem.features.booking.domain.repository.BookingRepository
 import com.swifttechnology.bookingsystem.features.meetingrooms.domain.repository.RoomRepository
@@ -255,13 +256,18 @@ class BookRoomViewModel @Inject constructor(
     }
 
     /**
-     * Parses "HH:mm" time string to API format "HH:mm:ss".
+     * Parses "HH:mm" time string to API object format LocalTimeDTO.
      */
-    private fun parseTimeString(time: String): String? {
+    private fun parseTimeString(time: String): LocalTimeDTO? {
         if (time.isBlank()) return null
         return try {
             val parts = time.split(":")
-            String.format(java.util.Locale.US, "%02d:%02d:00", parts[0].toInt(), parts[1].toInt())
+            LocalTimeDTO(
+                hour = parts[0].toInt(),
+                minute = parts[1].toInt(),
+                second = 0,
+                nano = 0
+            )
         } catch (e: Exception) {
             null
         }

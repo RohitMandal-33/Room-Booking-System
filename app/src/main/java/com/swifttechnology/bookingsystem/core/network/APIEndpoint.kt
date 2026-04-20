@@ -60,11 +60,21 @@ object APIEndpoint {
     const val ANNOUNCEMENT_BY_ID           = "api/v1/announcement/{id}"
     const val ANNOUNCEMENT_MARK_READ       = "api/v1/announcement/{id}/mark-as-read"
     const val ANNOUNCEMENT_BATCH_DELETE    = "api/v1/announcements/batch"
-    const val ANNOUNCEMENT_PINNED_LIST     = "api/v1/announcement/pinned-list"
-    const val ANNOUNCEMENT_TARGETED        = "api/v1/get-Targeted-Audience-Announcement"
-    const val ANNOUNCEMENT_TARGETED_PINNED = "api/v1/get-Targeted-Audience-pinned-Announcement"
     const val ANNOUNCEMENT_ADD             = "api/v1/announcement/add"
     const val ANNOUNCEMENT_UPDATE          = "api/v1/announcement/{id}/update"
     const val ANNOUNCEMENT_DELETE          = "api/v1/announcement/{id}/delete"
     const val ANNOUNCEMENT_CHANGE_PIN      = "api/v1/announcement/{id}/change-pin-status"
+
+    // Calendar APIs
+    const val CALENDAR_WEEK = "api/v1/calender/week"
+    const val CALENDAR_MONTH = "api/v1/calender/month"
+    const val CALENDAR_DAY = "api/v1/calender/day"
+
+    // New Room APIs
+    const val ROOM_RESOURCES = "api/v1/room/resources"
+
+    // Public/Private/Admin Test APIs
+    const val USER_PUBLIC = "api/v1/public"
+    const val USER_PRIVATE = "api/v1/private"
+    const val USER_ADMIN = "api/v1/admin"
 }

@@ -27,4 +27,10 @@ interface RoomApiService {
         @Path("id") id: Long,
         @Body request: StatusChangeRequestDTO
     ): GlobalResponse<Unit>
+
+    @GET(APIEndpoint.ROOM_LIST)
+    suspend fun getAllRoomsNoPagination(): GlobalResponse<List<RoomResponseDTO>>
+
+    @GET(APIEndpoint.ROOM_RESOURCES)
+    suspend fun getAllResources(): GlobalResponse<List<String>>
 }

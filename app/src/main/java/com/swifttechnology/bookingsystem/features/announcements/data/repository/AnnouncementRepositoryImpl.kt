@@ -12,22 +12,25 @@ class AnnouncementRepositoryImpl @Inject constructor(
 ) : AnnouncementRepository {
 
     override suspend fun getAllAnnouncements(): Result<List<Announcement>> = runCatching {
-        val response = api.getAllAnnouncements()
+        val request = com.swifttechnology.bookingsystem.features.meetingrooms.data.dtos.PaginatedDataRequestDTO(pageNo = 0, pageSize = 50)
+        val response = api.getAllAnnouncements(request)
         if (!response.success || response.data == null) throw Exception(response.message)
         response.data.content?.map { it.toDomain() } ?: emptyList()
     }
 
     override suspend fun getPinnedAnnouncements(): Result<List<Announcement>> = runCatching {
-        val response = api.getPinnedAnnouncements()
+        val request = com.swifttechnology.bookingsystem.features.announcements.data.dtos.AnnouncementPinStatusRequestDTO(
+            pageNo   = 0,
+            pageSize = 50,
+            pinStatus = true
+        )
+        val response = api.getAnnouncementsByPinStatus(request)
         if (!response.success || response.data == null) throw Exception(response.message)
         response.data.content?.map { it.toDomain() } ?: emptyList()
     }
 
-    override suspend fun getTargetedPinnedAnnouncements(): Result<List<Announcement>> = runCatching {
-        val response = api.getTargetedPinnedAnnouncements()
-        if (!response.success || response.data == null) throw Exception(response.message)
-        response.data.map { it.toDomain() }
-    }
+    override suspend fun getTargetedPinnedAnnouncements(): Result<List<Announcement>> =
+        getPinnedAnnouncements()
 
     override suspend fun addAnnouncement(request: AnnouncementRequestDTO): Result<Unit> = runCatching {
         val response = api.addAnnouncement(request)
@@ -49,17 +52,23 @@ class AnnouncementRepositoryImpl @Inject constructor(
         if (!response.success) throw Exception(response.message)
     }
 
+    override suspend fun deleteBulkAnnouncements(ids: List<Long>): Result<Unit> = runCatching {
+        val request = com.swifttechnology.bookingsystem.features.announcements.data.dtos.DeleteIdsRequestDTO(ids)
+        val response = api.deleteBulkAnnouncements(request)
+        if (!response.success) throw Exception(response.message)
+    }
+
     private fun AnnouncementDTO.toDomain() = Announcement(
-        id = id ?: 0L,
-        title = title.orEmpty(),
-        message = message.orEmpty(),
-        priorityLevel = priorityLevel.orEmpty(),
-        pinned = pinned ?: false,
-        authorName = authorName.orEmpty(),
+        id             = id ?: 0L,
+        title          = title.orEmpty(),
+        message        = message.orEmpty(),
+        priorityLevel  = priorityLevel.orEmpty(),
+        pinned         = pinned ?: false,
+        authorName     = authorName.orEmpty(),
         authorPosition = authorPosition.orEmpty(),
-        authorId = authorId,
-        createdAt = createdAt.orEmpty(),
-        startDate = startDate,
-        endDate = endDate
+        authorId       = authorId,
+        createdAt      = createdAt.orEmpty(),
+        startDate      = startDate,
+        endDate        = endDate
     )
 }

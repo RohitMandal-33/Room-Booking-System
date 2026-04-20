@@ -55,7 +55,6 @@ import com.swifttechnology.bookingsystem.shared.components.PrimaryButton
 @Composable
 fun AddEditAnnouncementSheet(
     editingAnnouncement: Announcement?,
-    authorId: Long,
     sheetState: SheetState,
     onDismiss: () -> Unit,
     onSave: (AnnouncementRequestDTO) -> Unit
@@ -77,10 +76,10 @@ fun AddEditAnnouncementSheet(
         mutableStateOf(editingAnnouncement?.pinned ?: false)
     }
     var startDate by rememberSaveable(editingAnnouncement) {
-        mutableStateOf(editingAnnouncement?.startDate ?: "")
+        mutableStateOf(formatToDisplayDate(editingAnnouncement?.startDate ?: ""))
     }
     var endDate by rememberSaveable(editingAnnouncement) {
-        mutableStateOf(editingAnnouncement?.endDate ?: "")
+        mutableStateOf(formatToDisplayDate(editingAnnouncement?.endDate ?: ""))
     }
     var allUser by rememberSaveable { mutableStateOf(true) }
 
@@ -234,14 +233,11 @@ fun AddEditAnnouncementSheet(
                             if (canSave) {
                                 onSave(
                                     AnnouncementRequestDTO(
-                                        title         = title.trim(),
-                                        message       = message.trim(),
-                                        priorityLevel = priorityLevel,
-                                        pinned        = pinned,
-                                        allUser       = allUser,
-                                        authorId      = authorId,
-                                        startDate     = startDate,
-                                        endDate       = endDate
+                                        title     = title.trim(),
+                                        message   = message.trim(),
+                                        pinned    = pinned,
+                                        startDate = convertToApiDate(startDate),
+                                        endDate   = convertToApiDate(endDate)
                                     )
                                 )
                             }
@@ -311,5 +307,33 @@ fun AddEditAnnouncementSheet(
         ) {
             DatePicker(state = datePickerState)
         }
+    }
+}
+
+private fun convertToApiDate(displayDate: String): String? {
+    if (displayDate.isBlank()) return null
+    return try {
+        val inputFormat = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault())
+        val outputFormat = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+        val date = inputFormat.parse(displayDate) ?: return null
+        outputFormat.format(date)
+    } catch (e: Exception) {
+        null
+    }
+}
+
+/**
+ * Converts API format "yyyy-MM-dd" to UI format "dd MMM yyyy"
+ */
+private fun formatToDisplayDate(apiDate: String): String {
+    if (apiDate.isBlank()) return ""
+    return try {
+        // Try parsing from YYYY-MM-DD
+        val inputFormat = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+        val outputFormat = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault())
+        val date = inputFormat.parse(apiDate) ?: return apiDate
+        outputFormat.format(date)
+    } catch (e: Exception) {
+        apiDate
     }
 }

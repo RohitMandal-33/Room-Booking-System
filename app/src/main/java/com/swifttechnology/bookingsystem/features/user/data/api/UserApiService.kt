@@ -36,4 +36,13 @@ interface UserApiService {
         @Query("size") size: Int = 10,
         @Query("sortBy") sortBy: String = "id"
     ): GlobalResponse<UserPageDTO>
+
+    @GET(APIEndpoint.USER_PUBLIC)
+    suspend fun testPublic(): String
+
+    @GET(APIEndpoint.USER_PRIVATE)
+    suspend fun testPrivate(): String
+
+    @GET(APIEndpoint.USER_ADMIN)
+    suspend fun adminOnly(): String
 }

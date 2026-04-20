@@ -94,11 +94,15 @@ class AnnouncementsViewModel @Inject constructor(
     fun deleteSelected(ids: Set<Long>) {
         viewModelScope.launch {
             val list = ids.toList()
-            list.forEach { id -> repository.deleteAnnouncement(id) }
-            _uiState.update {
-                it.copy(
-                    successMessage = "Deleted ${list.size} announcement(s)"
-                )
+            val result = repository.deleteBulkAnnouncements(list)
+            if (result.isSuccess) {
+                _uiState.update {
+                    it.copy(successMessage = "Deleted ${list.size} announcement(s)")
+                }
+            } else {
+                _uiState.update {
+                    it.copy(operationError = result.exceptionOrNull()?.message)
+                }
             }
             loadAnnouncements()
         }

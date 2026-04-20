@@ -6,8 +6,8 @@ package com.swifttechnology.bookingsystem.features.booking.data.dtos
 data class RoomBookingRequestDTO(
     val meetingTitle: String? = null,
     val date: String? = null,              // yyyy-MM-dd
-    val startTime: String? = null,
-    val endTime: String? = null,
+    val startTime: LocalTimeDTO? = null,
+    val endTime: LocalTimeDTO? = null,
     val meetingType: String? = null,        // INTERNAL, CLIENT, EXECUTIVE
     val description: String? = null,
     val roomId: Long? = null,
@@ -15,7 +15,16 @@ data class RoomBookingRequestDTO(
     val externalParticipants: List<ExternalParticipantDTO>? = null,
     val recurrenceEndDate: String? = null,
     val recurrenceType: String? = null,
-    val weekDays: List<String>? = null
+    val weekDays: List<String>? = null,
+    val updateScope: String? = null,        // ALL, THIS, SPECIFIC
+    val dates: List<String>? = null
+)
+
+/**
+ * Request body for Calendar APIs.
+ */
+data class CalenderRequestDTO(
+    val date: String // yyyy-MM-dd
 )
 
 

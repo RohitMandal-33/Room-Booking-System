@@ -29,6 +29,11 @@ class DashboardViewModel @Inject constructor(
         fetchAnnouncements()
     }
 
+    fun refreshAll() {
+        fetchUpcomingMeetings()
+        fetchAnnouncements()
+    }
+
     private fun fetchAnnouncements() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoadingAnnouncements = true) }

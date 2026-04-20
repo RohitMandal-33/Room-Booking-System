@@ -12,31 +12,24 @@ import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
-import retrofit2.http.Query
 
 interface AnnouncementApiService {
 
-    /** GET /api/v1/announcement/list */
-    @GET(APIEndpoint.ANNOUNCEMENT_LIST)
+    /** POST /api/v1/announcement/list — all announcements (paginated) */
+    @POST(APIEndpoint.ANNOUNCEMENT_LIST)
     suspend fun getAllAnnouncements(
-        @Query("page") page: Int = 0,
-        @Query("size") size: Int = 50
+        @Body request: com.swifttechnology.bookingsystem.features.meetingrooms.data.dtos.PaginatedDataRequestDTO
     ): GlobalResponse<AnnouncementPageDTO>
 
-    /** GET /api/v1/announcement/pinned-list */
-    @GET(APIEndpoint.ANNOUNCEMENT_PINNED_LIST)
-    suspend fun getPinnedAnnouncements(
-        @Query("page") page: Int = 0,
-        @Query("size") size: Int = 50
+    /**
+     * POST /api/v1/announcement/get — announcements filtered by pinStatus
+     *  - pinStatus = true  → pinned announcements
+     *  - pinStatus = false → un-pinned announcements
+     */
+    @POST(APIEndpoint.ANNOUNCEMENT_GET)
+    suspend fun getAnnouncementsByPinStatus(
+        @Body request: com.swifttechnology.bookingsystem.features.announcements.data.dtos.AnnouncementPinStatusRequestDTO
     ): GlobalResponse<AnnouncementPageDTO>
-
-    /** GET /api/v1/get-Targeted-Audience-Announcement */
-    @GET(APIEndpoint.ANNOUNCEMENT_TARGETED)
-    suspend fun getTargetedAnnouncements(): GlobalResponse<List<AnnouncementDTO>>
-
-    /** GET /api/v1/get-Targeted-Audience-pinned-Announcement */
-    @GET(APIEndpoint.ANNOUNCEMENT_TARGETED_PINNED)
-    suspend fun getTargetedPinnedAnnouncements(): GlobalResponse<List<AnnouncementDTO>>
 
     /** POST /api/v1/announcement/add */
     @POST(APIEndpoint.ANNOUNCEMENT_ADD)
@@ -62,11 +55,6 @@ interface AnnouncementApiService {
     suspend fun changePinStatus(
         @Path("id") id: Long
     ): GlobalResponse<Any>
-    /** POST /api/v1/announcement/get */
-    @POST(APIEndpoint.ANNOUNCEMENT_GET)
-    suspend fun getAnnouncementsByPinStatus(
-        @Body request: com.swifttechnology.bookingsystem.features.announcements.data.dtos.AnnouncementPinStatusRequestDTO
-    ): GlobalResponse<AnnouncementPageDTO>
 
     /** GET /api/v1/announcement/{id} */
     @GET(APIEndpoint.ANNOUNCEMENT_BY_ID)
@@ -80,9 +68,9 @@ interface AnnouncementApiService {
         @Path("id") id: Long
     ): GlobalResponse<Any>
 
-    /** HTTP DELETE /api/v1/announcements/batch (Retrofit doesn't support body with @DELETE annotation natively) */
+    /** DELETE /api/v1/announcements/batch */
     @retrofit2.http.HTTP(method = "DELETE", path = APIEndpoint.ANNOUNCEMENT_BATCH_DELETE, hasBody = true)
     suspend fun deleteBulkAnnouncements(
-        @Body request: List<Long>
+        @Body request: com.swifttechnology.bookingsystem.features.announcements.data.dtos.DeleteIdsRequestDTO
     ): GlobalResponse<Any>
 }

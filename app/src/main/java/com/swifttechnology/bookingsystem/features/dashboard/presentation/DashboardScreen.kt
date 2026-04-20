@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -37,7 +39,25 @@ fun DashboardScreen(
         viewModel.onSearchQueryChanged(searchQuery)
     }
 
+    var viewingAnnouncement by remember { 
+        androidx.compose.runtime.mutableStateOf<com.swifttechnology.bookingsystem.features.announcements.domain.model.Announcement?>(null) 
+    }
 
+
+
+
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                viewModel.refreshAll()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -53,7 +73,7 @@ fun DashboardScreen(
         AnnouncementSection(
             announcements = uiState.announcements,
             isLoading     = uiState.isLoadingAnnouncements,
-            onView        = { onNavigate(ScreenRoutes.ANNOUNCEMENTS) }
+            onView        = { announcement -> viewingAnnouncement = announcement }
         )
 
         Spacer(modifier = Modifier.height(Spacing.sm))
@@ -74,5 +94,12 @@ fun DashboardScreen(
         )
 
         Spacer(modifier = Modifier.height(Spacing.lg))
+    }
+
+    viewingAnnouncement?.let { announcement ->
+        com.swifttechnology.bookingsystem.features.announcements.presentation.components.AnnouncementDetailDialog(
+            announcement = announcement,
+            onDismiss = { viewingAnnouncement = null }
+        )
     }
 }

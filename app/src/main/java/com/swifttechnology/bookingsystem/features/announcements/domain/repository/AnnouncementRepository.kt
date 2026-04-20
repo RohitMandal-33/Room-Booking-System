@@ -11,4 +11,5 @@ interface AnnouncementRepository {
     suspend fun updateAnnouncement(id: Long, request: AnnouncementRequestDTO): Result<Unit>
     suspend fun deleteAnnouncement(id: Long): Result<Unit>
     suspend fun changePinStatus(id: Long): Result<Unit>
+    suspend fun deleteBulkAnnouncements(ids: List<Long>): Result<Unit>
 }

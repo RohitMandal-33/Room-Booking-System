@@ -2,6 +2,10 @@ package com.swifttechnology.bookingsystem.features.announcements.data.dtos
 
 import com.google.gson.annotations.SerializedName
 
+data class DeleteIdsRequestDTO(
+    @SerializedName("ids") val ids: List<Long>
+)
+
 data class AnnouncementPinStatusRequestDTO(
     @SerializedName("pageNo") val pageNo: Int? = null,
     @SerializedName("pageSize") val pageSize: Int? = null,
@@ -13,12 +17,7 @@ data class AnnouncementPinStatusRequestDTO(
 data class AnnouncementRequestDTO(
     @SerializedName("title") val title: String,
     @SerializedName("message") val message: String,
-    @SerializedName("priorityLevel") val priorityLevel: String,   // HIGH | NORMAL
     @SerializedName("pinned") val pinned: Boolean? = null,
-    @SerializedName("roleId") val roleId: Long? = null,
-    @SerializedName("groupId") val groupId: Long? = null,
-    @SerializedName("allUser") val allUser: Boolean? = null,
-    @SerializedName("authorId") val authorId: Long,
     @SerializedName("startDate") val startDate: String? = null,
     @SerializedName("endDate") val endDate: String? = null
 )
