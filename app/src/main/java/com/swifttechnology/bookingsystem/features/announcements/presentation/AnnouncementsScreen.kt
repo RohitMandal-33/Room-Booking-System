@@ -153,7 +153,7 @@ fun AnnouncementsScreen(
                                 announcement  = announcement,
                                 isEditMode    = isEditable,
                                 isSelected    = announcement.id in selectedIds,
-                                showAccentBar = uiState.selectedTab == AnnouncementTab.PINNED,
+                                showAccentBar = uiState.selectedTab == AnnouncementTab.PINNED || announcement.pinned,
                                 onTap = {
                                     if (isEditable) {
                                         selectedIds = if (announcement.id in selectedIds) {
@@ -202,7 +202,8 @@ fun AnnouncementsScreen(
             exit     = slideOutVertically(targetOffsetY = { it }) + fadeOut()
         ) {
             EditModeActionBar(
-                hasSelection = selectedIds.isNotEmpty(),
+                canEdit = selectedIds.size == 1,
+                canDelete = selectedIds.isNotEmpty(),
                 onEdit = {
                     val selected = uiState.displayedAnnouncements
                         .firstOrNull { it.id == selectedIds.firstOrNull() }
@@ -316,7 +317,8 @@ private fun AnnouncementTabBar(
 
 @Composable
 private fun EditModeActionBar(
-    hasSelection: Boolean,
+    canEdit: Boolean,
+    canDelete: Boolean,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -333,8 +335,8 @@ private fun EditModeActionBar(
                 .weight(1f)
                 .height(50.dp)
                 .clip(RoundedCornerShape(CornerRadius.lg))
-                .background(if (hasSelection) Color(0xFFEBEBF5) else Color(0xFFF2F2F7))
-                .clickable(enabled = hasSelection, onClick = onEdit),
+                .background(if (canEdit) Color(0xFFEBEBF5) else Color(0xFFF2F2F7))
+                .clickable(enabled = canEdit, onClick = onEdit),
             contentAlignment = Alignment.Center
         ) {
             Row(
@@ -344,10 +346,10 @@ private fun EditModeActionBar(
                 Icon(
                     imageVector = Icons.Outlined.Edit,
                     contentDescription = "Edit",
-                    tint = if (hasSelection) Color(0xFF1C1C1E) else Color(0xFF3C3C43).copy(alpha = 0.3f),
+                    tint = if (canEdit) Color(0xFF1C1C1E) else Color(0xFF3C3C43).copy(alpha = 0.3f),
                     modifier = Modifier.size(18.dp)
                 )
-                Text("Edit", color = if (hasSelection) Color(0xFF1C1C1E) else Color(0xFF3C3C43).copy(alpha = 0.3f), fontWeight = FontWeight.SemiBold)
+                Text("Edit", color = if (canEdit) Color(0xFF1C1C1E) else Color(0xFF3C3C43).copy(alpha = 0.3f), fontWeight = FontWeight.SemiBold)
             }
         }
 
@@ -357,8 +359,8 @@ private fun EditModeActionBar(
                 .weight(1f)
                 .height(50.dp)
                 .clip(RoundedCornerShape(CornerRadius.lg))
-                .background(if (hasSelection) Color(0xFFFFD4D4) else Color(0xFFF2F2F7))
-                .clickable(enabled = hasSelection, onClick = onDelete),
+                .background(if (canDelete) Color(0xFFFFD4D4) else Color(0xFFF2F2F7))
+                .clickable(enabled = canDelete, onClick = onDelete),
             contentAlignment = Alignment.Center
         ) {
             Row(
@@ -368,10 +370,10 @@ private fun EditModeActionBar(
                 Icon(
                     imageVector = Icons.Outlined.Delete,
                     contentDescription = "Delete",
-                    tint = if (hasSelection) Color(0xFF1C1C1E) else Color(0xFF3C3C43).copy(alpha = 0.3f),
+                    tint = if (canDelete) Color(0xFF1C1C1E) else Color(0xFF3C3C43).copy(alpha = 0.3f),
                     modifier = Modifier.size(18.dp)
                 )
-                Text("Delete", color = if (hasSelection) Color(0xFF1C1C1E) else Color(0xFF3C3C43).copy(alpha = 0.3f), fontWeight = FontWeight.SemiBold)
+                Text("Delete", color = if (canDelete) Color(0xFF1C1C1E) else Color(0xFF3C3C43).copy(alpha = 0.3f), fontWeight = FontWeight.SemiBold)
             }
         }
     }

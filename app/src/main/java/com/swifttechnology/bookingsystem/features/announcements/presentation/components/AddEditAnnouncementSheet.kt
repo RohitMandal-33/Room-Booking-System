@@ -322,9 +322,6 @@ private fun convertToApiDate(displayDate: String): String? {
     }
 }
 
-/**
- * Converts API format "yyyy-MM-dd" to UI format "dd MMM yyyy"
- */
 private fun formatToDisplayDate(apiDate: String): String {
     if (apiDate.isBlank()) return ""
     return try {

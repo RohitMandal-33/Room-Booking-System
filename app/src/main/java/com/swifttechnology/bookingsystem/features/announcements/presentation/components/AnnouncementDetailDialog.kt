@@ -13,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -53,12 +54,13 @@ fun AnnouncementDetailDialog(
                     .verticalScroll(rememberScrollState())
             ) {
 
-                // Close button row
+                // Top bar: Close + More options
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.End
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = onDismiss) {
                         Icon(
@@ -67,43 +69,22 @@ fun AnnouncementDetailDialog(
                             tint = colors.deepBlack
                         )
                     }
-                }
-
-                // Pinned Badge
-                if (announcement.pinned) {
-                    Row(
-                        modifier = Modifier
-                            .padding(horizontal = 24.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
+                    IconButton(onClick = onMoreOptions) {
                         Icon(
-                            imageVector = Icons.Outlined.PushPin,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Text(
-                            text = "Pinned",
-                            color = MaterialTheme.colorScheme.primary,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "More options",
+                            tint = colors.textSecondary
                         )
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
                 }
 
-                // Title + overflow menu
+                // Title + optional Pinned badge on same row
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp),
-                    verticalAlignment = Alignment.Top
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
                         text = announcement.title,
@@ -113,53 +94,94 @@ fun AnnouncementDetailDialog(
                         lineHeight = 30.sp,
                         modifier = Modifier.weight(1f)
                     )
-                    IconButton(
-                        onClick = onMoreOptions,
-                        modifier = Modifier.padding(top = 2.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = "More options",
-                            tint = colors.textSecondary
-                        )
+                    if (announcement.pinned) {
+                        Row(
+                            modifier = Modifier
+                                .background(
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.PushPin,
+                                contentDescription = "Pinned",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = "Pinned",
+                                color = MaterialTheme.colorScheme.primary,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Author name + department tag
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                // Dates Section
+                Column(
+                    modifier = Modifier.padding(horizontal = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = announcement.authorName,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = colors.deepBlack
+                        text = "Posted: ${formatDateString(announcement.createdAt)}",
+                        fontSize = 13.sp,
+                        color = colors.textSecondary
                     )
-                    if (announcement.authorPosition.isNotBlank()) {
+
+                    if (!announcement.startDate.isNullOrBlank()) {
                         Text(
-                            text = "• ${announcement.authorPosition}",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Normal,
+                            text = buildString {
+                                append("Valid: ")
+                                append(formatDateString(announcement.startDate))
+                                if (!announcement.endDate.isNullOrBlank()) {
+                                    append(" - ")
+                                    append(formatDateString(announcement.endDate))
+                                }
+                            },
+                            fontSize = 13.sp,
                             color = colors.textSecondary
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
-                // Date
-                Text(
-                    text = formatDateString(announcement.createdAt),
-                    fontSize = 13.sp,
-                    color = colors.textSecondary,
-                    modifier = Modifier.padding(horizontal = 24.dp)
-                )
+                // Author row
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = announcement.authorName,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.deepBlack
+                    )
+
+                    if (announcement.authorPosition.isNotBlank()) {
+                        Surface(
+                            color = Color(0xFFE8F5E9),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Text(
+                                text = announcement.authorPosition,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF2E7D32),
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(24.dp))
 

@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
@@ -186,17 +187,33 @@ fun AnnouncementCard(
 
                     Spacer(Modifier.height(2.dp))
 
-                    // Title
-                    Text(
-                        text = announcement.title,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = colors.deepBlack,
-                            fontSize = 14.sp
-                        ),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    // Title + pin icon
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (announcement.pinned) {
+                            Icon(
+                                imageVector = Icons.Outlined.PushPin,
+                                contentDescription = "Pinned",
+                                tint = Primary,
+                                modifier = Modifier
+                                    .size(14.dp)
+                                    .padding(end = 2.dp)
+                            )
+                        }
+                        Text(
+                            text = announcement.title,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = colors.deepBlack,
+                                fontSize = 14.sp
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
 
                     Spacer(Modifier.height(2.dp))
 
