@@ -22,10 +22,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
@@ -37,7 +35,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -51,7 +48,6 @@ import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-/** Formats an ISO date string to "Feb 7, 2026" */
 private fun formatDate(raw: String): String {
     return runCatching {
         val odt = OffsetDateTime.parse(raw)
@@ -59,13 +55,14 @@ private fun formatDate(raw: String): String {
     }.getOrDefault(raw)
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AnnouncementCard(
     announcement: Announcement,
     isEditMode: Boolean,
     isSelected: Boolean,
     modifier: Modifier = Modifier,
-    showAccentBar: Boolean = true,         // true on Pinned tab, false on All tab
+    showAccentBar: Boolean = true,
     onTap: () -> Unit,
     onLongPress: () -> Unit
 ) {
@@ -86,6 +83,7 @@ fun AnnouncementCard(
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // Animated checkbox in edit mode
         AnimatedVisibility(
             visible = isEditMode,
             enter = fadeIn(animationSpec = tween(250)) + expandHorizontally(
@@ -113,6 +111,7 @@ fun AnnouncementCard(
             )
         }
 
+        // Card surface
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -150,70 +149,41 @@ fun AnnouncementCard(
                         .weight(1f)
                         .padding(
                             start = if (!showAccentBar) Spacing.md else Spacing.ms,
-                            end = Spacing.md,
+                            end = 0.dp,
                             top = Spacing.ms,
                             bottom = Spacing.ms
                         )
                 ) {
-                    // Author + date row
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = buildString {
-                                append(announcement.authorName)
-                                if (announcement.authorPosition.isNotBlank()) {
-                                    append(" (${announcement.authorPosition})")
-                                }
-                            },
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                color = colors.textSecondary,
-                                fontSize = 11.sp
-                            ),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Spacer(Modifier.width(Spacing.sm))
-                        Text(
-                            text = formatDate(announcement.createdAt),
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                color = colors.textSecondary,
-                                fontSize = 11.sp
-                            )
-                        )
-                    }
+                    // Author
+                    Text(
+                        text = buildString {
+                            append(announcement.authorName)
+                            if (announcement.authorPosition.isNotBlank()) {
+                                append(" (${announcement.authorPosition})")
+                            }
+                        },
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = colors.textSecondary,
+                            fontSize = 11.sp
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
                     Spacer(Modifier.height(2.dp))
 
-                    // Title + pin icon
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        if (announcement.pinned) {
-                            Icon(
-                                imageVector = Icons.Outlined.PushPin,
-                                contentDescription = "Pinned",
-                                tint = Primary,
-                                modifier = Modifier
-                                    .size(14.dp)
-                                    .padding(end = 2.dp)
-                            )
-                        }
-                        Text(
-                            text = announcement.title,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = colors.deepBlack,
-                                fontSize = 14.sp
-                            ),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
+                    // Title
+                    Text(
+                        text = announcement.title,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = colors.deepBlack,
+                            fontSize = 14.sp
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
 
                     Spacer(Modifier.height(2.dp))
 
@@ -227,6 +197,40 @@ fun AnnouncementCard(
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
+                }
+
+                // Date and Pin Column
+                Column(
+                    modifier = Modifier
+                        .padding(start = Spacing.sm, end = Spacing.md, top = Spacing.ms)
+                        .align(Alignment.Top),
+                    horizontalAlignment = Alignment.End
+                ) {
+                    Text(
+                        text = formatDate(announcement.startDate ?: announcement.createdAt),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = colors.textSecondary,
+                            fontSize = 11.sp
+                        )
+                    )
+
+                    if (announcement.pinned) {
+                        Spacer(Modifier.height(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Primary.copy(alpha = 0.10f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.PushPin,
+                                contentDescription = "Pinned",
+                                tint = Primary,
+                                modifier = Modifier.size(13.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
