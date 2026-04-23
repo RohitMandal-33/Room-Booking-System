@@ -12,4 +12,5 @@ interface AnnouncementRepository {
     suspend fun deleteAnnouncement(id: Long): Result<Unit>
     suspend fun changePinStatus(id: Long): Result<Unit>
     suspend fun deleteBulkAnnouncements(ids: List<Long>): Result<Unit>
+    suspend fun markAsRead(id: Long): Result<Unit>
 }

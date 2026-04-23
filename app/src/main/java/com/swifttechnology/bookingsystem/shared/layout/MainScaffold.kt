@@ -1,5 +1,7 @@
 package com.swifttechnology.bookingsystem.shared.layout
 
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -9,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.ui.input.pointer.pointerInput
 import com.swifttechnology.bookingsystem.core.designsystem.Spacing
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.MaterialTheme
@@ -56,6 +59,7 @@ fun MainScaffold(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
+        gesturesEnabled = false,
         drawerContent = {
             ModalDrawerSheet(
                 modifier = Modifier
@@ -98,29 +102,44 @@ fun MainScaffold(
             )
         }
 
-        Scaffold(
-            containerColor = containerColor
-        ) { innerPadding ->
-            Column(
-                modifier = modifier
-                    .padding(innerPadding)
-                    .padding(if(showTopBar) Spacing.md else 0.dp)
-                    .fillMaxSize()
-            ) {
-                if (showTopBar) {
-                    TopBar(
-                        title = title,
-                        onMenuClick = { scope.launch { drawerState.open() } },
-                        showEditIcon = showEditIcon,
-                        isEditMode = isEditMode,
-                        showTodayIcon = showTodayIcon,
-                        onTodayClick = onTodayClick,
-                        onEditClick = onEditClick,
-                        onBackClick = onBackClick
-                    )
-                    Spacer(modifier = Modifier.height(Spacing.md))
+        Box(modifier = Modifier.fillMaxSize()) {
+            Scaffold(
+                containerColor = containerColor
+            ) { innerPadding ->
+                Column(
+                    modifier = modifier
+                        .padding(innerPadding)
+                        .padding(if (showTopBar) Spacing.md else 0.dp)
+                        .fillMaxSize()
+                ) {
+                    if (showTopBar) {
+                        TopBar(
+                            title = title,
+                            onMenuClick = { scope.launch { drawerState.open() } },
+                            showEditIcon = showEditIcon,
+                            isEditMode = isEditMode,
+                            showTodayIcon = showTodayIcon,
+                            onTodayClick = onTodayClick,
+                            onEditClick = onEditClick,
+                            onBackClick = onBackClick
+                        )
+                        Spacer(modifier = Modifier.height(Spacing.md))
+                    }
+                    content()
                 }
-                content()
+            }
+
+            // Overlay to capture taps and close drawer when open
+            if (drawerState.isOpen) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pointerInput(Unit) {
+                            detectTapGestures {
+                                scope.launch { drawerState.close() }
+                            }
+                        }
+                )
             }
         }
     }

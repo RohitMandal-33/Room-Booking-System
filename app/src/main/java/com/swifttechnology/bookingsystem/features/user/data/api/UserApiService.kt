@@ -19,6 +19,12 @@ interface UserApiService {
         @Body request: UpdateUserRequestDTO
     ): GlobalResponse<Unit>
 
+    @PATCH(APIEndpoint.USER_CHANGE_STATUS)
+    suspend fun changeUserStatus(
+        @Path("id") id: Long,
+        @Body request: com.swifttechnology.bookingsystem.features.meetingrooms.data.dtos.StatusChangeRequestDTO
+    ): GlobalResponse<Unit>
+
     @GET(APIEndpoint.USER_BY_ID)
     suspend fun getUserById(@Path("id") id: Long): GlobalResponse<UserDetailsDTO>
 

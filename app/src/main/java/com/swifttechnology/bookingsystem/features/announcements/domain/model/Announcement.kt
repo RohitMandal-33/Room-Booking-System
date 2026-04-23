@@ -11,5 +11,6 @@ data class Announcement(
     val authorId: Long?,
     val createdAt: String,       // raw ISO string, formatted in UI
     val startDate: String? = null,
-    val endDate: String? = null
+    val endDate: String? = null,
+    val isRead: Boolean = false
 )

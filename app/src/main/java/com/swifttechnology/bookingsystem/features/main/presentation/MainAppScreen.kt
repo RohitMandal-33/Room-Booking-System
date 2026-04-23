@@ -59,6 +59,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 data class PendingBookingDetails(
+    val bookingId: Long? = null,
     val roomName: String,
     val date: String,
     val startTime: String,
@@ -228,6 +229,7 @@ fun MainAppScreen(
                         val startFmt = event.startTime.format(DateTimeFormatter.ofPattern("hh:mm a", Locale.getDefault()))
                         val endFmt   = event.endTime.format(DateTimeFormatter.ofPattern("hh:mm a", Locale.getDefault()))
                         pendingBookingDetails = PendingBookingDetails(
+                            bookingId              = event.meetingId,
                             roomName               = event.meetingRoom,
                             date                   = dateFmt,
                             startTime              = startFmt,

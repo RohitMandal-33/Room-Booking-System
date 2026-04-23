@@ -1,9 +1,5 @@
 package com.swifttechnology.bookingsystem.features.meetingrooms.data.dtos
 
-/**
- * Request body for adding or updating a meeting room.
- * resources values: WIFI, TV, PROJECTOR, WHITEBOARD
- */
 data class RoomRequestDTO(
     val roomName: String,
     val capacity: Int,
@@ -18,9 +14,6 @@ data class PaginatedDataRequestDTO(
     val sortDir: String? = "asc"
 )
 
-/**
- * Filtered room request body for active rooms.
- */
 data class RoomDataRequestDTO(
     val pageNo: Int? = 0,
     val pageSize: Int? = 10,

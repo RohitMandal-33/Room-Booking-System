@@ -170,12 +170,8 @@ private fun InternalParticipantsContent(
 
     // For GROUPS: a group is "selected" if its ID is in selectedGroupIds (purely UI tracking).
     // For PEOPLE/TEAMS: "all selected" means every visible member is in participants.
-    val allSelected = when (groupBy) {
-        GroupBy.GROUPS -> filteredGroups.isNotEmpty() &&
-                filteredGroups.all { it.id in formState.selectedGroupIds }
-        else -> displayList.isNotEmpty() &&
-                displayList.all { p -> formState.participants.any { it.id == p.id } }
-    }
+    // Logic for "all selected" is now handled per department in TEAMS view
+    // and removed for PEOPLE/GROUPS as requested.
 
     Column(
         modifier = modifier
@@ -245,96 +241,7 @@ private fun InternalParticipantsContent(
             ) {
                 Row(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(CornerRadius.sm))
-                        .clickable {
-                            if (allSelected) {
-                                if (groupBy == GroupBy.GROUPS) {
-                                    // Deselect all visible groups:
-                                    // Remove their IDs from selectedGroupIds and remove members
-                                    // that no longer belong to any still-selected group.
-                                    val deselectedGroupIds = filteredGroups.map { it.id }.toSet()
-                                    val remainingGroupIds = formState.selectedGroupIds - deselectedGroupIds
-                                    val remainingGroupMemberIds = customGroups
-                                        .filter { it.id in remainingGroupIds }
-                                        .flatMap { it.memberIds }
-                                        .toSet()
-                                    val removedMemberIds = filteredGroups
-                                        .flatMap { it.memberIds }
-                                        .toSet()
-                                    onFormStateChanged(formState.copy(
-                                        participants = formState.participants.filterNot {
-                                            it.id in removedMemberIds && it.id !in remainingGroupMemberIds
-                                        },
-                                        selectedGroupIds = remainingGroupIds
-                                    ))
-                                } else {
-                                    // People / Teams: clear only the visible list from participants
-                                    val removeIds = displayList.map { it.id }.toSet()
-                                    onFormStateChanged(formState.copy(
-                                        participants = formState.participants.filterNot { it.id in removeIds }
-                                    ))
-                                }
-                            } else {
-                                if (groupBy == GroupBy.GROUPS) {
-                                    // Select all visible groups:
-                                    // Add all their IDs to selectedGroupIds and merge their members.
-                                    val newGroupIds = filteredGroups.map { it.id }.toSet()
-                                    val allMemberIds = filteredGroups.flatMap { it.memberIds }.distinct()
-                                    
-                                    scope.launch {
-                                        val resolvedMembers = viewModel.resolveParticipantsByIds(allMemberIds)
-                                        val merged = (formState.participants + resolvedMembers).distinctBy { it.id }
-                                        onFormStateChanged(formState.copy(
-                                            participants = merged,
-                                            selectedGroupIds = formState.selectedGroupIds + newGroupIds
-                                        ))
-                                    }
-                                } else {
-                                    // People / Teams: add visible members to participants only
-                                    val merged = (formState.participants + displayList).distinctBy { it.id }
-                                    onFormStateChanged(formState.copy(participants = merged))
-                                }
-                            }
-                        }
-                        .padding(end = 4.dp, top = 8.dp, bottom = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(18.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(
-                                if (allSelected) MaterialTheme.colorScheme.primary
-                                else Color.Transparent
-                            )
-                            .border(
-                                width = 1.5.dp,
-                                color = if (allSelected) MaterialTheme.colorScheme.primary else Neutral400,
-                                shape = RoundedCornerShape(4.dp)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (allSelected) {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(12.dp)
-                            )
-                        }
-                    }
-                    Text(
-                        text = "All",
-                        modifier = Modifier.padding(start = 6.dp),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.customColors.bookRoomLabel
-                    )
-                }
-
-                Row(
-                    modifier = Modifier
-                        .weight(1f)
+                        .fillMaxWidth()
                         .height(50.dp)
                         .clip(RoundedCornerShape(CornerRadius.full))
                         .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
@@ -469,18 +376,65 @@ private fun InternalParticipantsContent(
                         val grouped = displayList.groupBy { it.department }
                         grouped.forEach { (department, members) ->
                             item(key = "dept_$department") {
-                                Text(
-                                    text = department,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary,
+                                val isDeptSelected = members.isNotEmpty() && members.all { p -> formState.participants.any { it.id == p.id } }
+                                Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .background(
-                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.06f)
-                                        )
-                                        .padding(horizontal = Spacing.md, vertical = 5.dp)
-                                )
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.06f))
+                                        .padding(horizontal = Spacing.md, vertical = 5.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = department,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Row(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(CornerRadius.sm))
+                                            .clickable {
+                                                if (isDeptSelected) {
+                                                    val removeIds = members.map { it.id }.toSet()
+                                                    onFormStateChanged(formState.copy(
+                                                        participants = formState.participants.filterNot { it.id in removeIds }
+                                                    ))
+                                                } else {
+                                                    val merged = (formState.participants + members).distinctBy { it.id }
+                                                    onFormStateChanged(formState.copy(participants = merged))
+                                                }
+                                            }
+                                            .padding(2.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(16.dp)
+                                                .clip(RoundedCornerShape(4.dp))
+                                                .background(
+                                                    if (isDeptSelected) MaterialTheme.colorScheme.primary
+                                                    else Color.Transparent
+                                                )
+                                                .border(
+                                                    width = 1.2.dp,
+                                                    color = if (isDeptSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                                                    shape = RoundedCornerShape(4.dp)
+                                                ),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            if (isDeptSelected) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Check,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                                    modifier = Modifier.size(10.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
                             }
                             items(members, key = { it.id }) { participant ->
                                 InternalParticipantItem(

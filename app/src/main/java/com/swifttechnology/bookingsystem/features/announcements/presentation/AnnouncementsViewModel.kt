@@ -115,6 +115,23 @@ class AnnouncementsViewModel @Inject constructor(
         }
     }
 
+    fun markAsRead(id: Long) {
+        // Optimistic UI update
+        _uiState.update { state ->
+            val updateList = { list: List<Announcement> ->
+                list.map { if (it.id == id) it.copy(isRead = true) else it }
+            }
+            state.copy(
+                allAnnouncements = updateList(state.allAnnouncements),
+                pinnedAnnouncements = updateList(state.pinnedAnnouncements)
+            )
+        }
+        // Network call
+        viewModelScope.launch {
+            repository.markAsRead(id)
+        }
+    }
+
     //     Search                                                                 
 
     fun onSearchQueryChanged(query: String) {

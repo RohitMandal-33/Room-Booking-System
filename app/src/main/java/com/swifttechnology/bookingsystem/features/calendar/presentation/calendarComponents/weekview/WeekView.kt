@@ -318,6 +318,8 @@ private fun DayColumn(
             val endMinutes = event.endTime.hour * 60 + event.endTime.minute
             val duration = endMinutes - startMinutes
 
+            val eventColor = event.backendColor ?: event.color
+            
             // 1 minute = 1 dp (since 1 hour = 60 dp)
             Box(
                 modifier = Modifier
@@ -325,8 +327,8 @@ private fun DayColumn(
                     .fillMaxWidth()
                     .height((duration).dp)
                     .offset(y = (startMinutes).dp)
-                    .background(PurplePrimary.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
-                    .border(1.dp, PurplePrimary, RoundedCornerShape(4.dp))
+                    .background(eventColor.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                    .border(1.dp, eventColor, RoundedCornerShape(4.dp))
                     .clickable { onEventClick(event) }
                     .padding(4.dp)
             ) {

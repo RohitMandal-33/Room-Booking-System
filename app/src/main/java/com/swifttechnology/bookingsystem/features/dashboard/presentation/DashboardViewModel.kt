@@ -27,11 +27,27 @@ class DashboardViewModel @Inject constructor(
     init {
         fetchUpcomingMeetings()
         fetchAnnouncements()
+        fetchCalendarEvents(java.time.YearMonth.now())
     }
 
     fun refreshAll() {
         fetchUpcomingMeetings()
         fetchAnnouncements()
+        fetchCalendarEvents(java.time.YearMonth.now())
+    }
+
+    fun fetchCalendarEvents(yearMonth: java.time.YearMonth) {
+        val dateStr = yearMonth.atDay(1).format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingCalendar = true) }
+            bookingRepository.getCalendarMonth(dateStr)
+                .onSuccess { meetings ->
+                    _uiState.update { it.copy(isLoadingCalendar = false, calendarMeetings = meetings) }
+                }
+                .onFailure { 
+                    _uiState.update { it.copy(isLoadingCalendar = false) }
+                }
+        }
     }
 
     private fun fetchAnnouncements() {

@@ -4,6 +4,7 @@ import com.swifttechnology.bookingsystem.core.network.APIEndpoint
 import com.swifttechnology.bookingsystem.core.network.GlobalResponse
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.BookingResponseDTO
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.CalenderRequestDTO
+import com.swifttechnology.bookingsystem.features.booking.data.dtos.MeetingTypeDTO
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.RoomBookingRequestDTO
 import retrofit2.http.*
 
@@ -38,6 +39,11 @@ interface BookingApiService {
         @Path("roomBookingId") roomBookingId: Long
     ): GlobalResponse<BookingResponseDTO>
 
+    @GET(APIEndpoint.ROOM_MEETINGS)
+    suspend fun getRoomMeetings(
+        @Path("roomId") roomId: Long
+    ): GlobalResponse<List<BookingResponseDTO>>
+
     @POST(APIEndpoint.CALENDAR_WEEK)
     suspend fun getCalendarWeek(@Body request: CalenderRequestDTO): GlobalResponse<List<BookingResponseDTO>>
 
@@ -46,4 +52,8 @@ interface BookingApiService {
 
     @POST(APIEndpoint.CALENDAR_DAY)
     suspend fun getCalendarDay(@Body request: CalenderRequestDTO): GlobalResponse<List<BookingResponseDTO>>
+
+    // Meeting Types
+    @GET(APIEndpoint.MEETING_TYPE_GET_ALL)
+    suspend fun getAllMeetingTypes(): GlobalResponse<List<MeetingTypeDTO>>
 }

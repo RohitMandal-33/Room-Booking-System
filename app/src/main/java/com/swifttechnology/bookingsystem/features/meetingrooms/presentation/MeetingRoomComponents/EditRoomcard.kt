@@ -2,6 +2,7 @@ package com.swifttechnology.bookingsystem.features.meetingrooms.presentation.Mee
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,12 +21,16 @@ import androidx.compose.material.icons.outlined.BorderColor
 import androidx.compose.material.icons.outlined.Slideshow
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material.icons.outlined.Wifi
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -83,6 +88,8 @@ fun EditRoomCardScreen(
 
     var editedName by rememberSaveable(roomName) { mutableStateOf(room.name) }
     var editedCapacity by rememberSaveable(roomName) { mutableStateOf(room.capacity.toString()) }
+    var showCustomAmenityDialog by rememberSaveable { mutableStateOf(false) }
+    var customAmenityName by rememberSaveable { mutableStateOf("") }
     val editedAmenities = remember(roomName) { room.amenities.toMutableStateList() }
 
     LaunchedEffect(room) {
@@ -102,6 +109,39 @@ fun EditRoomCardScreen(
         },
         onLogout = onLogout
     ) {
+        if (showCustomAmenityDialog) {
+            AlertDialog(
+                onDismissRequest = { showCustomAmenityDialog = false },
+                title = { Text(text = "Add Custom Amenity") },
+                text = {
+                    OutlinedTextField(
+                        value = customAmenityName,
+                        onValueChange = { customAmenityName = it },
+                        label = { Text("Amenity Name") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            if (customAmenityName.isNotBlank()) {
+                                editedAmenities.add(RoomAmenity(customAmenityName.trim(), Icons.Outlined.CheckCircle))
+                                customAmenityName = ""
+                                showCustomAmenityDialog = false
+                            }
+                        }
+                    ) {
+                        Text("Add")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showCustomAmenityDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -150,78 +190,93 @@ fun EditRoomCardScreen(
             ) {
                 editScreenAmenities.forEach { amenity ->
                     val isSelected = editedAmenities.any { it.label == amenity.label }
-                    Box(
+                    Row(
                         modifier = Modifier
-                            .height(32.dp)
+                            .height(28.dp)
                             .background(
-                                color = if (isSelected) MaterialTheme.customColors.neutral200 else Color.Transparent,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else MaterialTheme.customColors.neutral200,
                                 shape = RoundedCornerShape(6.dp)
                             )
                             .border(
                                 width = 1.dp,
-                                color = MaterialTheme.customColors.neutral300,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.customColors.neutral300,
                                 shape = RoundedCornerShape(6.dp)
                             )
-                            .padding(horizontal = 12.dp)
-                            .let {
+                            .clickable {
                                 if (isSelected) {
-                                    it
+                                    editedAmenities.removeIf { it.label == amenity.label }
                                 } else {
-                                    it
+                                    editedAmenities.add(amenity)
                                 }
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                imageVector = amenity.icon,
-                                contentDescription = amenity.label,
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.customColors.textBody
-                            )
-                            Text(
-                                text = amenity.label,
-                                fontSize = 12.sp,
-                                color = MaterialTheme.customColors.textBody
-                            )
-                        }
-                    }
-                }
-
-                Box(
-                    modifier = Modifier
-                        .height(32.dp)
-                        .background(
-                            color = Color.Transparent,
-                            shape = RoundedCornerShape(6.dp)
-                        )
-                        .border(
-                            width = 1.dp,
-                            color = MaterialTheme.customColors.neutral300,
-                            shape = RoundedCornerShape(6.dp)
-                        )
-                        .padding(horizontal = 12.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(
+                            }
+                            .padding(horizontal = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.Add,
-                            contentDescription = "Add amenity",
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.customColors.textBody
+                            imageVector = amenity.icon,
+                            contentDescription = amenity.label,
+                            modifier = Modifier.size(14.dp),
+                            tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.customColors.textBody
                         )
                         Text(
-                            text = "Custom amenity",
+                            text = amenity.label,
                             fontSize = 12.sp,
-                            color = MaterialTheme.customColors.textBody
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.customColors.textBody,
+                            fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
                         )
                     }
+                }
+
+                // Show custom amenities
+                val customAmenities = editedAmenities.filter { sel -> editScreenAmenities.none { it.label == sel.label } }
+                customAmenities.forEach { amenity ->
+                    Row(
+                        modifier = Modifier
+                            .height(28.dp)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), RoundedCornerShape(6.dp))
+                            .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(6.dp))
+                            .clickable { editedAmenities.removeIf { it.label == amenity.label } }
+                            .padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = amenity.icon,
+                            contentDescription = amenity.label,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = amenity.label,
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Icon(
+                            imageVector = Icons.Outlined.Close,
+                            contentDescription = "Remove",
+                            modifier = Modifier.size(12.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                // Plus icon for custom amenities
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .background(MaterialTheme.customColors.neutral200, RoundedCornerShape(6.dp))
+                        .border(1.dp, MaterialTheme.customColors.neutral300, RoundedCornerShape(6.dp))
+                        .clickable { showCustomAmenityDialog = true },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Add,
+                        contentDescription = "Add custom amenity",
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.customColors.textBody
+                    )
                 }
             }
 
@@ -242,12 +297,14 @@ fun EditRoomCardScreen(
                     onClick = {
                         val capacity = editedCapacity.toIntOrNull() ?: room.capacity
                         val trimmedName = editedName.trim().ifEmpty { room.name }
+                        val currentAmenities = editedAmenities.toList()
                         viewModel.updateRoom(
                             original = room,
                             updated = room.copy(
                                 name = trimmedName,
                                 capacity = capacity,
-                                amenities = editedAmenities.toList()
+                                amenities = currentAmenities,
+                                resources = currentAmenities.map { it.label }
                             )
                         )
                         onBack()

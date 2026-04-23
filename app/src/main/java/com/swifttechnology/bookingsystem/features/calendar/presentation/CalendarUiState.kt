@@ -37,6 +37,7 @@ data class MeetingEvent(
     val startTime: LocalTime,
     val endTime: LocalTime,
     val color: Color,
+    val backendColor: Color? = null,
     val participants: List<String> = emptyList(),
     val internalParticipants: List<InternalParticipantDTO> = emptyList(),
     val externalParticipants: List<ExternalParticipantDTO> = emptyList(),

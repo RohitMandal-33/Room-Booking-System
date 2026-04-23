@@ -162,6 +162,9 @@ fun AnnouncementsScreen(
                                             selectedIds + announcement.id
                                         }
                                     } else {
+                                        if (!announcement.isRead) {
+                                            viewModel.markAsRead(announcement.id)
+                                        }
                                         viewingAnnouncement = announcement
                                     }
                                 },
@@ -170,7 +173,8 @@ fun AnnouncementsScreen(
                                         onEnterEditMode()
                                         selectedIds = selectedIds + announcement.id
                                     }
-                                }
+                                },
+                                onTogglePin = { viewModel.togglePin(announcement.id) }
                             )
                         }
                     }
@@ -251,12 +255,19 @@ fun AnnouncementsScreen(
         }
     }
 
-    //     Viewing dialog (Details)                                               
     viewingAnnouncement?.let { announcement ->
         com.swifttechnology.bookingsystem.features.announcements.presentation.components.AnnouncementDetailDialog(
             announcement = announcement,
+            showActions = true,
             onDismiss = { viewingAnnouncement = null },
-            onMoreOptions = { /* Handle more options if needed */ }
+            onEdit = {
+                viewingAnnouncement = null
+                viewModel.openEditSheet(announcement)
+            },
+            onDelete = {
+                viewingAnnouncement = null
+                viewModel.deleteSelected(setOf(announcement.id))
+            }
         )
     }
 

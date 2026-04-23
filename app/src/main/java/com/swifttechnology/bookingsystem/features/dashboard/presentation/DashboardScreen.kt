@@ -73,14 +73,16 @@ fun DashboardScreen(
         AnnouncementSection(
             announcements = uiState.announcements,
             isLoading     = uiState.isLoadingAnnouncements,
-            onView        = { announcement -> viewingAnnouncement = announcement }
+            onView        = { announcement -> viewingAnnouncement = announcement },
+            onSeeAllClick = { onNavigate(ScreenRoutes.ANNOUNCEMENTS) }
         )
 
         Spacer(modifier = Modifier.height(Spacing.sm))
 
         // 3. Calendar preview with inline range picker
         CalendarPreviewSection(
-            events             = uiState.upcomingMeetings,
+            events             = uiState.calendarMeetings,
+            onMonthChange      = { month -> viewModel.fetchCalendarEvents(month) },
             onOpenFullCalendar = { onNavigate(ScreenRoutes.CALENDAR) }
         )
 

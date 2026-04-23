@@ -72,7 +72,7 @@ class ReportsAnalyticsViewModel @Inject constructor(
     var customStartDate    by mutableStateOf<Long?>(null)
     var customEndDate      by mutableStateOf<Long?>(null)
     var selectedRoom       by mutableStateOf("All")
-    var selectedDepartment by mutableStateOf("All")
+    var selectedUser by mutableStateOf("All")
     var selectedSort       by mutableStateOf("Asc")
     
     fun clearFilters() {
@@ -80,13 +80,13 @@ class ReportsAnalyticsViewModel @Inject constructor(
         customStartDate = null
         customEndDate = null
         selectedRoom = "All"
-        selectedDepartment = "All"
+        selectedUser = "All"
         selectedSort = "Asc"
         currentPage = 0
     }
 
     // Pagination
-    val pageSize = 7
+    val pageSize = 10
     var currentPage by mutableIntStateOf(0)
 
     private val filteredEntries: List<ActivityEntry>
@@ -133,7 +133,7 @@ class ReportsAnalyticsViewModel @Inject constructor(
                 }
             }
             if (selectedRoom != "All")       list = list.filter { it.roomName == selectedRoom }
-            if (selectedDepartment != "All") list = list.filter { it.createdBy == selectedDepartment }
+            if (selectedUser != "All") list = list.filter { it.createdBy == selectedUser }
             
             list = if (selectedSort == "Asc") list.sortedBy { it.date + it.startTime }
                    else list.sortedByDescending { it.date + it.startTime }
@@ -159,7 +159,7 @@ class ReportsAnalyticsViewModel @Inject constructor(
     fun onNextPage()                    { if (canGoNext)     currentPage++ }
     fun onDateSelected(v: String)       { selectedDate = v;       currentPage = 0 }
     fun onRoomSelected(v: String)       { selectedRoom = v;       currentPage = 0 }
-    fun onDepartmentSelected(v: String) { selectedDepartment = v; currentPage = 0 }
+    fun onUserSelected(v: String)       { selectedUser = v;      currentPage = 0 }
     fun onSortSelected(v: String)       { selectedSort = v;       currentPage = 0 }
 
     fun saveExportToUri(context: Context, uri: Uri) {

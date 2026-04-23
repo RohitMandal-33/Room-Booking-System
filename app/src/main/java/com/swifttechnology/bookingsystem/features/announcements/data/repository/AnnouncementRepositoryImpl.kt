@@ -58,6 +58,11 @@ class AnnouncementRepositoryImpl @Inject constructor(
         if (!response.success) throw Exception(response.message)
     }
 
+    override suspend fun markAsRead(id: Long): Result<Unit> = runCatching {
+        val response = api.markAnnouncementAsRead(id)
+        if (!response.success) throw Exception(response.message)
+    }
+
     private fun AnnouncementDTO.toDomain() = Announcement(
         id             = id ?: 0L,
         title          = title.orEmpty(),
@@ -69,6 +74,7 @@ class AnnouncementRepositoryImpl @Inject constructor(
         authorId       = authorId,
         createdAt      = createdAt.orEmpty(),
         startDate      = startDate,
-        endDate        = endDate
+        endDate        = endDate,
+        isRead         = read ?: isRead ?: false
     )
 }

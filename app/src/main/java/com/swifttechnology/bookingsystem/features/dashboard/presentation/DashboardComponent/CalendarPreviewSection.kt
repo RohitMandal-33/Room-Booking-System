@@ -8,8 +8,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -87,13 +85,6 @@ private data class CalendarDayCell(
     val events: List<CalendarEvent>
 )
 
-/** Preset quick-pick ranges shown as pills above the calendar. */
-enum class DateRangePreset { TODAY, THIS_WEEK, THIS_MONTH, LAST_30_DAYS, CUSTOM }
-
-private data class DateRange(
-    val start: LocalDate,
-    val end: LocalDate
-)
 
   
 //  Accent colours  (aligned to brand palette)
@@ -104,56 +95,34 @@ private val OrangeAccent = Color(0xFFF97316)
 private val BlueAccent   = Color(0xFF3B82F6)
 
   
-//  Preset helpers
-  
-
-@RequiresApi(Build.VERSION_CODES.O)
-private fun DateRangePreset.toRange(today: LocalDate): DateRange? = when (this) {
-    DateRangePreset.TODAY        -> DateRange(today, today)
-    DateRangePreset.THIS_WEEK    -> {
-        val startOfWeek = today.with(DayOfWeek.MONDAY)
-        DateRange(startOfWeek, startOfWeek.plusDays(6))
-    }
-    DateRangePreset.THIS_MONTH   -> DateRange(
-        today.withDayOfMonth(1),
-        today.withDayOfMonth(today.lengthOfMonth())
-    )
-    DateRangePreset.LAST_30_DAYS -> DateRange(today.minusDays(29), today)
-    DateRangePreset.CUSTOM       -> null   // user picks manually on the grid
-}
-
-private val DateRangePreset.label: String
-    get() = when (this) {
-        DateRangePreset.TODAY        -> "Today"
-        DateRangePreset.THIS_WEEK    -> "This week"
-        DateRangePreset.THIS_MONTH   -> "This month"
-        DateRangePreset.LAST_30_DAYS -> "Last 30 days"
-        DateRangePreset.CUSTOM       -> "Custom"
-    }
 
   
 //  Public composable
   
 
-@OptIn(ExperimentalLayoutApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CalendarPreviewSection(
     events: List<com.swifttechnology.bookingsystem.features.booking.data.dtos.BookingResponseDTO> = emptyList(),
+    onMonthChange: (YearMonth) -> Unit = {},
     onOpenFullCalendar: () -> Unit = {}
 ) {
     // Stable today reference inside composition
     val today = remember { LocalDate.now() }
 
     //      Range state                                                                                                                     
-    var activePreset       by remember { mutableStateOf(DateRangePreset.TODAY) }
     var rangeStart         by remember { mutableStateOf<LocalDate?>(today) }
     var rangeEnd           by remember { mutableStateOf<LocalDate?>(today) }
     var customPickingStart by remember { mutableStateOf(true) }
 
     // Which month the calendar grid is showing
     var monthOffset    by remember { mutableIntStateOf(0) }
-    val displayYearMonth = YearMonth.from(today).plusMonths(monthOffset.toLong())
+    val displayYearMonth = remember(monthOffset) { YearMonth.from(today).plusMonths(monthOffset.toLong()) }
+
+    // Notify parent when month changes
+    androidx.compose.runtime.LaunchedEffect(displayYearMonth) {
+        onMonthChange(displayYearMonth)
+    }
 
     //      Map incoming events                                                                                                     
     val calendarEvents = remember(events) { events.mapNotNull { it.toCalendarEvent() } }
@@ -167,32 +136,9 @@ fun CalendarPreviewSection(
             .sortedBy { it.date }
     }
 
-    //      Helper: apply a preset                                                                                               
-    fun applyPreset(preset: DateRangePreset) {
-        activePreset = preset
-        val range = preset.toRange(today)
-        if (range != null) {
-            rangeStart  = range.start
-            rangeEnd    = range.end
-            monthOffset = YearMonth.from(range.start)
-                .let { it.year * 12 + it.monthValue } -
-                    YearMonth.from(today).let { it.year * 12 + it.monthValue }
-        } else {
-            rangeStart         = null
-            rangeEnd           = null
-            customPickingStart = true
-        }
-    }
 
     //      Handle a tap on a grid day                                                                                       
     fun handleDayTap(tapped: LocalDate) {
-        if (activePreset != DateRangePreset.CUSTOM) {
-            rangeStart         = tapped
-            rangeEnd           = tapped
-            activePreset       = DateRangePreset.CUSTOM
-            customPickingStart = false
-            return
-        }
         if (customPickingStart) {
             rangeStart         = tapped
             rangeEnd           = null
@@ -246,23 +192,9 @@ fun CalendarPreviewSection(
 
             Spacer(Modifier.height(Spacing.md))
 
-            //      Preset pills                                                                                                   
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                verticalArrangement   = Arrangement.spacedBy(Spacing.sm),
-                modifier              = Modifier.fillMaxWidth()
-            ) {
-                DateRangePreset.entries.forEach { preset ->
-                    RangePill(
-                        label    = preset.label,
-                        isActive = preset == activePreset,
-                        onClick  = { applyPreset(preset) }
-                    )
-                }
-            }
 
             //      Inline range label                                                                                         
-            val rangeText = buildRangeLabel(rangeStart, rangeEnd, activePreset)
+            val rangeText = buildRangeLabel(rangeStart, rangeEnd)
             if (rangeText.isNotEmpty()) {
                 Spacer(Modifier.height(Spacing.sm))
                 Text(
@@ -330,36 +262,6 @@ fun CalendarPreviewSection(
 }
 
   
-//  Preset pill chip
-  
-
-@Composable
-private fun RangePill(
-    label: String,
-    isActive: Boolean,
-    onClick: () -> Unit
-) {
-    val bg     = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
-    val fg     = if (isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.customColors.textBody
-    val border = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.customColors.divider
-
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(bg)
-            .border(1.dp, border, RoundedCornerShape(50))
-            .clickable { onClick() }
-            .padding(horizontal = Spacing.ms, vertical = Spacing.xs + 2.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text       = label,
-            style      = MaterialTheme.typography.labelMedium,
-            fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal,
-            color      = fg
-        )
-    }
-}
 
   
 //  Range label text helper
@@ -368,15 +270,13 @@ private fun RangePill(
 @RequiresApi(Build.VERSION_CODES.O)
 private fun buildRangeLabel(
     start: LocalDate?,
-    end: LocalDate?,
-    preset: DateRangePreset
+    end: LocalDate?
 ): String {
     val fmt = DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.getDefault())
     return when {
-        preset == DateRangePreset.CUSTOM && start == null -> "Tap a start date on the calendar"
-        preset == DateRangePreset.CUSTOM && end == null   -> "From ${start!!.format(fmt)} — tap an end date"
-        start == null                                     -> ""
-        end == null || start == end                       -> start.format(fmt)
+        start == null -> "Tap a start date on the calendar"
+        end == null   -> "From ${start.format(fmt)} — tap an end date"
+        start == end  -> start.format(fmt)
         else -> "${start.format(fmt)}  –  ${end.format(fmt)}"
     }
 }
@@ -726,7 +626,7 @@ private fun EventRow(event: CalendarEvent, showDate: Boolean = false) {
     }
 }
 
-/** Combines time + room into a single subtitle line. */
+// Combines time + room into a single subtitle line.
 private fun buildEventSubtitle(event: CalendarEvent): String {
     val parts = listOfNotNull(
         event.time.takeIf { it.isNotEmpty() },
@@ -790,13 +690,14 @@ private fun com.swifttechnology.bookingsystem.features.booking.data.dtos.Booking
         val color = when (this.meetingType?.uppercase()) {
             "EXECUTIVE" -> PurpleAccent
             "CLIENT"    -> OrangeAccent
+            "INTERNAL" -> BlueAccent
             else        -> BlueAccent
         }
         CalendarEvent(
             title       = this.meetingTitle ?: "Unnamed Meeting",
             time        = timeLabel,
-            room        = this.room?.roomName ?: "No Room",
-            tag         = this.meetingType  ?: "INTERNAL",
+            room        = this.roomName ?: this.room?.roomName ?: "No Room",
+            tag         = this.meetingType ?: "INTERNAL",
             tagColor    = color,
             accentColor = color,
             date        = ld

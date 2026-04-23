@@ -7,7 +7,6 @@ import com.swifttechnology.bookingsystem.core.model.RoomAmenity
 import com.swifttechnology.bookingsystem.core.model.RoomStatus
 import com.swifttechnology.bookingsystem.features.auth.domain.repository.AuthRepository
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.ExternalParticipantDTO
-import com.swifttechnology.bookingsystem.features.booking.data.dtos.LocalTimeDTO
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.RoomBookingRequestDTO
 import com.swifttechnology.bookingsystem.features.booking.domain.repository.BookingRepository
 import com.swifttechnology.bookingsystem.features.meetingrooms.domain.repository.RoomRepository
@@ -36,6 +35,7 @@ class BookRoomViewModel @Inject constructor(
     init {
         loadActiveRooms()
         loadParticipants()
+        loadMeetingTypes()
     }
 
     private fun loadParticipants() {
@@ -71,6 +71,15 @@ class BookRoomViewModel @Inject constructor(
                     ) 
                 }
             }
+        }
+    }
+
+    private fun loadMeetingTypes() {
+        viewModelScope.launch {
+            bookingRepository.getMeetingTypes()
+                .onSuccess { types ->
+                    _uiState.update { it.copy(availableMeetingTypes = types) }
+                }
         }
     }
 
@@ -131,6 +140,7 @@ class BookRoomViewModel @Inject constructor(
     }
 
     fun prefillBookingDetails(
+        bookingId: Long? = null,
         roomName: String,
         date: String,
         startTime: String,
@@ -144,8 +154,13 @@ class BookRoomViewModel @Inject constructor(
         _uiState.update { current ->
             val room = current.availableRooms.find { it.name == roomName }
 
+            // Find matching meeting type from available types
+            val matchedType = current.availableMeetingTypes.find { 
+                it.name.equals(meetingType, ignoreCase = true) 
+            }
+
             // Map API meeting type (INTERNAL/CLIENT/EXECUTIVE) → display form (Internal/Client/Executive)
-            val displayType = when (meetingType.uppercase()) {
+            val displayType = matchedType?.name ?: when (meetingType.uppercase()) {
                 "INTERNAL"  -> "Internal"
                 "CLIENT"    -> "Client"
                 "EXECUTIVE" -> "Executive"
@@ -164,9 +179,11 @@ class BookRoomViewModel @Inject constructor(
                     startTime       = startTime,
                     endTime         = endTime,
                     meetingType     = displayType,
+                    meetingTypeId   = matchedType?.id,
                     description     = description,
                     participants    = prefillInternal,
-                    externalMembers = externalMembers
+                    externalMembers = externalMembers,
+                    bookingId       = bookingId
                 )
             )
         }
@@ -190,7 +207,7 @@ class BookRoomViewModel @Inject constructor(
                 date = convertDisplayDateToApiDate(state.date),
                 startTime = parseTimeString(state.startTime),
                 endTime = parseTimeString(state.endTime),
-                meetingType = mapMeetingType(state.meetingType),
+                meetingTypeId = state.meetingTypeId ?: mapMeetingType(state.meetingType),
                 description = state.description.ifBlank { null },
                 roomId = state.selectedRoomId,
                 internalParticipantIds = state.participants
@@ -207,24 +224,29 @@ class BookRoomViewModel @Inject constructor(
                 } else null
             )
 
-            bookingRepository.bookRoom(request)
-                .onSuccess {
-                    _uiState.update {
-                        it.copy(
-                            isSubmitting = false,
-                            submitSuccess = true,
-                            formState = RoomBookingFormState() // Reset form
-                        )
-                    }
+            val result = if (state.bookingId != null) {
+                bookingRepository.updateBooking(state.bookingId, request)
+            } else {
+                bookingRepository.bookRoom(request)
+            }
+
+            result.onSuccess {
+                _uiState.update {
+                    it.copy(
+                        isSubmitting = false,
+                        submitSuccess = true,
+                        formState = RoomBookingFormState() // Reset form
+                    )
                 }
-                .onFailure { error ->
-                    _uiState.update {
-                        it.copy(
-                            isSubmitting = false,
-                            errorMessage = error.message ?: "Booking failed. Please try again."
-                        )
-                    }
+            }
+            .onFailure { error ->
+                _uiState.update {
+                    it.copy(
+                        isSubmitting = false,
+                        errorMessage = error.message ?: "Action failed. Please try again."
+                    )
                 }
+            }
         }
     }
 
@@ -256,18 +278,25 @@ class BookRoomViewModel @Inject constructor(
     }
 
     /**
-     * Parses "HH:mm" time string to API object format LocalTimeDTO.
+     * Parses time string to API format "HH:mm:ss".
+     * Supports formats like "HH:mm" (24h) and "hh:mm a" (12h with AM/PM).
      */
-    private fun parseTimeString(time: String): LocalTimeDTO? {
+    private fun parseTimeString(time: String): String? {
         if (time.isBlank()) return null
         return try {
-            val parts = time.split(":")
-            LocalTimeDTO(
-                hour = parts[0].toInt(),
-                minute = parts[1].toInt(),
-                second = 0,
-                nano = 0
-            )
+            // Check if format is "hh:mm a" (e.g. "10:30 AM")
+            if (time.contains("AM", ignoreCase = true) || time.contains("PM", ignoreCase = true)) {
+                val inputFormat = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault())
+                val outputFormat = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault())
+                val date = inputFormat.parse(time) ?: return null
+                outputFormat.format(date)
+            } else {
+                // Assume format is "HH:mm"
+                val parts = time.split(":")
+                val h = parts[0].padStart(2, '0')
+                val m = parts[1].padStart(2, '0')
+                "$h:$m:00"
+            }
         } catch (e: Exception) {
             null
         }
@@ -291,13 +320,21 @@ class BookRoomViewModel @Inject constructor(
     }
 
     /**
-     * Maps display meeting type to API enum value.
+     * Maps display meeting type to API id.
      */
-    private fun mapMeetingType(displayType: String): String? = when (displayType) {
-        "Internal" -> "INTERNAL"
-        "Client" -> "CLIENT"
-        "Executive" -> "EXECUTIVE"
-        else -> if (displayType.isBlank()) null else "INTERNAL"
+    private fun mapMeetingType(displayType: String): Long? {
+        val matchedType = _uiState.value.availableMeetingTypes.find { 
+            it.name.equals(displayType, ignoreCase = true) 
+        }
+        if (matchedType != null) return matchedType.id
+
+        // Fallback for hardcoded values if API list is empty or hasn't loaded
+        return when (displayType) {
+            "Internal" -> 1L
+            "Client" -> 2L
+            "Executive" -> 3L
+            else -> if (displayType.isBlank()) null else 1L
+        }
     }
 
     /**
@@ -308,6 +345,7 @@ class BookRoomViewModel @Inject constructor(
         "Daily" -> "DAILY"
         "Weekly" -> "WEEKLY"
         "Monthly" -> "MONTHLY"
+        "Yearly" -> "YEARLY"
         "Custom" -> "CUSTOM"
         else -> "NONE"
     }

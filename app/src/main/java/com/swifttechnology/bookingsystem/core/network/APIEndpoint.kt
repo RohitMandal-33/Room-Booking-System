@@ -22,6 +22,7 @@ object APIEndpoint {
     const val USER_GET_ALL_SIMPLE = "api/v1/user/get-all"
     const val USER_SEARCH = "api/v1/user/search"
     const val USER_UPDATE = "api/v1/user/{id}/update"
+    const val USER_CHANGE_STATUS = "api/v1/user/{id}/change-status"
 
     // Meeting Rooms
     const val ROOM_ADD = "api/v1/room/add"
@@ -33,7 +34,8 @@ object APIEndpoint {
     // Room Bookings
     const val BOOK_ROOM = "api/v1/book-room"
     const val UPDATE_BOOKING = "api/v1/update-booked-room/{bookingId}"
-    const val MY_BOOKINGS = "api/v1/get-booked-room"
+    const val MY_BOOKINGS = "api/v1/get-self-booked-room"
+    const val ROOM_MEETINGS = "api/v1/get-room-meetings/{roomId}"
     const val ALL_BOOKINGS = "api/v1/get-all-booked-room"
     const val UPCOMING_MEETING = "api/v1/upcoming-meeting"
     const val BOOKED_ROOM_CHANGE_STATUS = "api/v1/booked-room/{roomBookingId}/change-status"
@@ -77,4 +79,11 @@ object APIEndpoint {
     const val USER_PUBLIC = "api/v1/public"
     const val USER_PRIVATE = "api/v1/private"
     const val USER_ADMIN = "api/v1/admin"
+
+    // Meeting Type
+    const val MEETING_TYPE_ADD = "api/v1/meeting-type"
+    const val MEETING_TYPE_UPDATE = "api/v1/update/{meetingTypeId}"
+    const val MEETING_TYPE_CHANGE_STATUS = "api/v1/meeting-type/{meetingTypeId}/change-status"
+    const val MEETING_TYPE_BY_ID = "api/v1/get-meeting-type/{meetingTypeId}"
+    const val MEETING_TYPE_GET_ALL = "api/v1/get-all-meeting-type"
 }

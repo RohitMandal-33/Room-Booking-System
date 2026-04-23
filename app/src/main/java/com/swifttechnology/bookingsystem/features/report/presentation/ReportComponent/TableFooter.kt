@@ -46,7 +46,7 @@ fun TableFooter(vm: ReportsAnalyticsViewModel) {
         // Result count — left anchor
         Text(
             text = if (vm.totalResults == 0) "No results"
-            else "Showing ${vm.showingStart} of ${vm.totalResults}",
+            else "Showing ${vm.showingStart}-${vm.showingEnd} of ${vm.totalResults}",
             style = TextStyle(
                 fontSize = 12.sp,
                 color = ColorOnSurfaceVar.copy(alpha = 0.6f)
@@ -90,6 +90,8 @@ fun TableFooter(vm: ReportsAnalyticsViewModel) {
 
 @Composable
 fun TablePagination(vm: ReportsAnalyticsViewModel, modifier: Modifier = Modifier) {
+    if (vm.totalResults == 0) return
+
     Row(
         modifier = modifier
             .fillMaxWidth()

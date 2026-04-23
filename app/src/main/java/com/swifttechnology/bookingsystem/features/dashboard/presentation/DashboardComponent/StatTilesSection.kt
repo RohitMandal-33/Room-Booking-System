@@ -89,7 +89,6 @@ fun StatTilesSection() {
         }
 
         Spacer(modifier = Modifier.height(Spacing.ms))
-        ViewAllButton(onClick = {})
     }
 }
 

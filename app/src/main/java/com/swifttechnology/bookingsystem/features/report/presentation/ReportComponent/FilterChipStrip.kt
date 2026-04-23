@@ -82,9 +82,9 @@ fun FilterChipStrip(vm: ReportsAnalyticsViewModel) {
                 onSelect = vm::onRoomSelected
             )
             DropdownFilterChip(
-                icon = Icons.Default.Business, label = "Department",
-                selected = vm.selectedDepartment, options = vm.departmentOptions,
-                onSelect = vm::onDepartmentSelected
+                icon = Icons.Default.Business, label = "User",
+                selected = vm.selectedUser, options = vm.departmentOptions,
+                onSelect = vm::onUserSelected
             )
             DropdownFilterChip(
                 icon = Icons.Default.SwapVert, label = "Sort",

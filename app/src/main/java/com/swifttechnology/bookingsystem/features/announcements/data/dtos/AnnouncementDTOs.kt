@@ -40,7 +40,9 @@ data class AnnouncementDTO(
     @SerializedName("createdAt") val createdAt: String? = null,
     @SerializedName("updatedAt") val updatedAt: String? = null,
     @SerializedName("startDate") val startDate: String? = null,
-    @SerializedName("endDate") val endDate: String? = null
+    @SerializedName("endDate") val endDate: String? = null,
+    @SerializedName("read") val read: Boolean? = null,
+    @SerializedName("isRead") val isRead: Boolean? = null
 )
 
 /**

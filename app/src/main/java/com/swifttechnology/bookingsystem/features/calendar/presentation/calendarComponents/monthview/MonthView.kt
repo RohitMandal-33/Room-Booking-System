@@ -202,12 +202,13 @@ private fun EventPill(
     event: MeetingEvent,
     onClick: () -> Unit
 ) {
+    val pillColor = event.backendColor ?: event.color
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(18.dp)
             .clip(RoundedCornerShape(4.dp))
-            .background(event.color.copy(alpha = 0.9f))
+            .background(pillColor.copy(alpha = 0.9f))
             .clickable(onClick = onClick)
             .padding(horizontal = 4.dp),
         contentAlignment = Alignment.CenterStart

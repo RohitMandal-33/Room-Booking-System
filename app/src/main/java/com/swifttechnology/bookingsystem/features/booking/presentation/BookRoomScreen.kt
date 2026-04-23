@@ -1,7 +1,9 @@
 package com.swifttechnology.bookingsystem.features.booking.presentation
 
 import android.os.Build
+import android.graphics.Color as AndroidColor
 import androidx.annotation.RequiresApi
+import androidx.compose.ui.graphics.Color
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -65,8 +67,6 @@ import com.swifttechnology.bookingsystem.shared.components.PrimaryButton
 import com.swifttechnology.bookingsystem.features.main.presentation.PendingBookingDetails
 import com.swifttechnology.bookingsystem.shared.layout.BottomSheetView
 import com.swifttechnology.bookingsystem.shared.components.rooms.RoomInfoCard
-import android.graphics.Color as AndroidColor
-import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import com.swifttechnology.bookingsystem.features.booking.presentation.components.SelectedParticipantChip
@@ -116,6 +116,7 @@ fun BookRoomScreen(
         if (uiState.availableRooms.isNotEmpty()) {
             if (initialDetails != null) {
                 viewModel.prefillBookingDetails(
+                    bookingId             = initialDetails.bookingId,
                     roomName              = initialDetails.roomName,
                     date                  = initialDetails.date,
                     startTime             = initialDetails.startTime,
@@ -153,33 +154,46 @@ fun BookRoomScreen(
     val internalSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val externalSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    val meetingTypes = listOf("Internal", "Client", "Executive")
-    val meetingTypeIcons: Map<String, @Composable () -> Unit> = mapOf(
-        "Internal" to {
-            Box(
-                modifier = Modifier
-                    .size(14.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFF2196F3))
+    val meetingTypes = uiState.availableMeetingTypes.mapNotNull { it.name }.ifEmpty { listOf("Internal", "Client", "Executive") }
+    
+    val meetingTypeIcons: Map<String, @Composable () -> Unit> = remember(uiState.availableMeetingTypes) {
+        if (uiState.availableMeetingTypes.isEmpty()) {
+            mapOf(
+                "Internal" to { Box(modifier = Modifier.size(14.dp).clip(CircleShape).background(Color(0xFF2196F3))) },
+                "Client" to { Box(modifier = Modifier.size(14.dp).clip(CircleShape).background(Color(0xFFFF9800))) },
+                "Executive" to { Box(modifier = Modifier.size(14.dp).clip(CircleShape).background(Color(0xFF9C27B0))) }
             )
-        },
-        "Client" to {
-            Box(
-                modifier = Modifier
-                    .size(14.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFFFF9800))
-            )
-        },
-        "Executive" to {
-            Box(
-                modifier = Modifier
-                    .size(14.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFF9C27B0))
-            )
+        } else {
+            uiState.availableMeetingTypes.mapNotNull { type ->
+                type.name?.let { name ->
+                    name to @Composable {
+                        val color = type.colorCode?.let {
+                            try {
+                                if (it.startsWith("#")) {
+                                    Color(AndroidColor.parseColor(it))
+                                } else if (it.startsWith("rgb")) {
+                                    val match = Regex("""(\d+),\s*(\d+),\s*(\d+)""").find(it)
+                                    if (match != null) {
+                                        val (r, g, b) = match.destructured
+                                        Color(r.toInt(), g.toInt(), b.toInt())
+                                    } else Color(0xFF6C3EE8)
+                                } else Color(0xFF6C3EE8)
+                            } catch (e: Exception) {
+                                Color(0xFF6C3EE8)
+                            }
+                        } ?: Color(0xFF6C3EE8)
+                        
+                        Box(
+                            modifier = Modifier
+                                .size(14.dp)
+                                .clip(CircleShape)
+                                .background(color)
+                        )
+                    }
+                }
+            }.toMap()
         }
-    )
+    }
 
     val recurringOptions = listOf(
         "Does not repeat",
@@ -187,6 +201,7 @@ fun BookRoomScreen(
         "Daily",
         "Weekly",
         "Monthly",
+        "Yearly",
         "Custom"
     )
 
@@ -331,8 +346,14 @@ fun BookRoomScreen(
                     options = meetingTypes,
                     optionLeadingIcons = meetingTypeIcons,
                     onExpandChange = { showMeetingTypeDropdown = it },
-                    onOptionSelected = {
-                        viewModel.onFormStateChanged(formState.copy(meetingType = it))
+                    onOptionSelected = { selectedName ->
+                        val selectedType = uiState.availableMeetingTypes.find { it.name == selectedName }
+                        viewModel.onFormStateChanged(
+                            formState.copy(
+                                meetingType = selectedName,
+                                meetingTypeId = selectedType?.id
+                            )
+                        )
                         showMeetingTypeDropdown = false
                     }
                 )
@@ -537,7 +558,11 @@ fun BookRoomScreen(
 
                 // Book button
                 PrimaryButton(
-                    text = if (uiState.isSubmitting) "Booking..." else "Book Meeting Room",
+                    text = if (uiState.isSubmitting) {
+                        if (formState.bookingId != null) "Updating..." else "Booking..."
+                    } else {
+                        if (formState.bookingId != null) "Update Meeting Room" else "Book Meeting Room"
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = Spacing.md),

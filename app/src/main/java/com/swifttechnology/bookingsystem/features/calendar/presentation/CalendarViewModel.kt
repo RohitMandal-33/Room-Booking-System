@@ -36,7 +36,7 @@ class CalendarViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(
         CalendarUiState(
             selectedRoom = null,
-            events = sampleEvents()
+            events = emptyList() // Real events loaded from API; no placeholder data
         )
     )
     @RequiresApi(Build.VERSION_CODES.O)
@@ -47,7 +47,7 @@ class CalendarViewModel @Inject constructor(
 
     init {
         loadRooms()
-        loadBookings()
+        refreshBookings()
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -65,58 +65,81 @@ class CalendarViewModel @Inject constructor(
                         )
                     } ?: emptyList()
                     _rooms.value = roomList
-                    if (roomList.isNotEmpty()) {
-                        _uiState.update { it.copy(selectedRoom = roomList.first()) }
-                    }
+                    // Note: We don't auto-select the first room here anymore to allow "All Rooms" view by default
+                    // if roomList.isNotEmpty() {
+                    //     _uiState.update { it.copy(selectedRoom = roomList.first()) }
+                    //     refreshBookings()
+                    // }
                 }
                 .onFailure { /* Keep empty rooms on failure */ }
         }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    private fun loadBookings() {
+    fun refreshBookings() {
+        val selectedRoom = _uiState.value.selectedRoom
+        val view = _uiState.value.currentView
+        val dateStr = _uiState.value.selectedDate.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
+
         viewModelScope.launch {
-            bookingRepository.getAllBookings()
-                .onSuccess { bookings ->
-                    val events = bookings.mapIndexedNotNull { index, dto ->
-                        try {
-                            val date = LocalDate.parse(dto.date ?: return@mapIndexedNotNull null)
-                            val startTime = DateTimeUtils.parseLocalTime(dto.startTime) ?: return@mapIndexedNotNull null
-                            val endTime = DateTimeUtils.parseLocalTime(dto.endTime) ?: return@mapIndexedNotNull null
+            val result = when (view) {
+                CalendarView.MONTH -> bookingRepository.getCalendarMonth(dateStr)
+                CalendarView.WEEK -> bookingRepository.getCalendarWeek(dateStr)
+                CalendarView.DAY -> bookingRepository.getCalendarDay(dateStr)
+            }
 
-                            val color = when (dto.meetingType) {
-                                "INTERNAL" -> Color(0xFF4CD8A8)
-                                "CLIENT" -> Color(0xFFFF8C5A)
-                                "EXECUTIVE" -> Color(0xFF4A90E2)
-                                else -> Color(0xFF4CD8A8)
-                            }
+            result.onSuccess { bookings ->
+                val events = bookings.mapIndexedNotNull { index, dto ->
+                    try {
+                        val date = LocalDate.parse(dto.date ?: return@mapIndexedNotNull null)
+                        val startTimeStr = dto.startTimeString ?: return@mapIndexedNotNull null
+                        val endTimeStr = dto.endTimeString ?: return@mapIndexedNotNull null
 
-                            MeetingEvent(
-                                id = (dto.id ?: index.toLong()).toInt(),
-                                meetingId = dto.id,
-                                title = dto.meetingTitle ?: "Meeting",
-                                date = date,
-                                startTime = startTime,
-                                endTime = endTime,
-                                color = color,
-                                description = dto.description ?: "",
-                                meetingRoom = dto.room?.roomName ?: "",
-                                meetingType = dto.meetingType ?: "",
-                                internalParticipants = dto.internalParticipant ?: emptyList(),
-                                externalParticipants = dto.externalParticipant ?: emptyList(),
-                                createdBy = dto.roomBooker?.email ?: dto.roomBooker?.firstName ?: "",
-                                meetingStatus = dto.meetingStatus ?: dto.status
-                            )
-                        } catch (e: Exception) {
-                            null
+                        val startTime = DateTimeUtils.parseLocalTime(startTimeStr) ?: return@mapIndexedNotNull null
+                        val endTime = DateTimeUtils.parseLocalTime(endTimeStr) ?: return@mapIndexedNotNull null
+
+                        val color = when (dto.meetingType) {
+                            "Internal" -> Color(0xFF4CD8A8)
+                            "Client" -> Color(0xFFFF8C5A)
+                            "Executive" -> Color(0xFF4A90E2)
+                            else -> Color(0xFF4CD8A8)
                         }
+
+                        val backendColor = dto.meetingTypeColorCode?.let {
+                            val match = Regex("""\((\d+),\s*(\d+),\s*(\d+)\)""").find(it)
+                            if (match != null) {
+                                val (r, g, b) = match.destructured
+                                Color(r.toInt(), g.toInt(), b.toInt())
+                            } else null
+                        }
+
+                        MeetingEvent(
+                            id = (dto.meetingId ?: dto.id ?: index.toLong()).toInt(),
+                            meetingId = dto.meetingId ?: dto.id,
+                            title = dto.meetingTitle ?: "Meeting",
+                            date = date,
+                            startTime = startTime,
+                            endTime = endTime,
+                            color = color,
+                            backendColor = backendColor,
+                            description = dto.description ?: "",
+                            meetingRoom = dto.roomName ?: dto.room?.roomName ?: "",
+                            meetingType = dto.meetingType ?: "",
+                            internalParticipants = dto.internalParticipant ?: emptyList(),
+                            externalParticipants = dto.externalParticipant ?: emptyList(),
+                            createdBy = dto.roomBooker?.email ?: dto.roomBooker?.firstName ?: "",
+                            meetingStatus = dto.meetingStatus ?: dto.status
+                        )
+                    } catch (e: Exception) {
+                        null
                     }
-                    if (events.isNotEmpty()) {
-                        _uiState.update { it.copy(events = events) }
-                    }
-                    // If no API events, keep the sample events
+                }.filter { event ->
+                    selectedRoom == null || event.meetingRoom.equals(selectedRoom.name, ignoreCase = true)
                 }
-                .onFailure { /* Keep sample events on failure */ }
+                _uiState.update { it.copy(events = events) }
+            }.onFailure {
+                _uiState.update { it.copy(events = emptyList()) }
+            }
         }
     }
 
@@ -135,6 +158,7 @@ class CalendarViewModel @Inject constructor(
 
     fun onViewChange(view: CalendarView) {
         _uiState.update { it.copy(currentView = view) }
+        refreshBookings()
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -149,10 +173,11 @@ class CalendarViewModel @Inject constructor(
                         selectedDate = newMonth.atDay(newDay)
                     )
                 }
-                CalendarView.WEEK -> state.copy(selectedDate = state.selectedDate.minusDays(1))
+                CalendarView.WEEK -> state.copy(selectedDate = state.selectedDate.minusDays(7))
                 CalendarView.DAY -> state.copy(selectedDate = state.selectedDate.minusDays(1))
             }
         }
+        refreshBookings()
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -167,10 +192,11 @@ class CalendarViewModel @Inject constructor(
                         selectedDate = newMonth.atDay(newDay)
                     )
                 }
-                CalendarView.WEEK -> state.copy(selectedDate = state.selectedDate.plusDays(1))
+                CalendarView.WEEK -> state.copy(selectedDate = state.selectedDate.plusDays(7))
                 CalendarView.DAY -> state.copy(selectedDate = state.selectedDate.plusDays(1))
             }
         }
+        refreshBookings()
     }
 
     fun onDateSelected(date: LocalDate) {
@@ -180,14 +206,36 @@ class CalendarViewModel @Inject constructor(
                 currentMonth = YearMonth.from(date)
             )
         }
+        refreshBookings()
     }
 
     fun onEventSelected(event: MeetingEvent?) {
         _uiState.update { it.copy(selectedEvent = event) }
+        if (event != null && event.meetingId != null) {
+            viewModelScope.launch {
+                bookingRepository.getBookingDetails(event.meetingId)
+                    .onSuccess { dto ->
+                        val updatedEvent = event.copy(
+                            description = dto.description ?: "",
+                            internalParticipants = dto.internalParticipant ?: emptyList(),
+                            externalParticipants = dto.externalParticipant ?: emptyList(),
+                            createdBy = dto.roomBooker?.email ?: dto.roomBooker?.firstName ?: "Unknown",
+                            meetingStatus = dto.meetingStatus ?: dto.status,
+                            meetingRoom = dto.room?.roomName ?: dto.roomName ?: event.meetingRoom
+                        )
+                        _uiState.update { 
+                            if (it.selectedEvent?.meetingId == event.meetingId) {
+                                it.copy(selectedEvent = updatedEvent)
+                            } else it
+                        }
+                    }
+            }
+        }
     }
 
     fun onRoomSelected(room: Room) {
         _uiState.update { it.copy(selectedRoom = room) }
+        refreshBookings()
     }
 
     suspend fun logout() {

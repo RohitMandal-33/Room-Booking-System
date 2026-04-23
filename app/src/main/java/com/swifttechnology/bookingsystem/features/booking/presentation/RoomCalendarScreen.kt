@@ -277,10 +277,16 @@ fun RoomCalendarScreen(
 
                                     onProceed(
                                         PendingBookingDetails(
-                                            roomName  = roomName ?: "",
-                                            date      = formattedDate,
-                                            startTime = "%02d:%02d".format(startH, startM),
-                                            endTime   = "%02d:%02d".format(endH, endM)
+                                            bookingId              = initialDetails?.bookingId,
+                                            roomName               = roomName ?: "",
+                                            date                   = formattedDate,
+                                            startTime              = "%02d:%02d".format(startH, startM),
+                                            endTime                = "%02d:%02d".format(endH, endM),
+                                            meetingTitle           = initialDetails?.meetingTitle ?: "",
+                                            meetingType            = initialDetails?.meetingType ?: "",
+                                            description            = initialDetails?.description ?: "",
+                                            internalParticipantIds = initialDetails?.internalParticipantIds ?: emptyList(),
+                                            externalMembers        = initialDetails?.externalMembers ?: emptyList()
                                         )
                                     )
                                     pickerViewModel.onCancelBooking()

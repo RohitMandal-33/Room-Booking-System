@@ -118,14 +118,13 @@ fun MeetingDetailBottomSheet(
     val statusUpper = event.meetingStatus?.uppercase()
 
     val statusText = when (statusUpper) {
-        "APPROVED", "ACTIVE", "CONFIRMED" -> "Confirmed"
         "PENDING" -> "Pending approval"
         "CANCELLED", "CANCELED" -> "Cancelled"
         else -> "Reserved"
     }
 
     val statusColor = when (statusUpper) {
-        "APPROVED", "ACTIVE", "CONFIRMED" -> Color(0xFF12B76A)
+        "APPROVED", "ACTIVE"-> Color(0xFF12B76A)
         "PENDING" -> Color(0xFFF59E0B)
         "CANCELLED", "CANCELED" -> Color(0xFFEF4444)
         else -> Color(0xFF12B76A)

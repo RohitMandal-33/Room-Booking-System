@@ -8,6 +8,9 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.swifttechnology.bookingsystem.core.network.AccessTokenRequest
 import com.swifttechnology.bookingsystem.core.network.RefreshTokenApi
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.first
 
 private val Context.tokenDataStore by preferencesDataStore(name = "auth_tokens")
@@ -27,6 +30,9 @@ class TokenDataStore(
     @Volatile private var cachedAccessToken: String? = null
     @Volatile private var cachedRefreshToken: String? = null
     @Volatile private var isInitialized = false
+
+    private val _forceLogoutEvent = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    override val forceLogoutEvent: SharedFlow<Unit> = _forceLogoutEvent.asSharedFlow()
 
     private suspend fun ensureInitialized() {
         if (!isInitialized) {
@@ -61,6 +67,7 @@ class TokenDataStore(
         cachedAccessToken = null
         cachedRefreshToken = null
         context.tokenDataStore.edit { it.clear() }
+        _forceLogoutEvent.tryEmit(Unit)
     }
 
 

@@ -6,9 +6,9 @@ package com.swifttechnology.bookingsystem.features.booking.data.dtos
 data class RoomBookingRequestDTO(
     val meetingTitle: String? = null,
     val date: String? = null,              // yyyy-MM-dd
-    val startTime: LocalTimeDTO? = null,
-    val endTime: LocalTimeDTO? = null,
-    val meetingType: String? = null,        // INTERNAL, CLIENT, EXECUTIVE
+    val startTime: String? = null,         // HH:mm:ss
+    val endTime: String? = null,           // HH:mm:ss
+    val meetingTypeId: Long? = null,
     val description: String? = null,
     val roomId: Long? = null,
     val internalParticipantIds: List<Long>? = null,
@@ -16,7 +16,6 @@ data class RoomBookingRequestDTO(
     val recurrenceEndDate: String? = null,
     val recurrenceType: String? = null,
     val weekDays: List<String>? = null,
-    val updateScope: String? = null,        // ALL, THIS, SPECIFIC
     val dates: List<String>? = null
 )
 
@@ -78,14 +77,61 @@ data class BookingResponseDTO(
     val id: Long? = null,
     val meetingTitle: String? = null,
     val date: String? = null,
-    val startTime: Any? = null, // Can be String or LocalTimeDTO
-    val endTime: Any? = null,   // Can be String or LocalTimeDTO
-    val meetingType: String? = null,
+    val startTime: Any? = null, // Can be String ("HH:mm:ss") or LocalTimeDTO object
+    val endTime: Any? = null,   // Can be String ("HH:mm:ss") or LocalTimeDTO object
+    @com.google.gson.annotations.SerializedName("meetingType")
+    val meetingTypeObj: Any? = null,
     val description: String? = null,
     val status: String? = null,
     val meetingStatus: String? = null,
+    val meetingId: Long? = null,
+    val roomId: Long? = null,
+    val roomName: String? = null,
     val room: RoomDTO? = null,
     val roomBooker: RoomBookerDTO? = null,
     val internalParticipant: List<InternalParticipantDTO>? = null,
     val externalParticipant: List<ExternalParticipantDTO>? = null
-)
+) {
+    val meetingType: String?
+        get() = when (meetingTypeObj) {
+            is String -> meetingTypeObj
+            is Map<*, *> -> meetingTypeObj["name"] as? String
+            else -> null
+        }
+
+    val meetingTypeColorCode: String?
+        get() = when (meetingTypeObj) {
+            is Map<*, *> -> meetingTypeObj["colorCode"] as? String
+            else -> null
+        }
+    
+    /**
+     * Safely parses startTime as a String for UI consumption or further parsing.
+     */
+    val startTimeString: String?
+        get() = when (val time = startTime) {
+            is String -> time
+            is Map<*, *> -> {
+                val h = (time["hour"] as? Number)?.toInt() ?: 0
+                val m = (time["minute"] as? Number)?.toInt() ?: 0
+                val s = (time["second"] as? Number)?.toInt() ?: 0
+                String.format("%02d:%02d:%02d", h, m, s)
+            }
+            else -> null
+        }
+
+    /**
+     * Safely parses endTime as a String for UI consumption or further parsing.
+     */
+    val endTimeString: String?
+        get() = when (val time = endTime) {
+            is String -> time
+            is Map<*, *> -> {
+                val h = (time["hour"] as? Number)?.toInt() ?: 0
+                val m = (time["minute"] as? Number)?.toInt() ?: 0
+                val s = (time["second"] as? Number)?.toInt() ?: 0
+                String.format("%02d:%02d:%02d", h, m, s)
+            }
+            else -> null
+        }
+}
