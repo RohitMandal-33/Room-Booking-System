@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -146,14 +147,15 @@ class ParticipantsViewModel @Inject constructor(
                 .catch { e ->
                     _uiState.update { it.copy(isLoading = false, error = e.message ?: "Unknown error") }
                 }
-                .collect { participants ->
+                .firstOrNull()
+                ?.let { participants ->
                     _uiState.update { it.copy(participants = participants, isLoading = false, error = null) }
                 }
-        }
-        viewModelScope.launch {
+
             customGroupRepository.getCustomGroups()
                 .catch { }
-                .collect { groups ->
+                .firstOrNull()
+                ?.let { groups ->
                     _uiState.update { it.copy(customGroups = groups) }
                 }
         }

@@ -7,5 +7,6 @@ data class Room(
     val capacity: Int,
     val timeLabel: String = "",
     val amenities: List<RoomAmenity> = emptyList(),
-    val resources: List<String> = emptyList()
+    val resources: List<String> = emptyList(),      // Display names only (e.g. "Projector")
+    val resourceIds: List<Long> = emptyList()        // Server IDs, used for PUT requests
 )

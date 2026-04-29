@@ -29,8 +29,32 @@ data class ReportDataRequestDTO(
 data class ReportItemDTO(
     @SerializedName("meetingTitle") val meetingTitle: String? = null,
     @SerializedName("date")         val date: String? = null,
-    @SerializedName("startTime")    val startTime: String? = null,
-    @SerializedName("EndTime")      val endTime: String? = null,
+    @SerializedName("startTime")    val startTime: Any? = null, // Can be String or LocalTime object
+    @SerializedName("endTime")      val endTime: Any? = null,   // Can be String or LocalTime object
     @SerializedName("roomName")     val roomName: String? = null,
     @SerializedName("createdBy")    val createdBy: String? = null
-)
+) {
+    val startTimeString: String?
+        get() = when (val time = startTime) {
+            is String -> time
+            is Map<*, *> -> {
+                val h = (time["hour"] as? Number)?.toInt() ?: 0
+                val m = (time["minute"] as? Number)?.toInt() ?: 0
+                val s = (time["second"] as? Number)?.toInt() ?: 0
+                String.format("%02d:%02d:%02d", h, m, s)
+            }
+            else -> null
+        }
+
+    val endTimeString: String?
+        get() = when (val time = endTime) {
+            is String -> time
+            is Map<*, *> -> {
+                val h = (time["hour"] as? Number)?.toInt() ?: 0
+                val m = (time["minute"] as? Number)?.toInt() ?: 0
+                val s = (time["second"] as? Number)?.toInt() ?: 0
+                String.format("%02d:%02d:%02d", h, m, s)
+            }
+            else -> null
+        }
+}

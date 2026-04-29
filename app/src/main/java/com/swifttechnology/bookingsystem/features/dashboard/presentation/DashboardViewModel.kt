@@ -13,13 +13,15 @@ import androidx.lifecycle.viewModelScope
 import com.swifttechnology.bookingsystem.features.booking.domain.repository.BookingRepository
 import com.swifttechnology.bookingsystem.features.announcements.domain.repository.AnnouncementRepository
 import com.swifttechnology.bookingsystem.features.announcements.domain.model.Announcement
+import com.swifttechnology.bookingsystem.features.dashboard.domain.repository.DashboardRepository
 import kotlinx.coroutines.launch
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val bookingRepository: BookingRepository,
-    private val announcementRepository: AnnouncementRepository
+    private val announcementRepository: AnnouncementRepository,
+    private val dashboardRepository: DashboardRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
@@ -28,12 +30,14 @@ class DashboardViewModel @Inject constructor(
         fetchUpcomingMeetings()
         fetchAnnouncements()
         fetchCalendarEvents(java.time.YearMonth.now())
+        fetchDashboardStats()
     }
 
     fun refreshAll() {
         fetchUpcomingMeetings()
         fetchAnnouncements()
         fetchCalendarEvents(java.time.YearMonth.now())
+        fetchDashboardStats()
     }
 
     fun fetchCalendarEvents(yearMonth: java.time.YearMonth) {
@@ -72,6 +76,18 @@ class DashboardViewModel @Inject constructor(
                 }
                 .onFailure { exception ->
                     _uiState.update { it.copy(isLoadingMeetings = false, error = exception.message) }
+                }
+        }
+    }
+
+    private fun fetchDashboardStats() {
+        viewModelScope.launch {
+            dashboardRepository.getDashboardStats()
+                .onSuccess { stats ->
+                    _uiState.update { it.copy(dashboardStats = stats) }
+                }
+                .onFailure { exception ->
+                    // Optionally handle error state
                 }
         }
     }

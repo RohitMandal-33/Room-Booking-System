@@ -1,5 +1,7 @@
 package com.swifttechnology.bookingsystem.features.booking.data.dtos
 
+import com.swifttechnology.bookingsystem.features.meetingrooms.data.dtos.RoomResourceDTO
+
 /**
  * Request body for POST /api/v1/book-room and PUT /api/v1/update-booked-room/{id}.
  */
@@ -59,8 +61,25 @@ data class RoomDTO(
     val capacity: Int? = null,
     val bookedStatus: String? = null,
     val status: String? = null,
-    val resources: List<String>? = null
-)
+    val resources: List<Any>? = null   // API is inconsistent: can be List<String> or List<Map<String, Any>>
+) {
+    val resourceNames: List<String>
+        get() = resources?.mapNotNull {
+            when (it) {
+                is String -> it
+                is Map<*, *> -> it["name"] as? String
+                else -> null
+            }
+        } ?: emptyList()
+
+    val resourceIds: List<Long>
+        get() = resources?.mapNotNull {
+            when (it) {
+                is Map<*, *> -> (it["id"] as? Number)?.toLong()
+                else -> null
+            }
+        } ?: emptyList()
+}
 
 data class RoomBookerDTO(
     val id: Long? = null,

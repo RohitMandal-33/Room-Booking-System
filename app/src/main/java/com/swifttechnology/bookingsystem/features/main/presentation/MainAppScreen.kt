@@ -103,13 +103,13 @@ fun MainAppScreen(
     var pendingBookingDetails by remember { mutableStateOf<PendingBookingDetails?>(null) }
     var pendingParticipantToEdit by remember { mutableStateOf<Participant?>(null) }
     var pendingCustomGroupToEdit by remember { mutableStateOf<CustomGroup?>(null) }
-    // Success toast shown on the Participants screen after add/edit
-    var groupSuccessMessage by remember { mutableStateOf<String?>(null) }
+    // Success toast shown on various screens after actions
+    var globalSuccessMessage by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(groupSuccessMessage) {
-        if (groupSuccessMessage != null) {
+    LaunchedEffect(globalSuccessMessage) {
+        if (globalSuccessMessage != null) {
             kotlinx.coroutines.delay(2500)
-            groupSuccessMessage = null
+            globalSuccessMessage = null
         }
     }
 
@@ -282,6 +282,10 @@ fun MainAppScreen(
                         showRoomCalendarBottomSheet = true
                     },
                     onNavigate = navigateTo,
+                    onSuccess = {
+                        globalSuccessMessage = "Room booked successfully!"
+                        navigateBack()
+                    },
                     onNavigateToEdit = {
                         navigationStack = listOf(ScreenRoutes.MEETING_ROOMS)
                         isMeetingRoomsEditable = true
@@ -325,9 +329,9 @@ fun MainAppScreen(
                         }
                     )
 
-                    // Success toast: slides up from the bottom after add/edit
+                    // Success toast: slides up from the bottom after actions
                     AnimatedVisibility(
-                        visible = groupSuccessMessage != null,
+                        visible = globalSuccessMessage != null,
                         modifier = Modifier.align(Alignment.BottomCenter),
                         enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
                         exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
@@ -346,7 +350,7 @@ fun MainAppScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = groupSuccessMessage ?: "",
+                                text = globalSuccessMessage ?: "",
                                 color = Color.White,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium
@@ -381,7 +385,7 @@ fun MainAppScreen(
                     onContinue = { message ->
                         pendingCustomGroupToEdit = null
                         isParticipantsEditable = false
-                        groupSuccessMessage = message
+                        globalSuccessMessage = message
                         navigateBack()
                     }
                 )

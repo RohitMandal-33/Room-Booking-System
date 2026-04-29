@@ -73,12 +73,19 @@ object APIEndpoint {
     const val CALENDAR_DAY = "api/v1/calender/day"
 
     // New Room APIs
-    const val ROOM_RESOURCES = "api/v1/room/resources"
+    const val ROOM_RESOURCE = "api/v1/room/resource"
+    const val ROOM_RESOURCE_ADD = "api/v1/room/resource"
+    const val ROOM_RESOURCE_CHANGE_STATUS = "api/v1/room/resource/{id}"
+    const val ROOM_ACTIVE_RESOURCE = "api/v1/room/active-resource"
+
+    // Dashboard
+    const val DASHBOARD = "api/v1/dashboard"
 
     // Public/Private/Admin Test APIs
     const val USER_PUBLIC = "api/v1/public"
     const val USER_PRIVATE = "api/v1/private"
     const val USER_ADMIN = "api/v1/admin"
+    const val USERS_GET_ALL_ACTIVE = "api/v1/users/get-all-active"
 
     // Meeting Type
     const val MEETING_TYPE_ADD = "api/v1/meeting-type"
@@ -86,4 +93,6 @@ object APIEndpoint {
     const val MEETING_TYPE_CHANGE_STATUS = "api/v1/meeting-type/{meetingTypeId}/change-status"
     const val MEETING_TYPE_BY_ID = "api/v1/get-meeting-type/{meetingTypeId}"
     const val MEETING_TYPE_GET_ALL = "api/v1/get-all-meeting-type"
+    
+    const val UPDATE_RECURRENCE_BOOKING = "api/v1/update-recurrence-booked-room/{recurrenceId}"
 }

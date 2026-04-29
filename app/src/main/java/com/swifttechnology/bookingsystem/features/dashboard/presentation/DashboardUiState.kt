@@ -18,6 +18,7 @@ data class DashboardUiState(
     val announcements: List<Announcement> = emptyList(),
     val customStartDate: Long? = null,
     val customEndDate: Long? = null,
-    val error: String? = null
+    val error: String? = null,
+    val dashboardStats: com.swifttechnology.bookingsystem.features.dashboard.data.dtos.DashboardResponseDTO? = null
 )
 

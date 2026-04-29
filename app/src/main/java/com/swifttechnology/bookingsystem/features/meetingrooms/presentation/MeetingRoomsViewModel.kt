@@ -35,8 +35,21 @@ class MeetingRoomsViewModel @Inject constructor(
     private val _uiEvent = MutableSharedFlow<MeetingRoomsEvent>()
     val uiEvent: SharedFlow<MeetingRoomsEvent> = _uiEvent.asSharedFlow()
 
+    private val _navigationEvents = MutableSharedFlow<MeetingRoomsNavigationEvent>()
+    val navigationEvents: SharedFlow<MeetingRoomsNavigationEvent> = _navigationEvents.asSharedFlow()
+
     init {
         loadRooms()
+        loadResources()
+    }
+
+    fun loadResources() {
+        viewModelScope.launch {
+            roomRepository.getAllResources()
+                .onSuccess { resources ->
+                    _uiState.update { it.copy(allResources = resources) }
+                }
+        }
     }
 
     fun loadRooms() {
@@ -45,7 +58,7 @@ class MeetingRoomsViewModel @Inject constructor(
             roomRepository.listAllRooms()
                 .onSuccess { page ->
                     val rooms = page.content?.map { dto ->
-                        val mappedAmenities = (dto.resources ?: emptyList()).mapNotNull { res ->
+                        val mappedAmenities = dto.resourceNames.mapNotNull { res ->
                             RoomAmenity.fromResourceString(res)
                         }
                         Room(
@@ -54,7 +67,8 @@ class MeetingRoomsViewModel @Inject constructor(
                             status = RoomStatus.fromApiString(dto.status),
                             capacity = dto.capacity,
                             amenities = mappedAmenities,
-                            resources = dto.resources ?: emptyList()
+                            resources = dto.resourceNames,
+                            resourceIds = dto.resourceIds
                         )
                     } ?: emptyList()
                     _uiState.update { current -> 
@@ -73,7 +87,7 @@ class MeetingRoomsViewModel @Inject constructor(
         }
     }
 
-    fun addRoom(name: String, capacity: Int, amenities: List<RoomAmenity>) {
+    fun addRoom(name: String, capacity: Int, resourceIds: List<Long>?) {
         viewModelScope.launch {
             val tempRoom = Room(
                 id = 0L,
@@ -81,8 +95,7 @@ class MeetingRoomsViewModel @Inject constructor(
                 status = RoomStatus.ACTIVE,
                 capacity = capacity,
                 timeLabel = "New",
-                amenities = amenities,
-                resources = amenities.map { it.label }
+                resourceIds = resourceIds ?: emptyList()
             )
             _uiState.update { current ->
                 current.copy(
@@ -91,11 +104,11 @@ class MeetingRoomsViewModel @Inject constructor(
                     rooms = current.rooms + tempRoom
                 )
             }
-            val resources = amenities.map { it.label }.ifEmpty { null }
-            roomRepository.addRoom(name, capacity, resources)
+            roomRepository.addRoom(name, capacity, resourceIds)
                 .onSuccess {
                     loadRooms()
                     _uiEvent.emit(MeetingRoomsEvent.ShowSnackbar("Room added successfully!"))
+                    _navigationEvents.emit(MeetingRoomsNavigationEvent.NavigateBack)
                 }
                 .onFailure { error ->
                     _uiState.update { current ->
@@ -124,9 +137,10 @@ class MeetingRoomsViewModel @Inject constructor(
                     id = updated.id,
                     roomName = updated.name,
                     capacity = updated.capacity,
-                    resources = updated.resources.ifEmpty { null }
+                    resourceIds = updated.resourceIds.ifEmpty { null }
                 ).onSuccess {
                     _uiEvent.emit(MeetingRoomsEvent.ShowSnackbar("Room updated successfully!"))
+                    _navigationEvents.emit(MeetingRoomsNavigationEvent.NavigateBack)
                 }.onFailure {
                     // Revert on failure
                     _uiState.update { current ->
@@ -173,4 +187,20 @@ class MeetingRoomsViewModel @Inject constructor(
     suspend fun logout() {
         authRepository.logout()
     }
+
+    fun addResource(name: String) {
+        viewModelScope.launch {
+            roomRepository.addResource(name)
+                .onSuccess {
+                    loadResources()
+                }
+                .onFailure { error ->
+                    _uiEvent.emit(MeetingRoomsEvent.ShowSnackbar(error.message ?: "Failed to add resource"))
+                }
+        }
+    }
+}
+
+sealed class MeetingRoomsNavigationEvent {
+    object NavigateBack : MeetingRoomsNavigationEvent()
 }

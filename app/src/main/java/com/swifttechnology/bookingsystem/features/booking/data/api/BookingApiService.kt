@@ -19,6 +19,12 @@ interface BookingApiService {
         @Body request: RoomBookingRequestDTO
     ): GlobalResponse<BookingResponseDTO>
 
+    @PUT(APIEndpoint.UPDATE_RECURRENCE_BOOKING)
+    suspend fun updateRecurrenceBooking(
+        @Path("recurrenceId") recurrenceId: String,
+        @Body request: RoomBookingRequestDTO
+    ): GlobalResponse<BookingResponseDTO>
+
     @GET(APIEndpoint.MY_BOOKINGS)
     suspend fun getMyBookings(): GlobalResponse<List<BookingResponseDTO>>
 

@@ -25,11 +25,14 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -73,14 +76,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.swifttechnology.bookingsystem.core.designsystem.Success
+import com.swifttechnology.bookingsystem.core.designsystem.Warning
+import com.swifttechnology.bookingsystem.core.designsystem.Error
+import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.features.calendar.presentation.MeetingEvent
 import java.time.format.DateTimeFormatter
-
-private val PurplePrimary = Color(0xFF6C3EE8)
-private val PurpleSoft = Color(0xFFF3EEFF)
-private val SurfaceTint = Color(0xFFF8F9FC)
-private val BorderSoft = Color(0xFFE8EAF1)
-private val TextMuted = Color(0xFF667085)
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -95,66 +96,54 @@ fun MeetingDetailBottomSheet(
     val meetingTypeUpper = event.meetingType.uppercase()
 
     val typeColor = when (meetingTypeUpper) {
-        "CLIENT" -> Color(0xFFF97316)
-        "INTERNAL" -> Color(0xFF3B82F6)
-        "EXECUTIVE" -> Color(0xFF7C3AED)
-        else -> PurplePrimary
+        "CLIENT"    -> Color(0xFFF97316)
+        "INTERNAL"  -> Color(0xFF3B82F6)
+        "EXECUTIVE" -> MaterialTheme.colorScheme.primary
+        else        -> MaterialTheme.colorScheme.primary
     }
 
     val typeBg = when (meetingTypeUpper) {
-        "CLIENT" -> Color(0xFFFFF7ED)
-        "INTERNAL" -> Color(0xFFEFF6FF)
-        "EXECUTIVE" -> Color(0xFFF3EEFF)
-        else -> PurpleSoft
+        "CLIENT"    -> Color(0xFFFFF7ED)
+        "INTERNAL"  -> Color(0xFFEFF6FF)
+        "EXECUTIVE" -> MaterialTheme.customColors.primaryLight
+        else        -> MaterialTheme.customColors.primaryLight
     }
 
     val typeLabel = when (meetingTypeUpper) {
-        "CLIENT" -> "Client"
-        "INTERNAL" -> "Internal"
+        "CLIENT"    -> "Client"
+        "INTERNAL"  -> "Internal"
         "EXECUTIVE" -> "Executive"
-        else -> event.meetingType.ifBlank { "Meeting" }
+        else        -> event.meetingType.ifBlank { "Meeting" }
     }
 
     val statusUpper = event.meetingStatus?.uppercase()
 
     val statusText = when (statusUpper) {
-        "PENDING" -> "Pending approval"
+        "PENDING"             -> "Pending approval"
         "CANCELLED", "CANCELED" -> "Cancelled"
-        else -> "Reserved"
+        else                  -> "Reserved"
     }
 
     val statusColor = when (statusUpper) {
-        "APPROVED", "ACTIVE"-> Color(0xFF12B76A)
-        "PENDING" -> Color(0xFFF59E0B)
-        "CANCELLED", "CANCELED" -> Color(0xFFEF4444)
-        else -> Color(0xFF12B76A)
+        "APPROVED", "ACTIVE"      -> Success
+        "PENDING"                 -> Warning
+        "CANCELLED", "CANCELED"   -> Error
+        else                      -> Success
     }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surface,
-        dragHandle = {
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                Box(
-                    modifier = Modifier
-                        .padding(top = 10.dp, bottom = 6.dp)
-                        .width(44.dp)
-                        .height(5.dp)
-                        .clip(RoundedCornerShape(99.dp))
-                        .background(Color(0xFFE0E4EC))
-                )
-            }
-        },
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        dragHandle = null,
+        contentWindowInsets = { WindowInsets(0, 0, 0, 0) },
+        shape = RectangleShape
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.92f)
+                .fillMaxHeight()
+                .statusBarsPadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 24.dp)
@@ -259,7 +248,7 @@ private fun SheetHeader(
             Text(
                 text = "Review meeting information and attendees",
                 style = MaterialTheme.typography.bodyMedium,
-                color = TextMuted
+                color = MaterialTheme.customColors.textSecondary
             )
         }
 
@@ -268,7 +257,7 @@ private fun SheetHeader(
             modifier = Modifier
                 .size(42.dp)
                 .clip(CircleShape)
-                .background(SurfaceTint)
+                .background(MaterialTheme.customColors.surfaceLight)
         ) {
             Icon(
                 imageVector = Icons.Default.Close,
@@ -292,8 +281,10 @@ private fun HeroCard(
 ) {
     Card(
         shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceTint),
-        border = BorderStroke(1.dp, BorderSoft),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.customColors.surfaceLight
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.customColors.divider),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -343,12 +334,12 @@ private fun HeroCard(
                 PillChip(
                     text = "Confirmed",
                     backgroundColor = Color(0xFFEFFAF4),
-                    contentColor = Color(0xFF12B76A)
+                    contentColor = Success
                 )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            HorizontalDivider(color = BorderSoft)
+            HorizontalDivider(color = MaterialTheme.customColors.divider)
             Spacer(modifier = Modifier.height(14.dp))
 
             Row(
@@ -401,15 +392,17 @@ private fun MiniInfoTile(
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, BorderSoft),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.customColors.divider),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelMedium,
-                color = TextMuted,
+                color = MaterialTheme.customColors.textSecondary,
                 fontWeight = FontWeight.Medium
             )
             Spacer(modifier = Modifier.height(6.dp))
@@ -439,8 +432,10 @@ private fun SectionTitle(title: String) {
 private fun DetailSectionCard(content: @Composable ColumnScope.() -> Unit) {
     Card(
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, BorderSoft),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.customColors.divider),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -454,7 +449,7 @@ private fun DetailSectionCard(content: @Composable ColumnScope.() -> Unit) {
 @Composable
 private fun DividerSpacer() {
     Spacer(modifier = Modifier.height(14.dp))
-    HorizontalDivider(color = BorderSoft)
+    HorizontalDivider(color = MaterialTheme.customColors.divider)
     Spacer(modifier = Modifier.height(14.dp))
 }
 
@@ -472,13 +467,13 @@ private fun DetailItem(
             modifier = Modifier
                 .size(38.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(SurfaceTint),
+                .background(MaterialTheme.customColors.primaryLight),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = PurplePrimary,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -496,7 +491,7 @@ private fun DetailItem(
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = TextMuted,
+                color = MaterialTheme.customColors.textSecondary,
                 lineHeight = MaterialTheme.typography.bodySmall.lineHeight
             )
         }
@@ -536,13 +531,13 @@ private fun ExpandableAttendeesItem(event: MeetingEvent) {
                     modifier = Modifier
                         .size(38.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(SurfaceTint),
+                        .background(MaterialTheme.customColors.primaryLight),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Group,
                         contentDescription = null,
-                        tint = PurplePrimary,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -560,7 +555,7 @@ private fun ExpandableAttendeesItem(event: MeetingEvent) {
                     Text(
                         text = "$total ${if (total == 1) "person" else "people"}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = TextMuted
+                        color = MaterialTheme.customColors.textSecondary
                     )
                 }
             }
@@ -569,7 +564,7 @@ private fun ExpandableAttendeesItem(event: MeetingEvent) {
                 Icon(
                     imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                     contentDescription = null,
-                    tint = TextMuted,
+                    tint = MaterialTheme.customColors.textSecondary,
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -589,7 +584,7 @@ private fun ExpandableAttendeesItem(event: MeetingEvent) {
                     Text(
                         text = "Internal",
                         style = MaterialTheme.typography.labelMedium,
-                        color = TextMuted,
+                        color = MaterialTheme.customColors.textSecondary,
                         fontWeight = FontWeight.SemiBold
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -611,7 +606,7 @@ private fun ExpandableAttendeesItem(event: MeetingEvent) {
                     Text(
                         text = "External",
                         style = MaterialTheme.typography.labelMedium,
-                        color = TextMuted,
+                        color = MaterialTheme.customColors.textSecondary,
                         fontWeight = FontWeight.SemiBold
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -639,13 +634,13 @@ private fun AttendeeRow(
             modifier = Modifier
                 .size(34.dp)
                 .clip(CircleShape)
-                .background(PurpleSoft),
+                .background(MaterialTheme.customColors.primaryLight),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = name.firstOrNull()?.uppercase() ?: "?",
                 style = MaterialTheme.typography.labelMedium,
-                color = PurplePrimary,
+                color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Bold
             )
         }
@@ -665,7 +660,7 @@ private fun AttendeeRow(
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = TextMuted,
+                color = MaterialTheme.customColors.textSecondary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -686,7 +681,7 @@ private fun ActionBar(
             onClick = onDismiss,
             modifier = Modifier.weight(1f),
             shape = RoundedCornerShape(14.dp),
-            border = BorderStroke(1.dp, BorderSoft),
+            border = BorderStroke(1.dp, MaterialTheme.customColors.divider),
             colors = ButtonDefaults.outlinedButtonColors(
                 contentColor = MaterialTheme.colorScheme.onSurface
             )
@@ -698,18 +693,20 @@ private fun ActionBar(
             onClick = onEdit,
             modifier = Modifier.weight(1f),
             shape = RoundedCornerShape(14.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = PurplePrimary)
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary
+            )
         ) {
             Icon(
                 imageVector = Icons.Outlined.Edit,
                 contentDescription = null,
                 modifier = Modifier.size(18.dp),
-                tint = Color.White
+                tint = MaterialTheme.colorScheme.onPrimary
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = "Edit booking",
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onPrimary,
                 fontWeight = FontWeight.SemiBold
             )
         }

@@ -48,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -65,11 +66,11 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
 
-// ─── Colour tokens ───────────────────────────────────────────────────────────
+//     Colour tokens                                                            
 private val PinColor   = Color(0xFF7C3AED)   // purple  – "pin it"
 private val UnpinColor = Color(0xFFDC2626)   // red     – "unpin"
 
-// ─── Fraction of card width the swipe travels before triggering ─────────────
+//     Fraction of card width the swipe travels before triggering              
 private const val MAX_DRAG_FRACTION    = 0.50f   // card slides at most 50 % of its width
 private const val COMMIT_FRACTION      = 0.35f   // commit fires at 35 % (= 70 % of the 50 % max)
 
@@ -95,7 +96,7 @@ fun AnnouncementCard(
     val colors = MaterialTheme.customColors
     val scope  = rememberCoroutineScope()
 
-    // ── Swipe state ──────────────────────────────────────────────────────────
+    //    Swipe state                                                           
     val offsetX    = remember { Animatable(0f) }
     var dragTotal  by remember { mutableFloatStateOf(0f) }
 
@@ -104,7 +105,7 @@ fun AnnouncementCard(
     //  that approximates half a typical card; the actual clamp is done in pointerInput)
     val revealProgress = (offsetX.value / 300f).coerceIn(0f, 1f)
 
-    // ── Colours ──────────────────────────────────────────────────────────────
+    //    Colours                                                               
     val actionColor by animateColorAsState(
         targetValue = if (announcement.pinned) UnpinColor else PinColor,
         animationSpec = tween(250),
@@ -112,15 +113,15 @@ fun AnnouncementCard(
     )
     val bgColor by animateColorAsState(
         targetValue = when {
-            isSelected -> Primary.copy(alpha = 0.15f)
-            !announcement.isRead -> Primary.copy(alpha = 0.08f)
+            isSelected -> Primary.copy(alpha = 0.15f).compositeOver(colors.neutral100)
+            !announcement.isRead -> Primary.copy(alpha = 0.08f).compositeOver(colors.neutral100)
             else -> colors.neutral100
         },
         animationSpec = tween(200),
         label = "card_bg"
     )
 
-    // ── Icon scale pops at threshold ─────────────────────────────────────────
+    //    Icon scale pops at threshold                                          
     val iconScale by animateFloatAsState(
         targetValue = if (revealProgress >= 0.6f) 1.2f else 0.85f,
         animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
@@ -132,7 +133,7 @@ fun AnnouncementCard(
             .fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // ── Animated checkbox in edit mode ───────────────────────────────────
+        //    Animated checkbox in edit mode                                    
         AnimatedVisibility(
             visible = isEditMode,
             enter = fadeIn(animationSpec = tween(250)) + expandHorizontally(
@@ -158,10 +159,10 @@ fun AnnouncementCard(
             )
         }
 
-        // ── Swipe container ──────────────────────────────────────────────────
+        //    Swipe container                                                   
         Box(modifier = Modifier.weight(1f)) {
 
-            // ── Reveal background (shown behind the card while swiping) ──────
+            //    Reveal background (shown behind the card while swiping)       
             if (onTogglePin != null) {
                 Box(
                     modifier = Modifier
@@ -199,7 +200,7 @@ fun AnnouncementCard(
                 }
             }
 
-            // ── Card surface (slides right) ──────────────────────────────────
+            //    Card surface (slides right)                                   
             Box(
                 modifier = Modifier
                     .fillMaxWidth()

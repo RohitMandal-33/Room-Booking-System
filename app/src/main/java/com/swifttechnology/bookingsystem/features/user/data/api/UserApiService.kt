@@ -13,6 +13,9 @@ interface UserApiService {
     @POST(APIEndpoint.USERS_GET_ALL)
     suspend fun getAllUsers(@Body request: UserDataRequestDTO): GlobalResponse<UserPageDTO>
 
+    @POST(APIEndpoint.USERS_GET_ALL_ACTIVE)
+    suspend fun getAllActiveUsers(@Body request: com.swifttechnology.bookingsystem.features.meetingrooms.data.dtos.PaginatedDataRequestDTO): GlobalResponse<UserPageDTO>
+
     @PUT(APIEndpoint.USER_UPDATE)
     suspend fun updateUser(
         @Path("id") id: Long,

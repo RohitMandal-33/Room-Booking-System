@@ -1,5 +1,6 @@
 package com.swifttechnology.bookingsystem.navigation
 
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -46,7 +47,9 @@ fun AppNavGraph(
                 }
             )
         ) { entry ->
-            val roomName = entry.arguments?.getString(ScreenRoutes.MEETING_ROOM_NAME).orEmpty()
+            val roomName = Uri.decode(
+                entry.arguments?.getString(ScreenRoutes.MEETING_ROOM_NAME).orEmpty()
+            )
             EditRoomCardScreen(
                 roomName = roomName,
                 onBack = { navController.popBackStack() },

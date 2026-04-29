@@ -61,7 +61,8 @@ class CalendarViewModel @Inject constructor(
                             name = dto.roomName,
                             status = RoomStatus.fromApiString(dto.status),
                             capacity = dto.capacity,
-                            resources = dto.resources ?: emptyList()
+                            resources = dto.resourceNames,
+                            resourceIds = dto.resourceIds
                         )
                     } ?: emptyList()
                     _rooms.value = roomList

@@ -106,10 +106,6 @@ fun ParticipantsScreen(
         onExitEditMode()
     }
 
-    LaunchedEffect(Unit) {
-        viewModel.refresh()
-    }
-
     LaunchedEffect(searchQuery) {
         viewModel.onSearchQueryChanged(searchQuery)
     }

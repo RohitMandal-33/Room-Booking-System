@@ -97,8 +97,8 @@ fun AnnouncementsScreen(
     }
 
     // Auto-dismiss snackbar messages
-    LaunchedEffect(uiState.successMessage) {
-        if (uiState.successMessage != null) {
+    LaunchedEffect(uiState.successMessage, uiState.operationError) {
+        if (uiState.successMessage != null || uiState.operationError != null) {
             kotlinx.coroutines.delay(2500)
             viewModel.clearMessages()
         }
@@ -225,14 +225,14 @@ fun AnnouncementsScreen(
 
         //     Success / error snackbar                                            
         AnimatedVisibility(
-            visible  = uiState.successMessage != null || uiState.errorMessage != null,
+            visible  = uiState.successMessage != null || uiState.errorMessage != null || uiState.operationError != null,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = if (isEditable) 80.dp else 16.dp),
             enter    = slideInVertically(initialOffsetY = { it }) + fadeIn(),
             exit     = slideOutVertically(targetOffsetY = { it }) + fadeOut()
         ) {
-            val isError = uiState.errorMessage != null
+            val isError = uiState.errorMessage != null || uiState.operationError != null
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -246,7 +246,7 @@ fun AnnouncementsScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text       = uiState.successMessage ?: uiState.errorMessage ?: "",
+                    text       = uiState.successMessage ?: uiState.operationError ?: uiState.errorMessage ?: "",
                     color      = Color.White,
                     fontSize   = 14.sp,
                     fontWeight = FontWeight.Medium
@@ -275,6 +275,7 @@ fun AnnouncementsScreen(
     if (uiState.showAddEditSheet) {
         AddEditAnnouncementSheet(
             editingAnnouncement = uiState.editingAnnouncement,
+            pinnedCount         = uiState.pinnedAnnouncements.size,
             sheetState          = sheetState,
             onDismiss           = viewModel::dismissSheet,
             onSave              = viewModel::saveAnnouncement

@@ -11,7 +11,8 @@ data class MeetingRoomsUiState(
     val rooms: List<Room> = emptyList(),
     val searchQuery: String = "",
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val allResources: List<com.swifttechnology.bookingsystem.features.meetingrooms.data.dtos.RoomResourceDTO> = emptyList()
 ) {
     val filteredRooms: List<Room>
         get() = if (searchQuery.isBlank()) rooms

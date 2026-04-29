@@ -35,7 +35,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -71,7 +70,6 @@ fun RoomCalendarScreen(
 ) {
     val pickerUiState by pickerViewModel.uiState.collectAsStateWithLifecycle()
     val calendarUiState by calendarViewModel.uiState.collectAsStateWithLifecycle()
-    val context = LocalContext.current
 
     var selectedDate by remember {
         mutableStateOf(
@@ -88,6 +86,9 @@ fun RoomCalendarScreen(
                 LocalDate.now()
             }
         )
+    }
+    val regularEvents = remember(calendarUiState.events, roomName, selectedDate) {
+        roomName?.let { calendarViewModel.getEventsForRoomAndDate(it, selectedDate) } ?: emptyList()
     }
 
     var showStartTimePicker by remember { mutableStateOf(false) }
@@ -188,9 +189,7 @@ fun RoomCalendarScreen(
             //    Time picking grid (fills remaining space)                  
             DayColumnWithPicker(
                 selectedDate = selectedDate,
-                regularEvents = roomName?.let {
-                    calendarViewModel.getEventsForRoomAndDate(it, selectedDate)
-                } ?: emptyList(),
+                regularEvents = regularEvents,
                 pickerState = pickerUiState,
                 onGridLongPress = pickerViewModel::onTimeSlotLongPressed,
                 onDragStarted = pickerViewModel::onDragStarted,

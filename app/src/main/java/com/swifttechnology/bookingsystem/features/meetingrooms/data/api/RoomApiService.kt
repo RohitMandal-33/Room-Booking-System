@@ -31,6 +31,18 @@ interface RoomApiService {
     @GET(APIEndpoint.ROOM_LIST)
     suspend fun getAllRoomsNoPagination(): GlobalResponse<List<RoomResponseDTO>>
 
-    @GET(APIEndpoint.ROOM_RESOURCES)
-    suspend fun getAllResources(): GlobalResponse<List<String>>
+    @GET(APIEndpoint.ROOM_RESOURCE)
+    suspend fun getAllResources(): GlobalResponse<List<RoomResourceDTO>>
+
+    @POST(APIEndpoint.ROOM_RESOURCE_ADD)
+    suspend fun addResource(@Body request: RoomResourceRequestDTO): GlobalResponse<Unit>
+
+    @PATCH(APIEndpoint.ROOM_RESOURCE_CHANGE_STATUS)
+    suspend fun changeResourceStatus(
+        @Path("id") id: Long,
+        @Body request: StatusChangeRequestDTO
+    ): GlobalResponse<Unit>
+
+    @GET(APIEndpoint.ROOM_ACTIVE_RESOURCE)
+    suspend fun getActiveResources(): GlobalResponse<List<RoomResourceDTO>>
 }

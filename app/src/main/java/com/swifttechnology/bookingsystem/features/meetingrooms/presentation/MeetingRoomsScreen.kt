@@ -65,6 +65,19 @@ fun MeetingRoomsScreen(
         viewModel.onSearchQueryChanged(searchQuery)
     }
 
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                viewModel.loadRooms()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         if (uiState.isLoading && uiState.rooms.isEmpty()) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))

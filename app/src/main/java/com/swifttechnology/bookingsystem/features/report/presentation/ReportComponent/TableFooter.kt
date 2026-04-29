@@ -21,6 +21,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.swifttechnology.bookingsystem.R
 import com.swifttechnology.bookingsystem.features.report.presentation.ReportsAnalyticsViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 
 // Pagination Footer
@@ -32,7 +34,13 @@ fun TableFooter(vm: ReportsAnalyticsViewModel) {
         contract = ActivityResultContracts.CreateDocument("text/csv")
     ) { uri ->
         if (uri != null) {
-            vm.saveExportToUri(context, uri)
+            vm.exportCsv { csvBytes ->
+                withContext(Dispatchers.IO) {
+                    context.contentResolver.openOutputStream(uri)?.use { out ->
+                        out.write(csvBytes)
+                    } ?: error("Unable to open destination file")
+                }
+            }
         }
     }
 

@@ -11,15 +11,69 @@ import com.swifttechnology.bookingsystem.features.booking.data.dtos.RoomBookingR
 import com.swifttechnology.bookingsystem.features.booking.domain.repository.BookingRepository
 import com.swifttechnology.bookingsystem.features.meetingrooms.domain.repository.RoomRepository
 import com.swifttechnology.bookingsystem.features.participants.domain.repository.ParticipantRepository
+import com.swifttechnology.bookingsystem.features.booking.data.dtos.MeetingTypeDTO
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+
+data class InternalMember(
+    val id: Long,
+    val name: String,
+    val email: String,
+    val department: String
+)
+
+data class ExternalMember(
+    val name: String,
+    val email: String
+)
+
+data class RoomBookingFormState(
+    val bookingId: Long? = null,
+    val meetingTitle: String = "",
+    val date: String = "",
+    val startTime: String = "",
+    val endTime: String = "",
+    val meetingType: String = "",
+    val meetingTypeId: Long? = null,
+    val recurringType: String = "Does not repeat",
+    val recurrenceEndDate: String = "",
+    val selectedWeekDays: Set<String> = emptySet(),
+    val description: String = "",
+    val participants: List<InternalMember> = emptyList(),
+    val selectedGroupIds: Set<Long> = emptySet(),
+    val externalMembers: List<ExternalMember> = emptyList(),
+    val selectedRoom: String = "",
+    val selectedRoomId: Long? = null,
+    val updateScope: String = "ALL"
+)
+
+data class BookRoomScreenUiState(
+    val searchQuery: String = "",
+    val participantSearchQuery: String = "",
+    val formState: RoomBookingFormState = RoomBookingFormState(),
+    val availableRooms: List<Room> = emptyList(),
+    val availableParticipants: List<InternalMember> = emptyList(),
+    val availableMeetingTypes: List<MeetingTypeDTO> = emptyList(),
+    val isLoadingRooms: Boolean = false,
+    val isSearchingParticipants: Boolean = false,
+    val isSubmitting: Boolean = false,
+    val submitSuccess: Boolean = false,
+    val errorMessage: String? = null
+)
+
+sealed class BookRoomEvent {
+    object NavigateBack : BookRoomEvent()
+}
 
 @HiltViewModel
 class BookRoomViewModel @Inject constructor(
@@ -29,8 +83,11 @@ class BookRoomViewModel @Inject constructor(
     private val participantRepository: ParticipantRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(BookRoomUiState())
-    val uiState: StateFlow<BookRoomUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow<BookRoomScreenUiState>(BookRoomScreenUiState())
+    val uiState: StateFlow<BookRoomScreenUiState> = _uiState.asStateFlow()
+
+    private val _events = MutableSharedFlow<BookRoomEvent>()
+    val events: SharedFlow<BookRoomEvent> = _events.asSharedFlow()
 
     init {
         loadActiveRooms()
@@ -44,7 +101,20 @@ class BookRoomViewModel @Inject constructor(
 
     private var searchJob: Job? = null
     fun onParticipantSearchQueryChanged(query: String) {
-        _uiState.update { it.copy(participantSearchQuery = query) }
+        val c = _uiState.value
+        _uiState.value = BookRoomScreenUiState(
+            searchQuery = c.searchQuery,
+            participantSearchQuery = query,
+            formState = c.formState,
+            availableRooms = c.availableRooms,
+            availableParticipants = c.availableParticipants,
+            availableMeetingTypes = c.availableMeetingTypes,
+            isLoadingRooms = c.isLoadingRooms,
+            isSearchingParticipants = c.isSearchingParticipants,
+            isSubmitting = c.isSubmitting,
+            submitSuccess = c.submitSuccess,
+            errorMessage = c.errorMessage
+        )
         searchParticipants(query)
     }
 
@@ -94,10 +164,11 @@ class BookRoomViewModel @Inject constructor(
                             name = dto.roomName,
                             status = RoomStatus.fromApiString(dto.status),
                             capacity = dto.capacity,
-                            amenities = (dto.resources ?: emptyList()).mapNotNull { res ->
+                            amenities = dto.resourceNames.mapNotNull { res ->
                                 RoomAmenity.fromResourceString(res)
                             },
-                            resources = dto.resources ?: emptyList()
+                            resources = dto.resourceNames,
+                            resourceIds = dto.resourceIds
                         )
                     } ?: emptyList()
                     _uiState.update { it.copy(availableRooms = rooms, isLoadingRooms = false) }
@@ -238,6 +309,7 @@ class BookRoomViewModel @Inject constructor(
                         formState = RoomBookingFormState() // Reset form
                     )
                 }
+                _events.emit(BookRoomEvent.NavigateBack)
             }
             .onFailure { error ->
                 _uiState.update {
@@ -255,7 +327,7 @@ class BookRoomViewModel @Inject constructor(
     }
 
     fun clearError() {
-        _uiState.update { it.copy(errorMessage = null) }
+        _uiState.update { state -> state.copy(errorMessage = null) }
     }
 
     suspend fun logout() {
@@ -323,12 +395,7 @@ class BookRoomViewModel @Inject constructor(
      * Maps display meeting type to API id.
      */
     private fun mapMeetingType(displayType: String): Long? {
-        val matchedType = _uiState.value.availableMeetingTypes.find { 
-            it.name.equals(displayType, ignoreCase = true) 
-        }
-        if (matchedType != null) return matchedType.id
-
-        // Fallback for hardcoded values if API list is empty or hasn't loaded
+        // Fallback for hardcoded values
         return when (displayType) {
             "Internal" -> 1L
             "Client" -> 2L
@@ -364,3 +431,4 @@ class BookRoomViewModel @Inject constructor(
         else -> "MONDAY" // Fallback
     }
 }
+

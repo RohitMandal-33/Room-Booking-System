@@ -10,11 +10,9 @@ import com.swifttechnology.bookingsystem.core.utils.DateTimeUtils
 import com.swifttechnology.bookingsystem.features.report.data.dtos.ReportDataRequestDTO
 import com.swifttechnology.bookingsystem.features.report.domain.repository.ReportRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import android.content.Context
-import android.net.Uri
 import javax.inject.Inject
 
 @HiltViewModel
@@ -34,7 +32,7 @@ class ReportsAnalyticsViewModel @Inject constructor(
         fetchReports()
     }
 
-    private fun fetchReports() {
+    fun fetchReports() {
         viewModelScope.launch {
             isLoading = true
             error = null
@@ -45,8 +43,8 @@ class ReportsAnalyticsViewModel @Inject constructor(
                         ActivityEntry(
                             meetingTitle = dto.meetingTitle ?: "Untitled",
                             date = dto.date ?: "Unknown Date",
-                            startTime = dto.startTime ?: "",
-                            endTime = dto.endTime ?: "",
+                            startTime = dto.startTimeString ?: "",
+                            endTime = dto.endTimeString ?: "",
                             roomName = dto.roomName ?: "Unknown Room",
                             createdBy = dto.createdBy ?: "System"
                         )
@@ -162,29 +160,31 @@ class ReportsAnalyticsViewModel @Inject constructor(
     fun onUserSelected(v: String)       { selectedUser = v;      currentPage = 0 }
     fun onSortSelected(v: String)       { selectedSort = v;       currentPage = 0 }
 
-    fun saveExportToUri(context: Context, uri: Uri) {
+    private fun buildCsvExport(): ByteArray {
+        val csvContent = buildString {
+            append("Meeting Title,Date,Start Time,End Time,Room,Created By\n")
+            filteredEntries.forEach { entry ->
+                val title = entry.meetingTitle.replace(",", " -")
+                val room = entry.roomName.replace(",", " ")
+                val author = entry.createdBy.replace(",", " ")
+                append("$title,${entry.date},${entry.startTime},${entry.endTime},$room,$author\n")
+            }
+        }
+        return csvContent.toByteArray()
+    }
+
+    fun exportCsv(writeAction: suspend (ByteArray) -> Unit) {
         viewModelScope.launch {
             isLoading = true
             error = null
             try {
-                withContext(Dispatchers.IO) {
-                    context.contentResolver.openOutputStream(uri)?.use { out ->
-                        // Write CSV Header
-                        out.write("Meeting Title,Date,Start Time,End Time,Room,Created By\n".toByteArray())
-                        
-                        // Write each row, replacing commas to prevent CSV breakage
-                        filteredEntries.forEach { e ->
-                            val title = e.meetingTitle.replace(",", " -")
-                            val room = e.roomName.replace(",", " ")
-                            val author = e.createdBy.replace(",", " ")
-                            out.write("$title,${e.date},${e.startTime},${e.endTime},$room,$author\n".toByteArray())
-                        }
-                    }
-                }
+                val csvBytes = withContext(Dispatchers.Default) { buildCsvExport() }
+                writeAction(csvBytes)
             } catch (e: Exception) {
                 error = e.message ?: "Failed to export CSV"
+            } finally {
+                isLoading = false
             }
-            isLoading = false
         }
     }
 }

@@ -83,6 +83,7 @@ fun BookRoomScreen(
     initialRoomName: String? = null,
     initialDetails: PendingBookingDetails? = null,
     onNavigateToCalendar: (PendingBookingDetails) -> Unit = {},
+    onSuccess: () -> Unit = {},
     viewModel: BookRoomViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -90,14 +91,13 @@ fun BookRoomScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Show success Snackbar
-    LaunchedEffect(uiState.submitSuccess) {
-        if (uiState.submitSuccess) {
-            snackbarHostState.showSnackbar(
-                message = "Room booked successfully!",
-                duration = SnackbarDuration.Short
-            )
-            viewModel.clearSubmitSuccess()
+    // Show success callback
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            if (event is BookRoomEvent.NavigateBack) {
+                kotlinx.coroutines.delay(100)
+                onSuccess()
+            }
         }
     }
 

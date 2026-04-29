@@ -192,21 +192,6 @@ fun CalendarPreviewSection(
 
             Spacer(Modifier.height(Spacing.md))
 
-
-            //      Inline range label                                                                                         
-            val rangeText = buildRangeLabel(rangeStart, rangeEnd)
-            if (rangeText.isNotEmpty()) {
-                Spacer(Modifier.height(Spacing.sm))
-                Text(
-                    text  = rangeText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-
-            Spacer(Modifier.height(Spacing.md))
-
             //      Month calendar                                                                                                 
             MonthView(
                 today          = today,

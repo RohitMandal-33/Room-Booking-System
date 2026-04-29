@@ -31,8 +31,6 @@ data class RoomBookingFormState(
     val selectedWeekDays: Set<String> = emptySet(),
     val description: String = "",
     val participants: List<InternalMember> = emptyList(),
-    /** Tracks which custom-group IDs were explicitly selected via the Groups tab.
-     *  Independent of individual member selection in the People / Teams tabs. */
     val selectedGroupIds: Set<Long> = emptySet(),
     val externalMembers: List<ExternalMember> = emptyList(),
     val selectedRoom: String = "",
@@ -40,7 +38,7 @@ data class RoomBookingFormState(
     val updateScope: String = "ALL"
 )
 
-data class BookRoomUiState(
+data class BookRoomScreenUiState(
     val searchQuery: String = "",
     val participantSearchQuery: String = "",
     val formState: RoomBookingFormState = RoomBookingFormState(),

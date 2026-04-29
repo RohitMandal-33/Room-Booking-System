@@ -5,6 +5,7 @@ import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -25,7 +26,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
-import kotlinx.coroutines.launch
 import java.util.Locale
 
 private val PurplePrimary = Color(0xFF6C3EE8)
@@ -227,6 +227,11 @@ private fun <T> WheelColumn(
     val flingBehavior = rememberSnapFlingBehavior(lazyListState = state)
     val textPrimary  = MaterialTheme.customColors.textPrimary
     val ITEM_HEIGHT  = 44.dp
+    val visibleCenter by remember {
+        derivedStateOf {
+            state.firstVisibleItemIndex + if (state.firstVisibleItemScrollOffset > 22) 1 else 0
+        }
+    }
 
     LazyColumn(
         state = state,
@@ -256,13 +261,7 @@ private fun <T> WheelColumn(
         items(2) {
             Box(Modifier.height(ITEM_HEIGHT).fillMaxWidth())
         }
-        items(items) { item ->
-            val itemIdx = items.indexOf(item)
-            val visibleCenter by remember {
-                derivedStateOf {
-                    state.firstVisibleItemIndex + if (state.firstVisibleItemScrollOffset > 22) 1 else 0
-                }
-            }
+        itemsIndexed(items) { itemIdx, item ->
             val isSelected = itemIdx == visibleCenter
 
             Box(

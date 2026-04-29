@@ -65,7 +65,7 @@ fun DashboardScreen(
             .verticalScroll(rememberScrollState())
     ) {
         // 1. KPI stat tiles
-        StatTilesSection()
+        StatTilesSection(stats = uiState.dashboardStats)
 
         Spacer(modifier = Modifier.height(Spacing.sm))
 

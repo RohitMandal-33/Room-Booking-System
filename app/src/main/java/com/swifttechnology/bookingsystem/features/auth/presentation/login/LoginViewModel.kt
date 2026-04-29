@@ -8,8 +8,11 @@ import com.swifttechnology.bookingsystem.features.auth.domain.util.AuthResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -36,8 +39,8 @@ class LoginViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
-    private val _events = MutableStateFlow<LoginEvent?>(null)
-    val events: StateFlow<LoginEvent?> = _events.asStateFlow()
+    private val _events = MutableSharedFlow<LoginEvent>(extraBufferCapacity = 1)
+    val events: SharedFlow<LoginEvent> = _events.asSharedFlow()
 
     fun onEmailChanged(value: String) {
         _uiState.update { it.copy(email = value, emailError = null) }
@@ -56,7 +59,7 @@ class LoginViewModel @Inject constructor(
     }
 
     fun onForgotPasswordClicked() {
-        _events.value = LoginEvent.ShowSnackbar("Password reset email sent")
+        _events.tryEmit(LoginEvent.ShowSnackbar("Password reset email sent"))
     }
 
     fun onLoginClicked() {
@@ -74,21 +77,17 @@ class LoginViewModel @Inject constructor(
             when (val result = loginUseCase(state.email, state.password)) {
                 is AuthResult.Success -> {
                     _uiState.update { it.copy(isLoading = false) }
-                    _events.value = LoginEvent.NavigateToHome
+                    _events.emit(LoginEvent.NavigateToHome)
                 }
                 is AuthResult.Error -> {
                     _uiState.update { it.copy(isLoading = false, passwordError = result.message) }
-                    _events.value = LoginEvent.ShowSnackbar(result.message)
+                    _events.emit(LoginEvent.ShowSnackbar(result.message))
                 }
                 AuthResult.Loading -> {
                     _uiState.update { it.copy(isLoading = true) }
                 }
             }
         }
-    }
-
-    fun onEventConsumed() {
-        _events.value = null
     }
 
     private fun validateEmail(email: String): String? {

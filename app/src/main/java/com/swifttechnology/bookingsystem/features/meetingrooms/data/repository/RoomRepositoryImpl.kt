@@ -12,10 +12,10 @@ class RoomRepositoryImpl @Inject constructor(
     override suspend fun addRoom(
         roomName: String,
         capacity: Int,
-        resources: List<String>?
+        resourceIds: List<Long>?
     ): Result<Unit> = runCatching {
         val response = api.addRoom(
-            RoomRequestDTO(roomName = roomName, capacity = capacity, resources = resources)
+            RoomRequestDTO(roomName = roomName, capacity = capacity, resourcesIds = resourceIds)
         )
         if (!response.success) throw Exception(response.message)
     }
@@ -46,17 +46,28 @@ class RoomRepositoryImpl @Inject constructor(
         id: Long,
         roomName: String,
         capacity: Int,
-        resources: List<String>?
+        resourceIds: List<Long>?
     ): Result<Unit> = runCatching {
         val response = api.updateRoom(
             id = id,
-            request = RoomRequestDTO(roomName = roomName, capacity = capacity, resources = resources)
+            request = RoomRequestDTO(roomName = roomName, capacity = capacity, resourcesIds = resourceIds)
         )
         if (!response.success) throw Exception(response.message)
     }
 
     override suspend fun changeRoomStatus(id: Long, status: String): Result<Unit> = runCatching {
         val response = api.changeRoomStatus(id = id, request = StatusChangeRequestDTO(status = status))
+        if (!response.success) throw Exception(response.message)
+    }
+
+    override suspend fun getAllResources(): Result<List<RoomResourceDTO>> = runCatching {
+        val response = api.getAllResources()
+        if (!response.success || response.data == null) throw Exception(response.message)
+        response.data
+    }
+
+    override suspend fun addResource(name: String): Result<Unit> = runCatching {
+        val response = api.addResource(RoomResourceRequestDTO(name = name))
         if (!response.success) throw Exception(response.message)
     }
 }

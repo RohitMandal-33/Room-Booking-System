@@ -58,6 +58,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.swifttechnology.bookingsystem.R
 import com.swifttechnology.bookingsystem.shared.components.LoginTextField
 import com.swifttechnology.bookingsystem.shared.components.SwiftTechnologyLogo
+import kotlinx.coroutines.flow.collect
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -67,7 +68,6 @@ fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val event by viewModel.events.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val focusManager = LocalFocusManager.current
@@ -76,17 +76,16 @@ fun LoginScreen(
     val isKeyboardOpen = windowInfo.isWindowFocused &&
         WindowInsets.ime.getBottom(LocalDensity.current) > 0
 
-    LaunchedEffect(event) {
-        when (val e = event) {
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { e ->
+            when (e) {
             is LoginEvent.NavigateToHome -> {
-                viewModel.onEventConsumed()
                 onLoginSuccess()
             }
             is LoginEvent.ShowSnackbar -> {
                 snackbarHostState.showSnackbar(e.message)
-                viewModel.onEventConsumed()
             }
-            null -> Unit
+            }
         }
     }
 

@@ -55,6 +55,7 @@ import com.swifttechnology.bookingsystem.shared.components.PrimaryButton
 @Composable
 fun AddEditAnnouncementSheet(
     editingAnnouncement: Announcement?,
+    pinnedCount: Int,
     sheetState: SheetState,
     onDismiss: () -> Unit,
     onSave: (AnnouncementRequestDTO) -> Unit
@@ -87,6 +88,9 @@ fun AddEditAnnouncementSheet(
     var showEndDatePicker by remember { mutableStateOf(false) }
 
     val canSave = title.isNotBlank() && startDate.isNotBlank() && endDate.isNotBlank()
+    
+    // Pinning restriction: if already at 5 and this one isn't pinned, disable toggle
+    val isMaxReached = pinnedCount >= 5 && !(editingAnnouncement?.pinned ?: false)
 
     ModalBottomSheet(
         sheetState = sheetState,
@@ -200,21 +204,34 @@ fun AddEditAnnouncementSheet(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Pinned",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.SemiBold,
-                            color = colors.deepBlack
+                    Column {
+                        Text(
+                            text = "Pinned",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (isMaxReached && !pinned) colors.textSecondary else colors.deepBlack
+                            )
                         )
-                    )
+                        if (isMaxReached && !pinned) {
+                            Text(
+                                text = "Max pin reached",
+                                color = Color(0xFFDC2626),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
                     Switch(
                         checked = pinned,
                         onCheckedChange = { pinned = it },
+                        enabled = !isMaxReached || pinned,
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color.White,
                             checkedTrackColor = MaterialTheme.colorScheme.primary,
                             uncheckedThumbColor = Color.White,
-                            uncheckedTrackColor = colors.neutral300
+                            uncheckedTrackColor = colors.neutral300,
+                            disabledUncheckedTrackColor = colors.neutral200,
+                            disabledUncheckedThumbColor = Color.White.copy(alpha = 0.6f)
                         )
                     )
                 }

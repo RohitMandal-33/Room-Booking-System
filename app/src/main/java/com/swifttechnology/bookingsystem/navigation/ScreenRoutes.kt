@@ -1,5 +1,7 @@
 package com.swifttechnology.bookingsystem.navigation
 
+import android.net.Uri
+
 object ScreenRoutes {
     const val LOGIN = "login"
     const val MAIN_APP = "main_app"
@@ -25,7 +27,7 @@ object ScreenRoutes {
     }
 
     fun meetingRoomEdit(roomName: String): String {
-        return "$MEETING_ROOM_EDIT/$roomName"
+        return "$MEETING_ROOM_EDIT/${Uri.encode(roomName)}"
     }
 }
 

@@ -70,7 +70,20 @@ class AnnouncementsViewModel @Inject constructor(
 
     fun saveAnnouncement(request: AnnouncementRequestDTO) {
         viewModelScope.launch {
-            val editing = _uiState.value.editingAnnouncement
+            val state = _uiState.value
+            val editing = state.editingAnnouncement
+            
+            // Check pin limit
+            if (request.pinned == true) {
+                val currentlyPinnedCount = state.pinnedAnnouncements.size
+                val isAlreadyPinned = editing?.pinned ?: false
+                
+                if (!isAlreadyPinned && currentlyPinnedCount >= 5) {
+                    _uiState.update { it.copy(operationError = "Max pin reached") }
+                    return@launch
+                }
+            }
+
             val result = if (editing != null) {
                 repository.updateAnnouncement(editing.id, request)
             } else {
@@ -110,6 +123,14 @@ class AnnouncementsViewModel @Inject constructor(
 
     fun togglePin(id: Long) {
         viewModelScope.launch {
+            val state = _uiState.value
+            val announcement = (state.allAnnouncements + state.pinnedAnnouncements).find { it.id == id }
+            
+            if (announcement != null && !announcement.pinned && state.pinnedAnnouncements.size >= 5) {
+                _uiState.update { it.copy(operationError = "Max pin reached") }
+                return@launch
+            }
+
             repository.changePinStatus(id)
             loadAnnouncements()
         }
