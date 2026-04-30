@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.swifttechnology.bookingsystem.features.auth.domain.repository.AuthRepository
 import com.swifttechnology.bookingsystem.features.participants.domain.repository.CustomGroupRepository
 import com.swifttechnology.bookingsystem.features.participants.domain.repository.ParticipantRepository
+import com.swifttechnology.bookingsystem.features.department.domain.repository.DepartmentRepository
 import com.swifttechnology.bookingsystem.features.user.data.dtos.UserDetailsDTO
 import com.swifttechnology.bookingsystem.features.user.domain.repository.UserRepository
 import com.swifttechnology.bookingsystem.shared.components.SidebarItem
@@ -31,6 +32,7 @@ class ParticipantsViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val participantRepository: ParticipantRepository,
     private val customGroupRepository: CustomGroupRepository,
+    private val departmentRepository: DepartmentRepository,
     private val userRepository: UserRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ParticipantsUiState())
@@ -54,6 +56,7 @@ class ParticipantsViewModel @Inject constructor(
             .launchIn(viewModelScope)
 
         fetchCustomGroups()
+        fetchDepartments()
     }
 
     private fun fetchCustomGroups() {
@@ -72,6 +75,18 @@ class ParticipantsViewModel @Inject constructor(
             }
             .catch { }
             .launchIn(viewModelScope)
+    }
+
+    private fun fetchDepartments() {
+        viewModelScope.launch {
+            departmentRepository.getDepartments()
+                .onSuccess { depts ->
+                    _uiState.update { it.copy(departments = depts) }
+                }
+                .onFailure { err ->
+                    // Optionally handle error
+                }
+        }
     }
 
     fun onSidebarItemSelected(item: SidebarItem) {
@@ -158,6 +173,8 @@ class ParticipantsViewModel @Inject constructor(
                 ?.let { groups ->
                     _uiState.update { it.copy(customGroups = groups) }
                 }
+
+            fetchDepartments()
         }
     }
 }

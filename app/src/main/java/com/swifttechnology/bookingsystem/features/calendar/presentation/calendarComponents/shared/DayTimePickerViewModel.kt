@@ -53,10 +53,11 @@ class DayTimePickerViewModel @Inject constructor() : ViewModel() {
         )
     }
 
-    fun initializePicker(startMinutes: Int, endMinutes: Int) = _uiState.update { state ->
+    fun initializePicker(startMinutes: Int, endMinutes: Int, title: String = "New Meeting") = _uiState.update { state ->
         state.copy(
             draggableEvent = DraggableEvent(
-                timeRange = TimeRange(startMinutes, endMinutes)
+                timeRange = TimeRange(startMinutes, endMinutes),
+                title = title
             )
         )
     }

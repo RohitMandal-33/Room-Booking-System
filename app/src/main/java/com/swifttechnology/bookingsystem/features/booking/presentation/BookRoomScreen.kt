@@ -71,6 +71,30 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import com.swifttechnology.bookingsystem.features.booking.presentation.components.SelectedParticipantChip
 
+/**
+ * Parses all colour string formats the backend may return:
+ *  - "#RRGGBB"
+ *  - "rgb(R,G,B)"
+ *  - bare "(R,G,B)" (missing the 'rgb' prefix)
+ * Falls back to a default purple on any parse failure.
+ */
+private fun parseMeetingTypeColor(colorCode: String?): Color {
+    val fallback = Color(0xFF6C3EE8)
+    if (colorCode.isNullOrBlank()) return fallback
+    return try {
+        when {
+            colorCode.startsWith("#") -> Color(AndroidColor.parseColor(colorCode))
+            colorCode.startsWith("rgb") || colorCode.startsWith("(") -> {
+                val nums = Regex("""(\d+)\s*,\s*(\d+)\s*,\s*(\d+)""")
+                    .find(colorCode)?.destructured
+                    ?: return fallback
+                val (r, g, b) = nums
+                Color(r.toInt() / 255f, g.toInt() / 255f, b.toInt() / 255f)
+            }
+            else -> fallback
+        }
+    } catch (e: Exception) { fallback }
+}
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -83,6 +107,8 @@ fun BookRoomScreen(
     initialRoomName: String? = null,
     initialDetails: PendingBookingDetails? = null,
     onNavigateToCalendar: (PendingBookingDetails) -> Unit = {},
+    pendingTimeUpdate: Triple<String, String, String>? = null,
+    onTimeUpdate: ((String, String, String) -> Unit)? = null,
     onSuccess: () -> Unit = {},
     viewModel: BookRoomViewModel = hiltViewModel()
 ) {
@@ -112,9 +138,21 @@ fun BookRoomScreen(
         }
     }
 
-    LaunchedEffect(uiState.availableRooms, initialRoomName, initialDetails) {
-        if (uiState.availableRooms.isNotEmpty()) {
+    val wasPrefilledRef = remember { mutableStateOf(false) }
+    // Include availableParticipants in the key set so this re-fires once the participant
+    // list arrives from the API (it loads asynchronously via a Flow).
+    LaunchedEffect(uiState.availableRooms, uiState.availableMeetingTypes, uiState.availableParticipants, initialRoomName, initialDetails) {
+        if (uiState.availableRooms.isNotEmpty() && !wasPrefilledRef.value) {
+            // Wait for meeting types too before pre-filling so meetingTypeId resolves correctly
+            if (initialDetails != null && uiState.availableMeetingTypes.isEmpty()) return@LaunchedEffect
+            // If this booking has internal participants, wait until the participant list has
+            // loaded so that the prefill can actually match them by id.
+            if (initialDetails != null
+                && initialDetails.internalParticipantIds.isNotEmpty()
+                && uiState.availableParticipants.isEmpty()
+            ) return@LaunchedEffect
             if (initialDetails != null) {
+                wasPrefilledRef.value = true
                 viewModel.prefillBookingDetails(
                     bookingId             = initialDetails.bookingId,
                     roomName              = initialDetails.roomName,
@@ -123,13 +161,26 @@ fun BookRoomScreen(
                     endTime               = initialDetails.endTime,
                     meetingTitle          = initialDetails.meetingTitle,
                     meetingType           = initialDetails.meetingType,
+                    meetingTypeId          = initialDetails.meetingTypeId,
                     description           = initialDetails.description,
                     internalParticipantIds = initialDetails.internalParticipantIds,
-                    externalMembers       = initialDetails.externalMembers
+                    externalMembers       = initialDetails.externalMembers,
+                    recurrenceId          = initialDetails.recurrenceId,
+                    isRecurring           = initialDetails.isRecurring,
+                    recurrenceType        = initialDetails.recurrenceType,
+                    updateScope           = initialDetails.updateScope
                 )
             } else if (initialRoomName != null) {
+                wasPrefilledRef.value = true
                 viewModel.preSelectRoom(initialRoomName)
             }
+        }
+    }
+
+    LaunchedEffect(pendingTimeUpdate) {
+        pendingTimeUpdate?.let { (date, start, end) ->
+            viewModel.updateTimeOnly(date, start, end)
+            onTimeUpdate?.invoke(date, start, end)
         }
     }
 
@@ -167,22 +218,7 @@ fun BookRoomScreen(
             uiState.availableMeetingTypes.mapNotNull { type ->
                 type.name?.let { name ->
                     name to @Composable {
-                        val color = type.colorCode?.let {
-                            try {
-                                if (it.startsWith("#")) {
-                                    Color(AndroidColor.parseColor(it))
-                                } else if (it.startsWith("rgb")) {
-                                    val match = Regex("""(\d+),\s*(\d+),\s*(\d+)""").find(it)
-                                    if (match != null) {
-                                        val (r, g, b) = match.destructured
-                                        Color(r.toInt(), g.toInt(), b.toInt())
-                                    } else Color(0xFF6C3EE8)
-                                } else Color(0xFF6C3EE8)
-                            } catch (e: Exception) {
-                                Color(0xFF6C3EE8)
-                            }
-                        } ?: Color(0xFF6C3EE8)
-                        
+                        val color = parseMeetingTypeColor(type.colorCode)
                         Box(
                             modifier = Modifier
                                 .size(14.dp)
@@ -193,6 +229,14 @@ fun BookRoomScreen(
                 }
             }.toMap()
         }
+    }
+
+    // Resolve the colour of the currently-selected meeting type for the trigger field
+    val selectedMeetingTypeColor: Color? = remember(formState.meetingType, uiState.availableMeetingTypes) {
+        uiState.availableMeetingTypes
+            .find { it.name.equals(formState.meetingType, ignoreCase = true) }
+            ?.colorCode
+            ?.let { parseMeetingTypeColor(it) }
     }
 
     val recurringOptions = listOf(
@@ -299,10 +343,21 @@ fun BookRoomScreen(
                             onClick = {
                                 onNavigateToCalendar(
                                     PendingBookingDetails(
+                                        bookingId = formState.bookingId,
                                         roomName = formState.selectedRoom,
                                         date = formState.date,
                                         startTime = formState.startTime,
-                                        endTime = formState.endTime
+                                        endTime = formState.endTime,
+                                        meetingTitle = formState.meetingTitle,
+                                        meetingType = formState.meetingType,
+                                        meetingTypeId = formState.meetingTypeId,
+                                        description = formState.description,
+                                        internalParticipantIds = formState.participants.map { it.id },
+                                        externalMembers = formState.externalMembers,
+                                        recurrenceId = formState.recurrenceId,
+                                        isRecurring = formState.isRecurring,
+                                        recurrenceType = formState.recurrenceType,
+                                        updateScope = formState.updateScope
                                     )
                                 )
                             }
@@ -325,10 +380,21 @@ fun BookRoomScreen(
                             onClick = {
                                 onNavigateToCalendar(
                                     PendingBookingDetails(
+                                        bookingId = formState.bookingId,
                                         roomName = formState.selectedRoom,
                                         date = formState.date,
                                         startTime = formState.startTime,
-                                        endTime = formState.endTime
+                                        endTime = formState.endTime,
+                                        meetingTitle = formState.meetingTitle,
+                                        meetingType = formState.meetingType,
+                                        meetingTypeId = formState.meetingTypeId,
+                                        description = formState.description,
+                                        internalParticipantIds = formState.participants.map { it.id },
+                                        externalMembers = formState.externalMembers,
+                                        recurrenceId = formState.recurrenceId,
+                                        isRecurring = formState.isRecurring,
+                                        recurrenceType = formState.recurrenceType,
+                                        updateScope = formState.updateScope
                                     )
                                 )
                             }
@@ -345,9 +411,19 @@ fun BookRoomScreen(
                     expanded = showMeetingTypeDropdown,
                     options = meetingTypes,
                     optionLeadingIcons = meetingTypeIcons,
+                    selectedLeadingIcon = selectedMeetingTypeColor?.let { color ->
+                        {
+                            Box(
+                                modifier = Modifier
+                                    .size(14.dp)
+                                    .clip(CircleShape)
+                                    .background(color)
+                            )
+                        }
+                    },
                     onExpandChange = { showMeetingTypeDropdown = it },
                     onOptionSelected = { selectedName ->
-                        val selectedType = uiState.availableMeetingTypes.find { it.name == selectedName }
+                        val selectedType = uiState.availableMeetingTypes.find { it.name.equals(selectedName, ignoreCase = true) }
                         viewModel.onFormStateChanged(
                             formState.copy(
                                 meetingType = selectedName,
@@ -567,7 +643,7 @@ fun BookRoomScreen(
                         .fillMaxWidth()
                         .padding(horizontal = Spacing.md),
                     enabled = !uiState.isSubmitting,
-                    onClick = { viewModel.submitBooking() }
+                    onClick = { viewModel.onSubmitClicked() }
                 )
 
                 Spacer(modifier = Modifier.height(Spacing.md))
@@ -665,5 +741,17 @@ fun BookRoomScreen(
                 onClose = { showExternalSheet = false }
             )
         }
+    }
+
+    if (uiState.showRecurrenceScopeDialog) {
+        com.swifttechnology.bookingsystem.shared.components.ReusableAlertDialog(
+            style = com.swifttechnology.bookingsystem.shared.components.DialogStyle.INFO,
+            title = "Update Recurring Meeting",
+            message = "Do you want to update just this meeting or all meetings in the series?",
+            confirmText = "All occurrences",
+            onConfirm = { viewModel.submitWithScope("ALL") },
+            dismissText = "This occurrence only",
+            onDismiss = { viewModel.submitWithScope("THIS") }
+        )
     }
 }

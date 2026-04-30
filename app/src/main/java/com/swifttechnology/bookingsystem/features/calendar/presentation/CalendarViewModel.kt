@@ -129,7 +129,10 @@ class CalendarViewModel @Inject constructor(
                             internalParticipants = dto.internalParticipant ?: emptyList(),
                             externalParticipants = dto.externalParticipant ?: emptyList(),
                             createdBy = dto.roomBooker?.email ?: dto.roomBooker?.firstName ?: "",
-                            meetingStatus = dto.meetingStatus ?: dto.status
+                            meetingStatus = dto.meetingStatus ?: dto.status,
+                            meetingTypeId = dto.meetingTypeId,
+                            recurrenceId = dto.recurrenceId,
+                            recurrenceType = dto.recurrenceType
                         )
                     } catch (e: Exception) {
                         null

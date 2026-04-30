@@ -109,12 +109,21 @@ data class BookingResponseDTO(
     val room: RoomDTO? = null,
     val roomBooker: RoomBookerDTO? = null,
     val internalParticipant: List<InternalParticipantDTO>? = null,
-    val externalParticipant: List<ExternalParticipantDTO>? = null
+    val externalParticipant: List<ExternalParticipantDTO>? = null,
+    /** Populated when this booking is part of a recurring series. */
+    val recurrenceId: String? = null,
+    val recurrenceType: String? = null   // "NONE" | "DAILY" | "WEEKDAY" | "WEEKLY" | "MONTHLY" | "YEARLY" | "CUSTOM"
 ) {
     val meetingType: String?
         get() = when (meetingTypeObj) {
             is String -> meetingTypeObj
             is Map<*, *> -> meetingTypeObj["name"] as? String
+            else -> null
+        }
+
+    val meetingTypeId: Long?
+        get() = when (meetingTypeObj) {
+            is Map<*, *> -> (meetingTypeObj["id"] as? Number)?.toLong()
             else -> null
         }
 

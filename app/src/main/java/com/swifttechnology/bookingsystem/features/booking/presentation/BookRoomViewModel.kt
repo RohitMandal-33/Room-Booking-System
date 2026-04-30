@@ -54,7 +54,10 @@ data class RoomBookingFormState(
     val externalMembers: List<ExternalMember> = emptyList(),
     val selectedRoom: String = "",
     val selectedRoomId: Long? = null,
-    val updateScope: String = "ALL"
+    val recurrenceId: String? = null,
+    val isRecurring: Boolean = false,
+    val recurrenceType: String? = null,
+    val updateScope: String = "ASK"
 )
 
 data class BookRoomScreenUiState(
@@ -68,7 +71,8 @@ data class BookRoomScreenUiState(
     val isSearchingParticipants: Boolean = false,
     val isSubmitting: Boolean = false,
     val submitSuccess: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val showRecurrenceScopeDialog: Boolean = false
 )
 
 sealed class BookRoomEvent {
@@ -101,20 +105,8 @@ class BookRoomViewModel @Inject constructor(
 
     private var searchJob: Job? = null
     fun onParticipantSearchQueryChanged(query: String) {
-        val c = _uiState.value
-        _uiState.value = BookRoomScreenUiState(
-            searchQuery = c.searchQuery,
-            participantSearchQuery = query,
-            formState = c.formState,
-            availableRooms = c.availableRooms,
-            availableParticipants = c.availableParticipants,
-            availableMeetingTypes = c.availableMeetingTypes,
-            isLoadingRooms = c.isLoadingRooms,
-            isSearchingParticipants = c.isSearchingParticipants,
-            isSubmitting = c.isSubmitting,
-            submitSuccess = c.submitSuccess,
-            errorMessage = c.errorMessage
-        )
+        // Use update to preserve all existing state fields (including showRecurrenceScopeDialog)
+        _uiState.update { it.copy(participantSearchQuery = query) }
         searchParticipants(query)
     }
 
@@ -148,7 +140,8 @@ class BookRoomViewModel @Inject constructor(
         viewModelScope.launch {
             bookingRepository.getMeetingTypes()
                 .onSuccess { types ->
-                    _uiState.update { it.copy(availableMeetingTypes = types) }
+                    val activeTypes = types.filter { it.status == "ACTIVE" }
+                    _uiState.update { it.copy(availableMeetingTypes = activeTypes) }
                 }
         }
     }
@@ -218,9 +211,14 @@ class BookRoomViewModel @Inject constructor(
         endTime: String,
         meetingTitle: String = "",
         meetingType: String = "",
+        meetingTypeId: Long? = null,
         description: String = "",
         internalParticipantIds: List<Long> = emptyList(),
-        externalMembers: List<ExternalMember> = emptyList()
+        externalMembers: List<ExternalMember> = emptyList(),
+        recurrenceId: String? = null,
+        isRecurring: Boolean = false,
+        recurrenceType: String? = null,
+        updateScope: String = "ASK"
     ) {
         _uiState.update { current ->
             val room = current.availableRooms.find { it.name == roomName }
@@ -241,6 +239,16 @@ class BookRoomViewModel @Inject constructor(
             // Match internal participants by id from current available participants
             val prefillInternal = current.availableParticipants.filter { it.id in internalParticipantIds }
 
+            // When editing ALL occurrences, translate the raw API recurrenceType
+            // (e.g. "DAILY") to the display name used by the UI dropdown (e.g. "Daily").
+            // For THIS-occurrence edits keep "Does not repeat" so the recurrence
+            // section stays hidden and doesn't interfere with the single-occurrence update.
+            val displayRecurringType = if (updateScope == "ALL") {
+                mapApiRecurrenceTypeToDisplay(recurrenceType)
+            } else {
+                "Does not repeat"
+            }
+
             current.copy(
                 formState = current.formState.copy(
                     meetingTitle    = meetingTitle,
@@ -250,14 +258,52 @@ class BookRoomViewModel @Inject constructor(
                     startTime       = startTime,
                     endTime         = endTime,
                     meetingType     = displayType,
-                    meetingTypeId   = matchedType?.id,
+                    meetingTypeId   = meetingTypeId ?: matchedType?.id,
                     description     = description,
                     participants    = prefillInternal,
                     externalMembers = externalMembers,
-                    bookingId       = bookingId
+                    bookingId       = bookingId,
+                    recurrenceId    = recurrenceId,
+                    isRecurring     = isRecurring,
+                    recurrenceType  = recurrenceType,
+                    updateScope     = updateScope,
+                    recurringType   = displayRecurringType
                 )
             )
         }
+    }
+
+    fun updateTimeOnly(date: String, startTime: String, endTime: String) {
+        _uiState.update { current ->
+            current.copy(
+                formState = current.formState.copy(
+                    date = date,
+                    startTime = startTime,
+                    endTime = endTime
+                )
+            )
+        }
+    }
+
+    fun onSubmitClicked() {
+        val state = _uiState.value.formState
+        if (state.bookingId != null && state.recurrenceId != null && state.updateScope == "ASK") {
+            _uiState.update { it.copy(showRecurrenceScopeDialog = true) }
+        } else {
+            submitBooking()
+        }
+    }
+
+    fun dismissRecurrenceScopeDialog() {
+        _uiState.update { it.copy(showRecurrenceScopeDialog = false) }
+    }
+
+    fun submitWithScope(scope: String) {
+        _uiState.update { it.copy(
+            showRecurrenceScopeDialog = false,
+            formState = it.formState.copy(updateScope = scope)
+        ) }
+        submitBooking()
     }
 
     fun submitBooking() {
@@ -278,7 +324,7 @@ class BookRoomViewModel @Inject constructor(
                 date = convertDisplayDateToApiDate(state.date),
                 startTime = parseTimeString(state.startTime),
                 endTime = parseTimeString(state.endTime),
-                meetingTypeId = state.meetingTypeId ?: mapMeetingType(state.meetingType),
+                meetingTypeId = state.meetingTypeId, // Use the proper meeting type ID directly
                 description = state.description.ifBlank { null },
                 roomId = state.selectedRoomId,
                 internalParticipantIds = state.participants
@@ -295,10 +341,16 @@ class BookRoomViewModel @Inject constructor(
                 } else null
             )
 
-            val result = if (state.bookingId != null) {
-                bookingRepository.updateBooking(state.bookingId, request)
-            } else {
-                bookingRepository.bookRoom(request)
+            val result = when {
+                state.recurrenceId != null && state.updateScope == "ALL" -> {
+                    bookingRepository.updateRecurrenceBooking(state.recurrenceId, request)
+                }
+                state.bookingId != null -> {
+                    bookingRepository.updateBooking(state.bookingId, request)
+                }
+                else -> {
+                    bookingRepository.bookRoom(request)
+                }
             }
 
             result.onSuccess {
@@ -392,19 +444,6 @@ class BookRoomViewModel @Inject constructor(
     }
 
     /**
-     * Maps display meeting type to API id.
-     */
-    private fun mapMeetingType(displayType: String): Long? {
-        // Fallback for hardcoded values
-        return when (displayType) {
-            "Internal" -> 1L
-            "Client" -> 2L
-            "Executive" -> 3L
-            else -> if (displayType.isBlank()) null else 1L
-        }
-    }
-
-    /**
      * Maps display recurring type to API enum value.
      */
     private fun mapRecurringType(displayType: String): String = when (displayType) {
@@ -415,6 +454,20 @@ class BookRoomViewModel @Inject constructor(
         "Yearly" -> "YEARLY"
         "Custom" -> "CUSTOM"
         else -> "NONE"
+    }
+
+    /**
+     * Reverse-maps the raw API recurrenceType enum to the display string used
+     * by the Recurring dropdown in the UI.
+     */
+    private fun mapApiRecurrenceTypeToDisplay(apiType: String?): String = when (apiType?.uppercase()) {
+        "WEEKDAY" -> "Every weekday (Sun-Fri)"
+        "DAILY"   -> "Daily"
+        "WEEKLY"  -> "Weekly"
+        "MONTHLY" -> "Monthly"
+        "YEARLY"  -> "Yearly"
+        "CUSTOM"  -> "Custom"
+        else      -> "Does not repeat"
     }
 
     /**

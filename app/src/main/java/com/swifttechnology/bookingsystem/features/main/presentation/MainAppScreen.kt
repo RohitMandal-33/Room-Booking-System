@@ -66,9 +66,14 @@ data class PendingBookingDetails(
     val endTime: String,
     val meetingTitle: String = "",
     val meetingType: String = "",
+    val meetingTypeId: Long? = null,
     val description: String = "",
     val internalParticipantIds: List<Long> = emptyList(),
-    val externalMembers: List<ExternalMember> = emptyList()
+    val externalMembers: List<ExternalMember> = emptyList(),
+    val recurrenceId: String? = null,
+    val isRecurring: Boolean = false,
+    val recurrenceType: String? = null,
+    val updateScope: String = "ASK"
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -103,6 +108,7 @@ fun MainAppScreen(
     var pendingBookingDetails by remember { mutableStateOf<PendingBookingDetails?>(null) }
     var pendingParticipantToEdit by remember { mutableStateOf<Participant?>(null) }
     var pendingCustomGroupToEdit by remember { mutableStateOf<CustomGroup?>(null) }
+    var pendingTimeOnlyUpdate by remember { mutableStateOf<Triple<String, String, String>?>(null) }
     // Success toast shown on various screens after actions
     var globalSuccessMessage by remember { mutableStateOf<String?>(null) }
 
@@ -173,6 +179,7 @@ fun MainAppScreen(
             searchQuery = ""
             pendingRoomName = null
             pendingBookingDetails = null
+            pendingTimeOnlyUpdate = null
             isMeetingRoomsEditable = false
             isParticipantsEditable = false
             isAnnouncementsEditMode = false
@@ -222,7 +229,7 @@ fun MainAppScreen(
                         )
                         navigateTo(ScreenRoutes.BOOK_ROOM)
                     },
-                    onEditMeeting = { event ->
+                    onEditMeeting = { event, scope ->
                         // Pre-fill room name and date/time from the event
                         pendingRoomName = event.meetingRoom.takeIf { it.isNotBlank() }
                         val dateFmt = event.date.format(DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.getDefault()))
@@ -236,9 +243,14 @@ fun MainAppScreen(
                             endTime                = endFmt,
                             meetingTitle           = event.title,
                             meetingType            = event.meetingType,
+                            meetingTypeId          = event.meetingTypeId,
                             description            = event.description,
                             internalParticipantIds = event.internalParticipants.mapNotNull { it.id?.toLong() },
-                            externalMembers        = event.externalParticipants.map { ExternalMember(it.name ?: "", it.email ?: "") }
+                            externalMembers        = event.externalParticipants.map { ExternalMember(it.name ?: "", it.email ?: "") },
+                            recurrenceId           = event.recurrenceId,
+                            isRecurring            = event.recurrenceId != null,
+                            recurrenceType         = event.recurrenceType,
+                            updateScope            = scope
                         )
                         navigateTo(ScreenRoutes.BOOK_ROOM)
                     }
@@ -277,6 +289,10 @@ fun MainAppScreen(
                     searchQuery = searchQuery,
                     initialRoomName = pendingRoomName,
                     initialDetails = pendingBookingDetails,
+                    onTimeUpdate = { date, start, end ->
+                        pendingTimeOnlyUpdate = null
+                    },
+                    pendingTimeUpdate = pendingTimeOnlyUpdate,
                     onNavigateToCalendar = { currentDetails ->
                         pendingBookingDetails = currentDetails
                         showRoomCalendarBottomSheet = true
@@ -390,6 +406,18 @@ fun MainAppScreen(
                     }
                 )
             }
+            ScreenRoutes.DEPARTMENT_ADD -> {
+                com.swifttechnology.bookingsystem.features.participants.presentation.components.AddDepartmentScreen(
+                    onClose = {
+                        isParticipantsEditable = false
+                        navigateBack()
+                    },
+                    onContinue = {
+                        isParticipantsEditable = false
+                        navigateBack()
+                    }
+                )
+            }
             ScreenRoutes.SETTINGS -> {
                 SettingsScreen(
                     searchQuery = searchQuery,
@@ -416,9 +444,13 @@ fun MainAppScreen(
                 initialDetails = pendingBookingDetails,
                 onNavigateBack = { showRoomCalendarBottomSheet = false },
                 onProceed = { details ->
-                    pendingBookingDetails = details
+                    if (currentRoute == ScreenRoutes.BOOK_ROOM) {
+                        pendingTimeOnlyUpdate = Triple(details.date, details.startTime, details.endTime)
+                    } else {
+                        pendingBookingDetails = details
+                        navigateTo(ScreenRoutes.BOOK_ROOM)
+                    }
                     showRoomCalendarBottomSheet = false
-                    navigateTo(ScreenRoutes.BOOK_ROOM)
                 }
             )
         }

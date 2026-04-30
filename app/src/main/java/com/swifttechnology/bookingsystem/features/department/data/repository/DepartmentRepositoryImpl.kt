@@ -23,7 +23,8 @@ class DepartmentRepositoryImpl @Inject constructor(
         response.data.map {
             Department(
                 id = it.id,
-                departmentName = it.departmentName
+                departmentName = it.departmentName,
+                description = it.description
             )
         }
     }

@@ -47,6 +47,9 @@ data class MeetingEvent(
     val createdBy: String = "",
     val timeZone: String = "Time Zone",
     val repeats: Boolean = false,
-    val meetingStatus: String? = null
+    val meetingStatus: String? = null,
+    val meetingTypeId: Long? = null,
+    val recurrenceId: String? = null,
+    val recurrenceType: String? = null
 )
 

@@ -4,6 +4,7 @@ import com.swifttechnology.bookingsystem.core.network.APIEndpoint
 import com.swifttechnology.bookingsystem.core.network.GlobalResponse
 import com.swifttechnology.bookingsystem.features.report.data.dtos.ReportDataRequestDTO
 import com.swifttechnology.bookingsystem.features.report.data.dtos.ReportItemDTO
+import com.swifttechnology.bookingsystem.features.report.data.dtos.ReportPageDTO
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -12,12 +13,12 @@ interface ReportApiService {
 
     /** GET /api/v1/reports/get-all — fetch all reports (no filters) */
     @GET(APIEndpoint.REPORTS_GET_ALL)
-    suspend fun getAllReports(): GlobalResponse<List<ReportItemDTO>>
+    suspend fun getAllReports(): GlobalResponse<ReportPageDTO>
 
     @POST(APIEndpoint.REPORTS_FILTERED)
     suspend fun getFilteredReports(
         @Body request: ReportDataRequestDTO
-    ): GlobalResponse<List<ReportItemDTO>>
+    ): GlobalResponse<ReportPageDTO>
 
     /** POST /api/v1/reports/export — download reports */
     @retrofit2.http.Streaming

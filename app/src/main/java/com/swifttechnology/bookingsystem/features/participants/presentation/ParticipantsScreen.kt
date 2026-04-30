@@ -44,8 +44,8 @@ import com.swifttechnology.bookingsystem.shared.components.DialogStyle
 import com.swifttechnology.bookingsystem.shared.components.ReusableAlertDialog
 import com.swifttechnology.bookingsystem.features.participants.domain.model.CustomGroup
 import com.swifttechnology.bookingsystem.features.participants.domain.model.Participant
+import com.swifttechnology.bookingsystem.features.department.domain.model.Department
 
-  
 // Status styling data class
   
 
@@ -124,7 +124,8 @@ fun ParticipantsScreen(
             ParticipantsTabRow(
                 selectedTab      = uiState.selectedTab,
                 onTabSelected    = viewModel::onTabSelected,
-                customGroupsCount = uiState.customGroups.size
+                customGroupsCount = uiState.customGroups.size,
+                departmentsCount = uiState.departments.size
             )
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -175,6 +176,21 @@ fun ParticipantsScreen(
                                 }
                             )
                         }
+                        ParticipantsTab.DEPARTMENTS -> {
+                            val filteredDepartments = if (uiState.searchQuery.isBlank()) {
+                                uiState.departments
+                            } else {
+                                uiState.departments.filter {
+                                    it.departmentName.contains(uiState.searchQuery, ignoreCase = true) ||
+                                    (it.description?.contains(uiState.searchQuery, ignoreCase = true) == true)
+                                }
+                            }
+                            DepartmentsDirectoryContent(
+                                departments = filteredDepartments,
+                                searchQuery = uiState.searchQuery,
+                                onSearchQueryChanged = viewModel::onSearchQueryChanged
+                            )
+                        }
                     }
                 }
             }
@@ -190,10 +206,16 @@ fun ParticipantsScreen(
         ) {
             AddFab(
                 onClick  = {
-                    if (uiState.selectedTab == ParticipantsTab.ALL_PARTICIPANTS) {
-                        onNavigate(com.swifttechnology.bookingsystem.navigation.ScreenRoutes.PARTICIPANT_ADD)
-                    } else {
-                        onNavigate(com.swifttechnology.bookingsystem.navigation.ScreenRoutes.CUSTOM_GROUP_ADD)
+                    when (uiState.selectedTab) {
+                        ParticipantsTab.ALL_PARTICIPANTS -> {
+                            onNavigate(com.swifttechnology.bookingsystem.navigation.ScreenRoutes.PARTICIPANT_ADD)
+                        }
+                        ParticipantsTab.CUSTOM_GROUPS -> {
+                            onNavigate(com.swifttechnology.bookingsystem.navigation.ScreenRoutes.CUSTOM_GROUP_ADD)
+                        }
+                        ParticipantsTab.DEPARTMENTS -> {
+                            onNavigate(com.swifttechnology.bookingsystem.navigation.ScreenRoutes.DEPARTMENT_ADD)
+                        }
                     }
                 }
             )
@@ -518,6 +540,73 @@ fun CustomGroupCard(
     }
 }
 
+@Composable
+fun DepartmentsDirectoryContent(
+    departments: List<Department>,
+    searchQuery: String,
+    onSearchQueryChanged: (String) -> Unit
+) {
+    Column {
+        Text(
+            text       = "Departments",
+            fontWeight = FontWeight.SemiBold,
+            fontSize   = 17.sp,
+            color      = Color(0xFF1C1C1E),
+            modifier   = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
+        )
+
+        DirectorySearchBar(
+            query          = searchQuery,
+            onQueryChanged = onSearchQueryChanged
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        LazyColumn(
+            contentPadding = PaddingValues(bottom = 80.dp)
+        ) {
+            items(departments, key = { it.id }) { department ->
+                DepartmentCard(department = department)
+            }
+        }
+    }
+}
+
+@Composable
+fun DepartmentCard(department: Department) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape  = RoundedCornerShape(20.dp),
+            color  = Color.White,
+            border = BorderStroke(1.dp, Color(0xFF3C3C43).copy(alpha = 0.15f))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text       = department.departmentName,
+                    fontWeight = FontWeight.Bold,
+                    fontSize   = 18.sp,
+                    color      = Color(0xFF1C1C1E)
+                )
+                if (!department.description.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text      = department.description,
+                        fontSize  = 14.sp,
+                        color     = Color(0xFF3C3C43).copy(alpha = 0.65f),
+                        fontStyle = FontStyle.Italic
+                    )
+                }
+            }
+        }
+    }
+}
+
 // Tab row
   
 
@@ -525,7 +614,8 @@ fun CustomGroupCard(
 fun ParticipantsTabRow(
     selectedTab: ParticipantsTab,
     onTabSelected: (ParticipantsTab) -> Unit,
-    customGroupsCount: Int
+    customGroupsCount: Int,
+    departmentsCount: Int
 ) {
     Surface(color = Color.Transparent) {
         Row(
@@ -548,6 +638,14 @@ fun ParticipantsTabRow(
                 badge      = customGroupsCount,
                 modifier   = Modifier.weight(1f),
                 onClick    = { onTabSelected(ParticipantsTab.CUSTOM_GROUPS) }
+            )
+            ParticipantsTabItem(
+                label      = "Departments",
+                icon       = Icons.Outlined.Business,
+                isSelected = selectedTab == ParticipantsTab.DEPARTMENTS,
+                badge      = departmentsCount,
+                modifier   = Modifier.weight(1f),
+                onClick    = { onTabSelected(ParticipantsTab.DEPARTMENTS) }
             )
         }
     }

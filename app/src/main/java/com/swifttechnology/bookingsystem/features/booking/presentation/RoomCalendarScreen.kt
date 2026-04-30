@@ -87,8 +87,9 @@ fun RoomCalendarScreen(
             }
         )
     }
-    val regularEvents = remember(calendarUiState.events, roomName, selectedDate) {
-        roomName?.let { calendarViewModel.getEventsForRoomAndDate(it, selectedDate) } ?: emptyList()
+    val regularEvents = remember(calendarUiState.events, roomName, selectedDate, initialDetails?.bookingId) {
+        val events = roomName?.let { calendarViewModel.getEventsForRoomAndDate(it, selectedDate) } ?: emptyList()
+        events.filter { it.meetingId != initialDetails?.bookingId }
     }
 
     var showStartTimePicker by remember { mutableStateOf(false) }
@@ -99,18 +100,35 @@ fun RoomCalendarScreen(
     LaunchedEffect(initialDetails) {
         if (initialDetails != null) {
             try {
-                val startParts = initialDetails.startTime.split(":")
-                val endParts   = initialDetails.endTime.split(":")
-                val startMin   = startParts[0].toInt() * 60 + startParts[1].toInt()
-                val endMin     = endParts[0].toInt() * 60 + endParts[1].toInt()
-                pickerViewModel.initializePicker(startMin, endMin)
+                val formatter12 = java.time.format.DateTimeFormatter.ofPattern("hh:mm a", java.util.Locale.getDefault())
+                val formatter24 = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
+
+                fun parseToMinutes(timeStr: String): Int {
+                    val t = try {
+                        java.time.LocalTime.parse(timeStr, formatter12)
+                    } catch (e: Exception) {
+                        java.time.LocalTime.parse(timeStr, formatter24)
+                    }
+                    return t.hour * 60 + t.minute
+                }
+
+                val startMin = parseToMinutes(initialDetails.startTime)
+                val endMin   = parseToMinutes(initialDetails.endTime)
+                val blockTitle = initialDetails.meetingTitle.ifBlank { "New Meeting" }
+                pickerViewModel.initializePicker(startMin, endMin, blockTitle)
             } catch (_: Exception) {}
         }
     }
 
-    LaunchedEffect(calendarUiState.events, selectedDate, roomName) {
+    LaunchedEffect(calendarUiState.events, selectedDate, roomName, initialDetails?.bookingId) {
         if (roomName != null) {
-            val apiBlocked = calendarViewModel.getBlockedSlotsForRoomAndDate(roomName, selectedDate)
+            val apiBlockedEvents = calendarViewModel.getEventsForRoomAndDate(roomName, selectedDate)
+                .filter { it.meetingId != initialDetails?.bookingId }
+            val apiBlocked = apiBlockedEvents.map { event ->
+                val startMin = event.startTime.hour * 60 + event.startTime.minute
+                val endMin = event.endTime.hour * 60 + event.endTime.minute
+                com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.shared.TimeRange(startMin, endMin)
+            }
             
             // Calculate past time block
             val now = LocalDate.now()
@@ -191,6 +209,7 @@ fun RoomCalendarScreen(
                 selectedDate = selectedDate,
                 regularEvents = regularEvents,
                 pickerState = pickerUiState,
+                bookedEventColor = Color(0xFFEF4444),
                 onGridLongPress = pickerViewModel::onTimeSlotLongPressed,
                 onDragStarted = pickerViewModel::onDragStarted,
                 onPreviewChanged = pickerViewModel::onPreviewChanged,
@@ -283,9 +302,14 @@ fun RoomCalendarScreen(
                                             endTime                = "%02d:%02d".format(endH, endM),
                                             meetingTitle           = initialDetails?.meetingTitle ?: "",
                                             meetingType            = initialDetails?.meetingType ?: "",
+                                            meetingTypeId          = initialDetails?.meetingTypeId,
                                             description            = initialDetails?.description ?: "",
                                             internalParticipantIds = initialDetails?.internalParticipantIds ?: emptyList(),
-                                            externalMembers        = initialDetails?.externalMembers ?: emptyList()
+                                            externalMembers        = initialDetails?.externalMembers ?: emptyList(),
+                                            recurrenceId           = initialDetails?.recurrenceId,
+                                            isRecurring            = initialDetails?.isRecurring ?: false,
+                                            recurrenceType         = initialDetails?.recurrenceType,
+                                            updateScope            = initialDetails?.updateScope ?: "ASK"
                                         )
                                     )
                                     pickerViewModel.onCancelBooking()

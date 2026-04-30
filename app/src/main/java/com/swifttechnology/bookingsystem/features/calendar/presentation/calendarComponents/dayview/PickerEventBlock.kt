@@ -238,22 +238,65 @@ fun PickerEventBlock(
                 .background(animatedFill)
                 .border(1.5.dp, animatedBorder, RoundedCornerShape(CORNER_RADIUS))
         ) {
-            // Content layout: title only
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
-            ) {
-                Text(
-                    text = event.title,
-                    fontSize = 12.sp,
-                    color = PickerBorder,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.fillMaxWidth()
-                )
+        // Content layout: title + live time range + duration
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 12.dp, vertical = 6.dp)
+        ) {
+            // Format a minute offset (from midnight) into "h:mm AM/PM"
+            fun minutesToTimeLabel(totalMinutes: Int): String {
+                val clamped = totalMinutes.coerceIn(0, 24 * 60 - 1)
+                val h = clamped / 60
+                val m = clamped % 60
+                val isPm = h >= 12
+                val h12 = when {
+                    h == 0 -> 12
+                    h > 12 -> h - 12
+                    else   -> h
+                }
+                return "%d:%02d %s".format(h12, m, if (isPm) "PM" else "AM")
             }
+
+            val startMin = (topPxState.floatValue / minutePx).roundToInt()
+            val durMin   = (heightPxState.floatValue / minutePx).roundToInt().coerceAtLeast(0)
+            val endMin   = startMin + durMin
+
+            Text(
+                text = event.title,
+                fontSize = 12.sp,
+                color = PickerBorder,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth()
+            )
+            // Time range line
+            Text(
+                text = "${minutesToTimeLabel(startMin)} – ${minutesToTimeLabel(endMin)}",
+                fontSize = 10.sp,
+                color = PickerBorder.copy(alpha = 0.85f),
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            // Duration line
+            val h = durMin / 60
+            val m = durMin % 60
+            val durationLabel = buildString {
+                if (h > 0) append("${h}h ")
+                if (m > 0) append("${m}min")
+                if (h == 0 && m == 0) append("0min")
+            }.trim()
+            Text(
+                text = durationLabel,
+                fontSize = 10.sp,
+                color = PickerBorder.copy(alpha = 0.65f),
+                fontWeight = FontWeight.Normal,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
         }
 
         // TOP-LEFT resize dot

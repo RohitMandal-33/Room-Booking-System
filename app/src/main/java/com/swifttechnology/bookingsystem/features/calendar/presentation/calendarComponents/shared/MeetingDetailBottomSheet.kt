@@ -81,6 +81,8 @@ import com.swifttechnology.bookingsystem.core.designsystem.Warning
 import com.swifttechnology.bookingsystem.core.designsystem.Error
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.features.calendar.presentation.MeetingEvent
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -89,7 +91,7 @@ import java.time.format.DateTimeFormatter
 fun MeetingDetailBottomSheet(
     event: MeetingEvent,
     onDismiss: () -> Unit,
-    onEdit: () -> Unit
+    onEdit: (String) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -116,19 +118,19 @@ fun MeetingDetailBottomSheet(
         else        -> event.meetingType.ifBlank { "Meeting" }
     }
 
-    val statusUpper = event.meetingStatus?.uppercase()
-
-    val statusText = when (statusUpper) {
-        "PENDING"             -> "Pending approval"
-        "CANCELLED", "CANCELED" -> "Cancelled"
-        else                  -> "Reserved"
+    val now = LocalDateTime.now()
+    val meetingStart = LocalDateTime.of(event.date, event.startTime)
+    val meetingEnd = LocalDateTime.of(event.date, event.endTime)
+    val statusText = when {
+        event.date == LocalDate.now() -> "Today"
+        meetingEnd.isBefore(now) -> "Passed"
+        meetingStart.isAfter(now) -> "Upcoming"
+        else -> "Today"
     }
-
-    val statusColor = when (statusUpper) {
-        "APPROVED", "ACTIVE"      -> Success
-        "PENDING"                 -> Warning
-        "CANCELLED", "CANCELED"   -> Error
-        else                      -> Success
+    val statusColor = when (statusText) {
+        "Passed" -> Error
+        "Today" -> Warning
+        else -> Success
     }
 
     ModalBottomSheet(
@@ -173,16 +175,6 @@ fun MeetingDetailBottomSheet(
 
             DetailSectionCard {
                 DetailItem(
-                    icon = Icons.Outlined.Schedule,
-                    title = "Schedule",
-                    subtitle = event.date.format(DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy")) +
-                        " • " +
-                        "${event.startTime.format(DateTimeFormatter.ofPattern("hh:mm a"))} – ${event.endTime.format(DateTimeFormatter.ofPattern("hh:mm a"))}"
-                )
-
-                DividerSpacer()
-
-                DetailItem(
                     icon = Icons.Outlined.Place,
                     title = "Room",
                     subtitle = if (event.meetingRoom.isNotBlank()) event.meetingRoom else "Unassigned"
@@ -204,6 +196,21 @@ fun MeetingDetailBottomSheet(
                         subtitle = event.description
                     )
                 }
+
+                if (!event.recurrenceType.isNullOrBlank() && event.recurrenceType != "NONE") {
+                    DividerSpacer()
+                    DetailItem(
+                        icon = Icons.Outlined.Schedule,
+                        title = "Recurrence",
+                        subtitle = buildString {
+                            append(formatRecurrenceType(event.recurrenceType))
+                            event.recurrenceId?.let { id ->
+                                append(" • Series ID: ")
+                                append(id)
+                            }
+                        }
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -218,10 +225,23 @@ fun MeetingDetailBottomSheet(
             Spacer(modifier = Modifier.height(18.dp))
 
             ActionBar(
+                event = event,
                 onDismiss = onDismiss,
                 onEdit = onEdit
             )
         }
+    }
+}
+
+private fun formatRecurrenceType(type: String?): String {
+    return when (type?.uppercase()) {
+        "DAILY" -> "Repeats daily"
+        "WEEKDAY" -> "Repeats on weekdays"
+        "WEEKLY" -> "Repeats weekly"
+        "MONTHLY" -> "Repeats monthly"
+        "YEARLY" -> "Repeats yearly"
+        "CUSTOM" -> "Custom recurrence"
+        else -> "Does not repeat"
     }
 }
 
@@ -329,12 +349,6 @@ private fun HeroCard(
                     text = typeLabel,
                     backgroundColor = typeBg,
                     contentColor = typeColor
-                )
-
-                PillChip(
-                    text = "Confirmed",
-                    backgroundColor = Color(0xFFEFFAF4),
-                    contentColor = Success
                 )
             }
 
@@ -670,8 +684,9 @@ private fun AttendeeRow(
 
 @Composable
 private fun ActionBar(
+    event: MeetingEvent,
     onDismiss: () -> Unit,
-    onEdit: () -> Unit
+    onEdit: (String) -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -689,26 +704,65 @@ private fun ActionBar(
             Text("Close")
         }
 
-        Button(
-            onClick = onEdit,
-            modifier = Modifier.weight(1f),
-            shape = RoundedCornerShape(14.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
-            )
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Edit,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
-                tint = MaterialTheme.colorScheme.onPrimary
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Edit booking",
-                color = MaterialTheme.colorScheme.onPrimary,
-                fontWeight = FontWeight.SemiBold
-            )
+        if (!event.recurrenceId.isNullOrBlank()) {
+            OutlinedButton(
+                onClick = { onEdit("THIS") },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(14.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Text(
+                    text = "Edit this",
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            Button(
+                onClick = { onEdit("ALL") },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Edit,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.onPrimary
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Edit all",
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        } else {
+            Button(
+                onClick = { onEdit("ASK") },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Edit,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.onPrimary
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Edit booking",
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
     }
 }

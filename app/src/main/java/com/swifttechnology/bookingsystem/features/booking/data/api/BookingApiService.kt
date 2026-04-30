@@ -60,6 +60,21 @@ interface BookingApiService {
     suspend fun getCalendarDay(@Body request: CalenderRequestDTO): GlobalResponse<List<BookingResponseDTO>>
 
     // Meeting Types
+    @POST(APIEndpoint.MEETING_TYPE_ADD)
+    suspend fun createMeetingType(@Body request: com.swifttechnology.bookingsystem.features.booking.data.dtos.MeetingTypeRequestDTO): GlobalResponse<Unit>
+
+    @PUT(APIEndpoint.MEETING_TYPE_UPDATE)
+    suspend fun updateMeetingType(
+        @Path("meetingTypeId") meetingTypeId: Long,
+        @Body request: com.swifttechnology.bookingsystem.features.booking.data.dtos.MeetingTypeRequestDTO
+    ): GlobalResponse<Unit>
+
+    @PATCH(APIEndpoint.MEETING_TYPE_CHANGE_STATUS)
+    suspend fun changeMeetingTypeStatus(
+        @Path("meetingTypeId") meetingTypeId: Long,
+        @Body request: com.swifttechnology.bookingsystem.features.meetingrooms.data.dtos.StatusChangeRequestDTO
+    ): GlobalResponse<Unit>
+
     @GET(APIEndpoint.MEETING_TYPE_GET_ALL)
     suspend fun getAllMeetingTypes(): GlobalResponse<List<MeetingTypeDTO>>
 }

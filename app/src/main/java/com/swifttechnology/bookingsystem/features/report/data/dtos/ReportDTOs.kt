@@ -14,9 +14,21 @@ data class ReportDataRequestDTO(
     val sortDir: String? = null,
     val startDate: String? = null,   // yyyy-MM-dd
     val endDate: String? = null,     // yyyy-MM-dd
-    val meetingType: String? = null, // INTERNAL | CLIENT | EXECUTIVE
+    val meetingTypeId: Long? = null, // Matches OpenAPI spec
     val roomName: String? = null,
     val createdBy: String? = null
+)
+
+/**
+ * Paginated report list response.
+ */
+data class ReportPageDTO(
+    val content: List<ReportItemDTO>? = null,
+    val totalElements: Long? = null,
+    val totalPages: Int? = null,
+    val pageNo: Int? = null,
+    val pageSize: Int? = null,
+    val last: Boolean? = null
 )
 
 /**

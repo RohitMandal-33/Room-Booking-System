@@ -69,7 +69,7 @@ fun CalendarScreen(
     searchQuery: String,
     onNavigate: (String) -> Unit,
     onProceedWithDetails: (String, String, String, String) -> Unit = { _, _, _, _ -> },
-    onEditMeeting: (MeetingEvent) -> Unit = {},
+    onEditMeeting: (MeetingEvent, String) -> Unit = { _, _ -> },
     todayTrigger: Int = 0,
     viewModel: CalendarViewModel = hiltViewModel(),
     pickerViewModel: DayTimePickerViewModel = hiltViewModel()
@@ -168,8 +168,8 @@ fun CalendarScreen(
             }
         },
         onTimePickerConfirm = pickerViewModel::initializePicker,
-        onEditMeeting = { event ->
-            onEditMeeting(event)
+        onEditMeeting = { event, scope ->
+            onEditMeeting(event, scope)
             viewModel.onEventSelected(null)
         }
     )
@@ -199,7 +199,7 @@ private fun CalendarContent(
     onPickerCancelBooking: () -> Unit,
     onProceed: () -> Unit,
     onTimePickerConfirm: (Int, Int) -> Unit,
-    onEditMeeting: (MeetingEvent) -> Unit = {}
+    onEditMeeting: (MeetingEvent, String) -> Unit = { _, _ -> }
 ) {
     var showStartPicker by remember { mutableStateOf(false) }
     var showEndPicker   by remember { mutableStateOf(false) }
@@ -364,7 +364,7 @@ private fun CalendarContent(
         MeetingDetailBottomSheet(
             event = event,
             onDismiss = { onEventSelected(null) },
-            onEdit = { onEditMeeting(event) }
+            onEdit = { scope -> onEditMeeting(event, scope) }
         )
     }
 }

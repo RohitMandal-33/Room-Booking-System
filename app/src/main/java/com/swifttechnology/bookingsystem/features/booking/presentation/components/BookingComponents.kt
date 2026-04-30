@@ -229,6 +229,8 @@ fun BookingDropdownField(
     options: List<String>,
     leadingIcon: (@Composable () -> Unit)? = null,
     optionLeadingIcons: Map<String, @Composable () -> Unit>? = null,
+    /** Icon shown inside the trigger field after a selection is made */
+    selectedLeadingIcon: (@Composable () -> Unit)? = null,
     onExpandChange: (Boolean) -> Unit,
     onOptionSelected: (String) -> Unit
 ) {
@@ -275,7 +277,13 @@ fun BookingDropdownField(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.weight(1f)
                     ) {
-                        leadingIcon?.invoke()
+                        // If a selection was made and a per-selection icon is provided, show it;
+                        // otherwise fall back to the generic leading icon
+                        if (value.isNotEmpty() && selectedLeadingIcon != null) {
+                            selectedLeadingIcon()
+                        } else {
+                            leadingIcon?.invoke()
+                        }
                         Text(
                             text = value.ifEmpty { placeholder },
                             fontSize = 14.sp,

@@ -26,6 +26,15 @@ class BookingRepositoryImpl @Inject constructor(
         response.data
     }
 
+    override suspend fun updateRecurrenceBooking(
+        recurrenceId: String,
+        request: RoomBookingRequestDTO
+    ): Result<BookingResponseDTO> = runCatching {
+        val response = api.updateRecurrenceBooking(recurrenceId, request)
+        if (!response.success || response.data == null) throw Exception(response.message)
+        response.data
+    }
+
     override suspend fun getMyBookings(): Result<List<BookingResponseDTO>> = runCatching {
         val response = api.getMyBookings()
         if (!response.success || response.data == null) throw Exception(response.message)
@@ -54,6 +63,27 @@ class BookingRepositoryImpl @Inject constructor(
         val response = api.getAllMeetingTypes()
         if (!response.success || response.data == null) throw Exception(response.message)
         response.data
+    }
+
+    override suspend fun createMeetingType(request: com.swifttechnology.bookingsystem.features.booking.data.dtos.MeetingTypeRequestDTO): Result<Unit> = runCatching {
+        val response = api.createMeetingType(request)
+        if (!response.success) throw Exception(response.message)
+    }
+
+    override suspend fun updateMeetingType(
+        meetingTypeId: Long,
+        request: com.swifttechnology.bookingsystem.features.booking.data.dtos.MeetingTypeRequestDTO
+    ): Result<Unit> = runCatching {
+        val response = api.updateMeetingType(meetingTypeId, request)
+        if (!response.success) throw Exception(response.message)
+    }
+
+    override suspend fun changeMeetingTypeStatus(meetingTypeId: Long, status: String): Result<Unit> = runCatching {
+        val response = api.changeMeetingTypeStatus(
+            meetingTypeId,
+            com.swifttechnology.bookingsystem.features.meetingrooms.data.dtos.StatusChangeRequestDTO(status = status)
+        )
+        if (!response.success) throw Exception(response.message)
     }
 
     override suspend fun getCalendarMonth(date: String): Result<List<BookingResponseDTO>> = runCatching {

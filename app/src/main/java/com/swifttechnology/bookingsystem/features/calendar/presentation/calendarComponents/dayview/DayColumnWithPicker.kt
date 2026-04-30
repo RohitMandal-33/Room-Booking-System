@@ -61,6 +61,7 @@ fun DayColumnWithPicker(
     selectedDate: LocalDate,
     regularEvents: List<MeetingEvent>,
     pickerState: DayPickerUiState,
+    bookedEventColor: Color? = null,
     modifier: Modifier = Modifier,
     onGridLongPress: (Int) -> Unit,
     onEventClick: (MeetingEvent) -> Unit = {},
@@ -273,7 +274,7 @@ fun DayColumnWithPicker(
                                 .height(with(density) { heightPx.toDp() })
                                 .padding(horizontal = 2.dp, vertical = 1.dp)
                                 .clip(RoundedCornerShape(6.dp))
-                                .background((event.backendColor ?: event.color).copy(alpha = 0.75f))
+                                .background((bookedEventColor ?: event.backendColor ?: event.color).copy(alpha = 0.75f))
                                 .pointerInput(event) {
                                     detectTapGestures(
                                         onTap = { onEventClick(event) },
@@ -326,17 +327,5 @@ fun DayColumnWithPicker(
             }
         }
 
-        // Time overlay shown during drag
-        if (pickerState.isDragging) {
-            pickerState.previewRange?.let { preview ->
-                TimeOverlay(
-                    range = preview,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(end = 12.dp, top = 12.dp)
-                        .zIndex(20f)
-                )
-            }
-        }
     }
 }

@@ -4,8 +4,9 @@ import com.swifttechnology.bookingsystem.features.participants.domain.model.Part
 import com.swifttechnology.bookingsystem.navigation.ScreenRoutes
 import com.swifttechnology.bookingsystem.shared.components.SidebarItem
 import com.swifttechnology.bookingsystem.shared.components.defaultSidebarItems
+import com.swifttechnology.bookingsystem.features.department.domain.model.Department
 
-enum class ParticipantsTab { ALL_PARTICIPANTS, CUSTOM_GROUPS }
+enum class ParticipantsTab { ALL_PARTICIPANTS, CUSTOM_GROUPS, DEPARTMENTS }
 
 data class ParticipantsUiState(
     val sidebarItems: List<SidebarItem> = defaultSidebarItems.map { it.copy(isActive = it.route == ScreenRoutes.PARTICIPANTS) },
@@ -17,6 +18,7 @@ data class ParticipantsUiState(
     val error: String? = null,
     val participants: List<Participant> = emptyList(),
     val customGroups: List<com.swifttechnology.bookingsystem.features.participants.domain.model.CustomGroup> = emptyList(),
+    val departments: List<Department> = emptyList(),
     val expandedCustomGroupId: Long? = null,
     val resolvedUserNames: Map<Long, String> = emptyMap()
 )
