@@ -21,6 +21,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -55,7 +56,7 @@ fun DayStrip(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.surface)
     ) {
         // Only show header (Month/Year + arrows) if navigation callbacks are provided.
         // This removes the non-functional/duplicate header in screens like CalendarScreen.
@@ -74,14 +75,14 @@ fun DayStrip(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                         contentDescription = "Previous week",
-                        tint = Color(0xFF333333)
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 Text(
                     text = monthYearLabel,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF111111)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 IconButton(
                     onClick = { onNextWeek?.invoke() },
@@ -90,7 +91,7 @@ fun DayStrip(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                         contentDescription = "Next week",
-                        tint = Color(0xFF333333)
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -117,7 +118,7 @@ fun DayStrip(
                         text = day.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)
                             .take(3),
                         fontSize = 10.sp,
-                        color = Color(0xFF888888),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal
                     )
                     Spacer(modifier = Modifier.height(2.dp))
@@ -125,19 +126,29 @@ fun DayStrip(
                         modifier = Modifier
                             .size(30.dp)
                             .clip(CircleShape)
-                            .background(if (isSelected && isToday) PurplePrimary else if (isSelected) Color.Black else Color.Transparent),
+                            .background(
+                                if (isSelected && isToday) PurplePrimary
+                                else if (isSelected) MaterialTheme.colorScheme.primary
+                                else Color.Transparent
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = day.dayOfMonth.toString(),
                             fontSize = 13.sp,
                             fontWeight = if (isSelected || day == LocalDate.now()) FontWeight.Bold else FontWeight.Normal,
-                            color = if (isSelected) Color.White else if (day == LocalDate.now()) PurplePrimary else Color(0xFF111111)
+                            color = if (isSelected) {
+                                MaterialTheme.colorScheme.onPrimary
+                            } else if (day == LocalDate.now()) {
+                                PurplePrimary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            }
                         )
                     }
                 }
             }
         }
-        HorizontalDivider(color = Color(0xFFEEEEEE))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     }
 }

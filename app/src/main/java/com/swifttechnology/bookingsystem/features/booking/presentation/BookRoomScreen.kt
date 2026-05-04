@@ -481,7 +481,7 @@ fun BookRoomScreen(
                                 Text(
                                     text = day,
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = if (isSelected) Color.White else Neutral700
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else Neutral700
                                 )
                             }
                         }

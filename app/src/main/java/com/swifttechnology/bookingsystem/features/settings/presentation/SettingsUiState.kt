@@ -5,6 +5,7 @@ import com.swifttechnology.bookingsystem.shared.components.SidebarItem
 import com.swifttechnology.bookingsystem.shared.components.defaultSidebarItems
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.MeetingTypeDTO
 import com.swifttechnology.bookingsystem.features.department.domain.model.Department
+import com.swifttechnology.bookingsystem.core.designsystem.ThemeMode
 
 data class SettingsUiState(
     val sidebarItems: List<SidebarItem> = defaultSidebarItems.map { it.copy(isActive = it.route == ScreenRoutes.SETTINGS) },
@@ -15,6 +16,8 @@ data class SettingsUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val successMessage: String? = null,
+
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
     
     // Global Rules Mock State
     val durationMin: String = "30",

@@ -186,8 +186,8 @@ fun AnnouncementsScreen(
         if (!isEditable) {
             FloatingActionButton(
                 onClick         = viewModel::openAddSheet,
-                containerColor  = colors.deepBlack,
-                contentColor    = Color.White,
+                containerColor  = MaterialTheme.colorScheme.primary,
+                contentColor    = MaterialTheme.colorScheme.onPrimary,
                 shape           = CircleShape,
                 modifier        = Modifier
                     .align(Alignment.BottomEnd)
@@ -239,7 +239,7 @@ fun AnnouncementsScreen(
                     .padding(horizontal = Spacing.lg)
                     .navigationBarsPadding()
                     .background(
-                        color = if (isError) Color(0xFFDC2626) else Color(0xFF1C1C1E),
+                        color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.inverseSurface,
                         shape = RoundedCornerShape(14.dp)
                     )
                     .padding(horizontal = 20.dp, vertical = 14.dp),
@@ -247,7 +247,7 @@ fun AnnouncementsScreen(
             ) {
                 Text(
                     text       = uiState.successMessage ?: uiState.operationError ?: uiState.errorMessage ?: "",
-                    color      = Color.White,
+                    color      = if (isError) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.inverseOnSurface,
                     fontSize   = 14.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -314,7 +314,7 @@ private fun AnnouncementTabBar(
                 ) {
                     Text(
                         text  = tab.name.lowercase().replaceFirstChar { it.uppercase() },
-                        color = if (isSelected) Color.White else colors.textSecondary,
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else colors.textSecondary,
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                         )

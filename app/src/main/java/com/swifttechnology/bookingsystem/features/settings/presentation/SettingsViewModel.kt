@@ -14,12 +14,15 @@ import androidx.lifecycle.viewModelScope
 import com.swifttechnology.bookingsystem.features.department.domain.repository.DepartmentRepository
 import com.swifttechnology.bookingsystem.features.booking.domain.repository.BookingRepository
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.MeetingTypeRequestDTO
+import com.swifttechnology.bookingsystem.core.designsystem.ThemeMode
+import com.swifttechnology.bookingsystem.core.storage.UserDefaultsManager
 import kotlinx.coroutines.launch
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val bookingRepository: BookingRepository
+    private val bookingRepository: BookingRepository,
+    private val userDefaultsManager: UserDefaultsManager
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
@@ -39,6 +42,19 @@ class SettingsViewModel @Inject constructor(
 
     init {
         fetchMeetingTypes()
+        observeThemeMode()
+    }
+
+    private fun observeThemeMode() {
+        viewModelScope.launch {
+            userDefaultsManager.themeMode.collect { mode ->
+                _uiState.update { it.copy(themeMode = mode) }
+            }
+        }
+    }
+
+    fun setThemeMode(mode: ThemeMode) {
+        viewModelScope.launch { userDefaultsManager.setThemeMode(mode) }
     }
 
     private fun fetchMeetingTypes() {

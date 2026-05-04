@@ -27,8 +27,9 @@ import java.time.LocalDate
 import java.time.YearMonth
 
 private val PurplePrimary = Color(0xFF6C3EE8)
-private val MaxVisibleEvents = 4
+private val MaxVisibleEvents = 3
 private val TileCornerRadius = 10.dp
+private val PillHeight = 14.dp
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -47,14 +48,13 @@ fun MonthView(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.surface)
     ) {
         for (row in 0 until 6) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(95.dp)
+                    .weight(1f)
             ) {
 
                 for (col in 0 until 7) {
@@ -72,7 +72,6 @@ fun MonthView(
                             events = dayEvents,
                             modifier = Modifier
                                 .weight(1f)
-                                .fillMaxHeight()
                                 .padding(2.dp),
                             onClick = { onDateClick(date) },
                             onEventClick = onEventClick
@@ -90,7 +89,6 @@ fun MonthView(
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .fillMaxHeight()
                                 .padding(2.dp)
                                 .clip(RoundedCornerShape(TileCornerRadius))
                                 .border(
@@ -131,7 +129,7 @@ private fun MonthDayTile(
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(TileCornerRadius))
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.surface)
             .border(
                 width = if (isSelected) 1.5.dp else 0.5.dp,
                 color = if (isSelected) PurplePrimary else MaterialTheme.customColors.divider,
@@ -151,7 +149,9 @@ private fun MonthDayTile(
                         modifier = Modifier
                             .size(24.dp)
                             .clip(CircleShape)
-                            .background(if (isToday) PurplePrimary else Color.Black),
+                            .background(
+                                if (isToday) PurplePrimary else MaterialTheme.colorScheme.primary
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -159,7 +159,7 @@ private fun MonthDayTile(
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                 } else {
@@ -184,11 +184,11 @@ private fun MonthDayTile(
             // Overflow indicator (+N)
             if (overflowCount > 0) {
                 Text(
-                    text = "+$overflowCount",
+                    text = "+$overflowCount more",
                     color = PurplePrimary,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 11.sp,
-                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 2.dp)
+                    fontSize = 10.sp,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
             }
 
@@ -206,9 +206,10 @@ private fun EventPill(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(18.dp)
+            .height(PillHeight)
             .clip(RoundedCornerShape(4.dp))
-            .background(pillColor.copy(alpha = 0.9f))
+            .background(pillColor.copy(alpha = 0.3f))
+            .border(1.dp, pillColor, RoundedCornerShape(4.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = 4.dp),
         contentAlignment = Alignment.CenterStart
@@ -216,8 +217,8 @@ private fun EventPill(
         Text(
             text = event.title,
             style = MaterialTheme.typography.labelSmall,
-            fontSize = 9.sp,
-            color = Color.White,
+            fontSize = 8.sp,
+            color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )

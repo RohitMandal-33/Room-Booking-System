@@ -32,8 +32,6 @@ import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
 private val PurplePrimary = Color(0xFF6C3EE8)
-private val PurpleBg = Color(0xFFFCF9FF)
-private val BorderColor = Color(0xFFD6D5D4)
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -112,6 +110,8 @@ private fun DayCell(
 ) {
     val isToday = date == LocalDate.now()
     val dayOfWeekLabel = date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()).uppercase()
+    val isPrimarySelected = isLeftSelected
+    val isSecondarySelected = isRightSelected
 
     Column(
         modifier = modifier
@@ -123,43 +123,69 @@ private fun DayCell(
         Text(
             text = dayOfWeekLabel.take(3),
             fontSize = 10.sp,
-            fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
+            fontWeight = if (isToday) FontWeight.SemiBold else FontWeight.Normal,
             color = if (isToday) PurplePrimary else MaterialTheme.customColors.textSecondary,
             textAlign = TextAlign.Center
         )
 
-        val pillBgColor = Color(0xFFEBEBEB)
-
+        val pillBgColor = MaterialTheme.colorScheme.surfaceVariant
         Box(
             modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
-            if (isLeftSelected || isRightSelected) {
-                Row(modifier = Modifier.fillMaxWidth().height(30.dp)) {
-                    // Left half (connects to left side if this is the right day)
-                    Box(modifier = Modifier.weight(1f).fillMaxHeight().background(
-                        if (isRightSelected && date.dayOfWeek != DayOfWeek.SUNDAY) pillBgColor else Color.Transparent
-                    ))
-                    // Right half (connects to right side if this is the left day)
-                    Box(modifier = Modifier.weight(1f).fillMaxHeight().background(
-                        if (isLeftSelected && date.dayOfWeek != DayOfWeek.SATURDAY) pillBgColor else Color.Transparent
-                    ))
+            if (isPrimarySelected || isSecondarySelected) {
+                // Connected band across the selected 2-day range.
+                // Height matches the badge (30.dp) and the right edge is rounded on the second day.
+                val bandCorner = 15.dp // badge is 30.dp -> radius 15.dp
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(30.dp)
+                ) {
+                    // Left half of this cell
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .background(
+                                when {
+                                    isSecondarySelected -> pillBgColor // connects from previous (primary) day
+                                    else -> Color.Transparent
+                                }
+                            )
+                    )
+                    // Right half of this cell
+                    val rightHalfModifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .then(
+                            if (isSecondarySelected) {
+                                Modifier.clip(RoundedCornerShape(topEnd = bandCorner, bottomEnd = bandCorner))
+                            } else {
+                                Modifier
+                            }
+                        )
+                        .background(
+                            when {
+                                isPrimarySelected -> pillBgColor // connects into next (secondary) day
+                                isSecondarySelected -> pillBgColor // rounded end happens via clip above
+                                else -> Color.Transparent
+                            }
+                        )
+                    Box(modifier = rightHalfModifier)
                 }
-                // Center circle to round the grey background at the day's position
-                Box(modifier = Modifier.size(30.dp).background(pillBgColor, CircleShape))
             }
 
             val circleColor = when {
-                isLeftSelected && isToday -> PurplePrimary
-                isLeftSelected -> Color.Black
+                isPrimarySelected && isToday -> PurplePrimary
+                isPrimarySelected -> Color.Black
                 else -> Color.Transparent
             }
-            
+
             val textColor = when {
-                isLeftSelected -> Color.White
+                isPrimarySelected -> Color.White
                 isToday -> PurplePrimary
-                isRightSelected -> Color.Black
-                else -> MaterialTheme.customColors.textPrimary
+                else -> MaterialTheme.colorScheme.onSurface
             }
 
             Box(
@@ -172,7 +198,7 @@ private fun DayCell(
                 Text(
                     text = date.dayOfMonth.toString(),
                     fontSize = 13.sp,
-                    fontWeight = if (isLeftSelected || isRightSelected || isToday) FontWeight.Bold else FontWeight.Normal,
+                    fontWeight = if (isPrimarySelected || isToday) FontWeight.Bold else FontWeight.Normal,
                     color = textColor,
                     textAlign = TextAlign.Center
                 )
@@ -229,12 +255,13 @@ private fun WeekCalendarGrid(
         else "${it - 12} PM"
     }
 
+    val gridBorder = MaterialTheme.colorScheme.outline
     Box(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
             .clip(RoundedCornerShape(12.dp))
-            .border(1.dp, BorderColor, RoundedCornerShape(12.dp))
+            .border(1.dp, gridBorder, RoundedCornerShape(12.dp))
     ) {
         Row(
             modifier = Modifier
@@ -245,15 +272,15 @@ private fun WeekCalendarGrid(
             Column(
                 modifier = Modifier
                     .width(50.dp)
-                    .background(Color.White)
+                    .background(MaterialTheme.colorScheme.surface)
             ) {
                 timeSlots.forEachIndexed { index, label ->
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(60.dp)
-                            .border(width = 0.5.dp, color = BorderColor.copy(alpha = 0.5f))
-                            .background(Color.White),
+                            .border(width = 0.5.dp, color = gridBorder.copy(alpha = 0.5f))
+                            .background(MaterialTheme.colorScheme.surface),
                         contentAlignment = Alignment.TopCenter
                     ) {
                         Text(
@@ -296,10 +323,12 @@ private fun DayColumn(
     modifier: Modifier = Modifier,
     isLast: Boolean = false
 ) {
+    val columnBg = MaterialTheme.colorScheme.surfaceVariant
+    val cellBorder = MaterialTheme.colorScheme.outline
     Box(
         modifier = modifier
-            .background(PurpleBg)
-            .border(width = 0.5.dp, color = BorderColor.copy(alpha = 0.5f))
+            .background(columnBg)
+            .border(width = 0.5.dp, color = cellBorder.copy(alpha = 0.5f))
     ) {
         Column {
             for (hour in 0..23) {
@@ -307,8 +336,8 @@ private fun DayColumn(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(60.dp)
-                        .border(width = 0.5.dp, color = BorderColor.copy(alpha = 0.5f))
-                        .background(PurpleBg)
+                        .border(width = 0.5.dp, color = cellBorder.copy(alpha = 0.5f))
+                        .background(columnBg)
                 )
             }
         }
@@ -335,6 +364,7 @@ private fun DayColumn(
                 Text(
                     text = event.title,
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )

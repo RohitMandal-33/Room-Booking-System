@@ -17,9 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -357,22 +354,26 @@ private fun MonthView(
 
     val cells = buildMonthCells(today, displayYearMonth, events)
 
-    LazyVerticalGrid(
-        columns               = GridCells.Fixed(7),
-        modifier              = Modifier
-            .fillMaxWidth()
-            .height(240.dp),
-        verticalArrangement   = Arrangement.spacedBy(2.dp),
-        horizontalArrangement = Arrangement.spacedBy(0.dp),
-        userScrollEnabled     = false
+    // Full month grid (non-lazy): a fixed-height LazyVerticalGrid hid most rows when scrolling was disabled.
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        items(cells) { cell ->
-            MonthDayCell(
-                cell       = cell,
-                rangeStart = rangeStart,
-                rangeEnd   = rangeEnd,
-                onDayTap   = onDayTap
-            )
+        cells.chunked(7).forEach { week ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(0.dp)
+            ) {
+                week.forEach { cell ->
+                    MonthDayCell(
+                        cell = cell,
+                        rangeStart = rangeStart,
+                        rangeEnd = rangeEnd,
+                        onDayTap = onDayTap,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
         }
     }
 }
@@ -387,7 +388,8 @@ private fun MonthDayCell(
     cell: CalendarDayCell,
     rangeStart: LocalDate?,
     rangeEnd: LocalDate?,
-    onDayTap: (LocalDate) -> Unit
+    onDayTap: (LocalDate) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val effectiveEnd = rangeEnd ?: rangeStart
 
@@ -419,7 +421,7 @@ private fun MonthDayCell(
     }
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .aspectRatio(1f)
             .clip(shape)
             .background(bgColor)

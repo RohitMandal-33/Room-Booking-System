@@ -31,6 +31,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -104,7 +105,7 @@ fun ParticipantCard(
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape  = RoundedCornerShape(20.dp),
-            color  = Color.White,
+            color  = MaterialTheme.colorScheme.surface,
             border = BorderStroke(1.dp, Color(0xFF3C3C43).copy(alpha = 0.15f))
         ) {
             Column(

@@ -99,7 +99,7 @@ fun AddCustomGroupScreen(
     }
 
     Scaffold(
-        containerColor = Color.White
+        containerColor = MaterialTheme.colorScheme.surface
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -245,7 +245,7 @@ fun AddCustomGroupScreen(
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
                     .padding(horizontal = Spacing.lg, vertical = Spacing.lg)
-                    .background(Color.White)
+                    .background(MaterialTheme.colorScheme.surface)
             ) {
                 Button(
                     onClick = {
@@ -264,7 +264,7 @@ fun AddCustomGroupScreen(
                 ) {
                     if (uiState.isLoading) {
                         CircularProgressIndicator(
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(24.dp)
                         )
                     } else {
@@ -272,7 +272,7 @@ fun AddCustomGroupScreen(
                             text = if (isEditMode) "Save Changes" else "Continue",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                 }

@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -14,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -42,6 +44,9 @@ fun FilterChipStrip(vm: ReportsAnalyticsViewModel) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.surface)
             .padding(horizontal = 20.dp, vertical = 10.dp)
     ) {
         Row(
@@ -115,6 +120,9 @@ fun FilterChipStrip(vm: ReportsAnalyticsViewModel) {
 @Composable
 fun MeetingTypeFilterChip(vm: ReportsAnalyticsViewModel) {
     var expanded by remember { mutableStateOf(false) }
+    val menuMaxH = LocalConfiguration.current.screenHeightDp.dp * 0.5f
+    val menuMaxW =
+        minOf(420.dp, LocalConfiguration.current.screenWidthDp.dp - 32.dp).coerceAtLeast(160.dp)
     val selected = vm.selectedMeetingType
     val isActive = selected != null
     val displayText = selected?.name ?: "Type"
@@ -128,7 +136,10 @@ fun MeetingTypeFilterChip(vm: ReportsAnalyticsViewModel) {
                     if (isActive) Color(0xFFAFA9EC) else ColorChipBorder,
                     RoundedCornerShape(20.dp)
                 )
-                .background(if (isActive) Color(0xFFEEEDFE) else Color.White)
+                .background(
+                    if (isActive) MaterialTheme.colorScheme.primaryContainer
+                    else MaterialTheme.colorScheme.surface
+                )
                 .clickable { expanded = !expanded }
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -161,8 +172,10 @@ fun MeetingTypeFilterChip(vm: ReportsAnalyticsViewModel) {
             expanded = expanded,
             onDismissRequest = { expanded = false },
             modifier = Modifier
-                .background(Color.White)
-                .widthIn(min = 160.dp)
+                .widthIn(min = 160.dp, max = menuMaxW)
+                .heightIn(max = menuMaxH)
+                .background(MaterialTheme.colorScheme.surface)
+                .verticalScroll(rememberScrollState())
         ) {
             DropdownMenuItem(
                 text = { Text("All", style = TextStyle(fontSize = 14.sp)) },
@@ -182,7 +195,10 @@ fun MeetingTypeFilterChip(vm: ReportsAnalyticsViewModel) {
                         )
                     },
                     onClick = { vm.onMeetingTypeSelected(type); expanded = false },
-                    modifier = Modifier.background(if (isSelected) Color(0xFFEEEDFE) else Color.White)
+                    modifier = Modifier.background(
+                        if (isSelected) MaterialTheme.colorScheme.primaryContainer
+                        else MaterialTheme.colorScheme.surface
+                    )
                 )
             }
         }
@@ -200,6 +216,9 @@ fun DropdownFilterChip(
     onSelect: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val menuMaxH = LocalConfiguration.current.screenHeightDp.dp * 0.5f
+    val menuMaxW =
+        minOf(420.dp, LocalConfiguration.current.screenWidthDp.dp - 32.dp).coerceAtLeast(160.dp)
     val isActive = selected != "All" && selected != "Asc"
     val displayText = if (isActive) selected else label
 
@@ -212,7 +231,10 @@ fun DropdownFilterChip(
                     if (isActive) Color(0xFFAFA9EC) else ColorChipBorder,
                     RoundedCornerShape(20.dp)
                 )
-                .background(if (isActive) Color(0xFFEEEDFE) else Color.White)
+                .background(
+                    if (isActive) MaterialTheme.colorScheme.primaryContainer
+                    else MaterialTheme.colorScheme.surface
+                )
                 .clickable { expanded = !expanded }
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -245,8 +267,10 @@ fun DropdownFilterChip(
             expanded = expanded,
             onDismissRequest = { expanded = false },
             modifier = Modifier
-                .background(Color.White)
-                .widthIn(min = 160.dp)
+                .widthIn(min = 160.dp, max = menuMaxW)
+                .heightIn(max = menuMaxH)
+                .background(MaterialTheme.colorScheme.surface)
+                .verticalScroll(rememberScrollState())
         ) {
             options.forEach { option ->
                 val isSelected = option == selected
@@ -262,7 +286,10 @@ fun DropdownFilterChip(
                         )
                     },
                     onClick = { onSelect(option); expanded = false },
-                    modifier = Modifier.background(if (isSelected) Color(0xFFEEEDFE) else Color.White)
+                    modifier = Modifier.background(
+                        if (isSelected) MaterialTheme.colorScheme.primaryContainer
+                        else MaterialTheme.colorScheme.surface
+                    )
                 )
             }
         }

@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -95,7 +96,8 @@ fun ActivityTableCard(vm: ReportsAnalyticsViewModel) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .background(ColorSurface)
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
     ) {
 
         // ── Header bar: date range + Columns button ──────────────────────────
@@ -147,7 +149,7 @@ fun ActivityTableCard(vm: ReportsAnalyticsViewModel) {
                 modifier = Modifier
                     .clip(RoundedCornerShape(12.dp))
                     .border(1.dp, ColorChipBorder, RoundedCornerShape(12.dp))
-                    .background(Color.White)
+                    .background(MaterialTheme.colorScheme.surface)
                     .clickable { showColumnsSheet = true }
                     .padding(horizontal = 16.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -240,7 +242,7 @@ fun ActivityTableCard(vm: ReportsAnalyticsViewModel) {
     if (showColumnsSheet) {
         ModalBottomSheet(
             onDismissRequest = { showColumnsSheet = false },
-            containerColor   = ColorSurface
+            containerColor   = MaterialTheme.colorScheme.surface
         ) {
             Column(
                 modifier = Modifier
@@ -310,7 +312,7 @@ internal fun TableHeaderRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.surface)
             .padding(vertical = 14.dp)
     ) {
         activeColumns.forEachIndexed { index, col ->
@@ -360,7 +362,10 @@ internal fun TableBodyRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(if (isEven) Color.White else ColorSurface)
+            .background(
+                if (isEven) MaterialTheme.colorScheme.surface
+                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+            )
             .padding(vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

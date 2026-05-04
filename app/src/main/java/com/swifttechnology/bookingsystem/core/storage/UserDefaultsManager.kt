@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.swifttechnology.bookingsystem.core.designsystem.ThemeMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -16,12 +17,43 @@ class UserDefaultsManager(private val context: Context) {
 
     // ── Theme ──────────────────────────────────────────────────────────────
     private val DARK_MODE_KEY: Preferences.Key<Boolean> = booleanPreferencesKey("dark_mode")
+    private val THEME_MODE_KEY: Preferences.Key<String> = stringPreferencesKey("theme_mode")
 
     val isDarkModeEnabled: Flow<Boolean> =
         context.userPrefsStore.data.map { it[DARK_MODE_KEY] ?: false }
 
     suspend fun setDarkMode(enabled: Boolean) {
         context.userPrefsStore.edit { it[DARK_MODE_KEY] = enabled }
+    }
+
+    val themeMode: Flow<ThemeMode> =
+        context.userPrefsStore.data.map { prefs ->
+            val stored = prefs[THEME_MODE_KEY]
+            when (stored?.uppercase()) {
+                "LIGHT" -> ThemeMode.LIGHT
+                "DARK" -> ThemeMode.DARK
+                "SYSTEM" -> ThemeMode.SYSTEM
+                null -> {
+                    // Backward compatible default:
+                    // if old boolean was enabled, treat it as DARK; otherwise SYSTEM.
+                    if (prefs[DARK_MODE_KEY] == true) ThemeMode.DARK else ThemeMode.SYSTEM
+                }
+                else -> ThemeMode.SYSTEM
+            }
+        }
+
+    suspend fun setThemeMode(mode: ThemeMode) {
+        context.userPrefsStore.edit { prefs ->
+            prefs[THEME_MODE_KEY] = mode.name
+            // Keep legacy boolean in sync for any old readers.
+            when (mode) {
+                ThemeMode.DARK -> prefs[DARK_MODE_KEY] = true
+                ThemeMode.LIGHT -> prefs[DARK_MODE_KEY] = false
+                ThemeMode.SYSTEM -> {
+                    // don't force a value; leave legacy key as-is
+                }
+            }
+        }
     }
 
     // ── Locale ─────────────────────────────────────────────────────────────

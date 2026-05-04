@@ -4,6 +4,7 @@ import android.content.Context
 import com.swifttechnology.bookingsystem.core.network.RefreshTokenApi
 import com.swifttechnology.bookingsystem.core.storage.TokenDataStore
 import com.swifttechnology.bookingsystem.core.storage.TokenStorage
+import com.swifttechnology.bookingsystem.core.storage.UserDefaultsManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -20,4 +21,10 @@ object StorageModule {
         @ApplicationContext context: Context,
         refreshTokenApi: RefreshTokenApi
     ): TokenStorage = TokenDataStore(context, refreshTokenApi)
+
+    @Provides
+    @Singleton
+    fun provideUserDefaultsManager(
+        @ApplicationContext context: Context
+    ): UserDefaultsManager = UserDefaultsManager(context)
 }

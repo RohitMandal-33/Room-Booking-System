@@ -29,6 +29,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -294,6 +295,7 @@ private fun CalendarContent(
                         selectedDate = uiState.selectedDate,
                         regularEvents = filteredEvents,
                         pickerState = pickerUiState,
+                        showBlockedSlots = false,
                         onGridLongPress = onGridLongPress,
                         onEventClick = { onEventSelected(it) },
                         onDragStarted = onPickerDragStarted,
@@ -408,19 +410,22 @@ private fun TopBar(
                         text = view.name.lowercase().replaceFirstChar { it.uppercase() },
                         fontSize = 12.sp,
                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                        color = if (isSelected) Color.White else MaterialTheme.customColors.textSecondary
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.customColors.textSecondary
                     )
                 }
             }
         }
 
         if (showRoomPicker) {
+            val menuMaxH = LocalConfiguration.current.screenHeightDp.dp * 0.5f
+            val menuMaxW =
+                minOf(400.dp, LocalConfiguration.current.screenWidthDp.dp - 48.dp).coerceAtLeast(180.dp)
             Box {
                 Row(
                     modifier = Modifier
                         .clip(CircleShape)
                         .border(1.dp, Color(0xFF9D74FE), CircleShape)
-                        .background(Color.White)
+                        .background(MaterialTheme.colorScheme.surface)
                         .clickable { expanded = true }
                         .padding(horizontal = 12.dp)
                         .height(32.dp),
@@ -443,7 +448,10 @@ private fun TopBar(
 
                 DropdownMenu(
                     expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                    onDismissRequest = { expanded = false },
+                    modifier = Modifier
+                        .widthIn(max = menuMaxW)
+                        .heightIn(max = menuMaxH)
                 ) {
                     rooms.forEach { room ->
                         DropdownMenuItem(
@@ -488,16 +496,44 @@ private fun NavigationHeader(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = Spacing.md, vertical = Spacing.sm),
-        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.customColors.textPrimary
-        )
+        IconButton(
+            onClick = onPrev,
+            modifier = Modifier.size(40.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.ChevronLeft,
+                contentDescription = "Previous",
+                tint = MaterialTheme.customColors.textPrimary
+            )
+        }
 
+        Box(
+            modifier = Modifier.weight(1f),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.customColors.textPrimary,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        IconButton(
+            onClick = onNext,
+            modifier = Modifier.size(40.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = "Next",
+                tint = MaterialTheme.customColors.textPrimary
+            )
+        }
     }
 }
 

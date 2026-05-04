@@ -48,7 +48,7 @@ fun TotalBookingsRow(room: String) {
             shape    = RoundedCornerShape(10.dp),
             colors   = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
-            Text("Book $room", style = MaterialTheme.typography.labelLarge, color = Color.White)
+            Text("Book $room", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onPrimary)
         }
     }
 }

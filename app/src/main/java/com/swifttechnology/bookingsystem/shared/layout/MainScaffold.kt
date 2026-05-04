@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.input.pointer.pointerInput
+import com.swifttechnology.bookingsystem.core.designsystem.Layout
 import com.swifttechnology.bookingsystem.core.designsystem.Spacing
+import com.swifttechnology.bookingsystem.core.designsystem.adaptiveHorizontalScreenPadding
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
@@ -56,6 +58,7 @@ fun MainScaffold(
     val scope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     var showLogoutDialog by rememberSaveable { mutableStateOf(false) }
+    val horizontalScreenPadding = adaptiveHorizontalScreenPadding()
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -64,7 +67,7 @@ fun MainScaffold(
             ModalDrawerSheet(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .width(280.dp),
+                    .width(Layout.navigationDrawerWidth),
                 windowInsets = WindowInsets.systemBars,
                 drawerContainerColor = MaterialTheme.customColors.neutral100
             ) {
@@ -109,7 +112,11 @@ fun MainScaffold(
                 Column(
                     modifier = modifier
                         .padding(innerPadding)
-                        .padding(if (showTopBar) Spacing.md else 0.dp)
+                        .padding(
+                            start = horizontalScreenPadding,
+                            end = horizontalScreenPadding,
+                            top = if (showTopBar) Spacing.sm else 0.dp
+                        )
                         .fillMaxSize()
                 ) {
                     if (showTopBar) {
@@ -123,7 +130,7 @@ fun MainScaffold(
                             onEditClick = onEditClick,
                             onBackClick = onBackClick
                         )
-                        Spacer(modifier = Modifier.height(Spacing.md))
+                        Spacer(modifier = Modifier.height(Spacing.sm))
                     }
                     content()
                 }

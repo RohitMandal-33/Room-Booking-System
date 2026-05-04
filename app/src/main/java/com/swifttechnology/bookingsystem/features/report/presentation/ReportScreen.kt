@@ -10,6 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MeetingRoom
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -24,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.swifttechnology.bookingsystem.core.designsystem.adaptiveHorizontalScreenPadding
 import com.swifttechnology.bookingsystem.features.report.presentation.ReportComponent.ActivityTableCard
 import com.swifttechnology.bookingsystem.features.report.presentation.ReportComponent.FilterChipStrip
 import com.swifttechnology.bookingsystem.features.report.presentation.ReportComponent.TablePagination
@@ -31,7 +33,6 @@ import com.swifttechnology.bookingsystem.features.report.presentation.ReportComp
 
 // Local design tokens
  
-private val ColorBackground    = Color(0xFFFFFFFF)
 private val ColorSurfaceVariant = Color(0xFFE9E7EE)
 private val ColorOnSurface     = Color(0xFF1B1B20)
 private val ColorOnSurfaceVar  = Color(0xFF5F5C70)
@@ -77,11 +78,13 @@ fun ReportScreen(
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ReportsAnalyticsScreen(vm: ReportsAnalyticsViewModel) {
-    Scaffold(containerColor = ColorBackground) { padding ->
+    val horizontalPadding = adaptiveHorizontalScreenPadding()
+    Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .padding(horizontal = horizontalPadding)
                 .verticalScroll(rememberScrollState())
         ) {
             FilterChipStrip(vm)

@@ -191,7 +191,16 @@ fun MeetingCardsSection(
                     }
 
                     Spacer(modifier = Modifier.height(10.dp))
-                    ViewAllButton(onClick = {}, modifier = Modifier.padding(horizontal = Spacing.md))
+                    androidx.compose.material3.TextButton(
+                        onClick = {},
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.md)
+                    ) {
+                        Text(
+                            text = "View All",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
         }

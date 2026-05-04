@@ -19,6 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -52,15 +53,17 @@ import java.time.LocalTime
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 
-private const val HOUR_HEIGHT_DP = 60
+private const val HOUR_HEIGHT_DP = 120
 private const val TIME_LABEL_WIDTH_DP = 64
 private const val MIN_BLOCK_HEIGHT_DP = 20
+private const val EVENT_BLOCK_CORNER_DP = 6
 
 @Composable
 fun DayColumnWithPicker(
     selectedDate: LocalDate,
     regularEvents: List<MeetingEvent>,
     pickerState: DayPickerUiState,
+    showBlockedSlots: Boolean = true,
     bookedEventColor: Color? = null,
     modifier: Modifier = Modifier,
     onGridLongPress: (Int) -> Unit,
@@ -147,7 +150,7 @@ fun DayColumnWithPicker(
                             Text(
                                 text = formatHourLabel(hour),
                                 fontSize = 11.sp,
-                                color = Color(0xFF9E9E9E),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.End,
                                 fontWeight = FontWeight.Normal,
                                 modifier = Modifier.fillMaxWidth()
@@ -157,7 +160,7 @@ fun DayColumnWithPicker(
                             modifier = Modifier
                                 .weight(1f)
                                 .height(HOUR_HEIGHT_DP.dp)
-                                .border(0.5.dp, Color(0xFFE8E8E8))
+                                .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
                         )
                     }
                 }
@@ -165,6 +168,7 @@ fun DayColumnWithPicker(
                 // 30-minute sub-grid dashed lines
                 val dashEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 4f), 0f)
                 val timeLabelWidthPx = with(density) { TIME_LABEL_WIDTH_DP.dp.toPx() }
+                val dashLineColor = MaterialTheme.colorScheme.outlineVariant
                 Canvas(
                     modifier = Modifier
                         .fillMaxSize()
@@ -172,7 +176,7 @@ fun DayColumnWithPicker(
                     for (hour in 0 until 24) {
                         val y = (hour * HOUR_HEIGHT_DP + HOUR_HEIGHT_DP / 2) * density.density
                         drawLine(
-                            color = Color(0xFFEEEEEE),
+                            color = dashLineColor,
                             start = Offset(timeLabelWidthPx, y),
                             end = Offset(size.width, y),
                             strokeWidth = 0.5f * density.density,
@@ -193,7 +197,8 @@ fun DayColumnWithPicker(
                             .padding(start = TIME_LABEL_WIDTH_DP.dp)
                             .fillMaxWidth()
                             .height(overlayHeightY)
-                            .background(Color(0xFFD0CCDD).copy(alpha = 0.5f))
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
+                            .zIndex(0.5f)
                     )
                 }
 
@@ -210,7 +215,7 @@ fun DayColumnWithPicker(
                             .fillMaxWidth()
                             .height(2.dp)
                             .background(Color(0xFFEF4444))
-                            .zIndex(5f)
+                            .zIndex(1f)
                     )
                     // Red circle at left edge
                     Box(
@@ -222,36 +227,42 @@ fun DayColumnWithPicker(
                             .size(10.dp)
                             .clip(CircleShape)
                             .background(Color(0xFFEF4444))
-                            .zIndex(5f)
+                            .zIndex(1f)
                     )
                 }
 
 
 
                 // Past blocked slots (lilac-gray)
-                pickerState.pastBlockedSlots.forEach { slot ->
-                    Box(
-                        modifier = Modifier
-                            .padding(start = TIME_LABEL_WIDTH_DP.dp, end = 4.dp)
-                            .offset { IntOffset(0, (slot.startMinutes * minutePx).roundToInt()) }
-                            .fillMaxWidth()
-                            .height(with(density) { (slot.durationMinutes * minutePx).toDp() })
-                            .background(Color(0xFFD0CCDD).copy(alpha = 0.5f))
-                            .border(0.5.dp, Color(0xFFB0ACBD).copy(alpha = 0.5f), RoundedCornerShape(4.dp))
-                    )
+                if (showBlockedSlots) {
+                    pickerState.pastBlockedSlots.forEach { slot ->
+                        Box(
+                            modifier = Modifier
+                                .padding(start = TIME_LABEL_WIDTH_DP.dp, end = 4.dp)
+                                .offset { IntOffset(0, (slot.startMinutes * minutePx).roundToInt()) }
+                                .fillMaxWidth()
+                                .height(with(density) { (slot.durationMinutes * minutePx).toDp() })
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
+                                .border(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.45f), RoundedCornerShape(4.dp))
+                                .zIndex(1f)
+                        )
+                    }
                 }
 
                 // Booked meeting slots (red)
-                pickerState.bookedBlockedSlots.forEach { slot ->
-                    Box(
-                        modifier = Modifier
-                            .padding(start = TIME_LABEL_WIDTH_DP.dp, end = 4.dp)
-                            .offset { IntOffset(0, (slot.startMinutes * minutePx).roundToInt()) }
-                            .fillMaxWidth()
-                            .height(with(density) { (slot.durationMinutes * minutePx).toDp() })
-                            .background(Color(0xFFFF7070))
-                            .border(0.5.dp, Color(0xFFCC5A5A), RoundedCornerShape(4.dp))
-                    )
+                if (showBlockedSlots) {
+                    pickerState.bookedBlockedSlots.forEach { slot ->
+                        Box(
+                            modifier = Modifier
+                                .padding(start = TIME_LABEL_WIDTH_DP.dp, end = 4.dp)
+                                .offset { IntOffset(0, (slot.startMinutes * minutePx).roundToInt()) }
+                                .fillMaxWidth()
+                                .height(with(density) { (slot.durationMinutes * minutePx).toDp() })
+                                .background(Color(0xFFFF7070))
+                                .border(0.5.dp, Color(0xFFCC5A5A), RoundedCornerShape(4.dp))
+                                .zIndex(1f)
+                        )
+                    }
                 }
 
                 // Regular events rendered on the day grid (on top of blocked areas)
@@ -266,6 +277,7 @@ fun DayColumnWithPicker(
                             .coerceAtLeast(with(density) { MIN_BLOCK_HEIGHT_DP.dp.toPx() })
                         val durationMin = endMin - startMin
 
+                        val eventColor = bookedEventColor ?: event.backendColor ?: event.color
                         Box(
                             modifier = Modifier
                                 .padding(start = TIME_LABEL_WIDTH_DP.dp, end = 4.dp)
@@ -273,8 +285,9 @@ fun DayColumnWithPicker(
                                 .fillMaxWidth()
                                 .height(with(density) { heightPx.toDp() })
                                 .padding(horizontal = 2.dp, vertical = 1.dp)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background((bookedEventColor ?: event.backendColor ?: event.color).copy(alpha = 0.75f))
+                                .clip(RoundedCornerShape(EVENT_BLOCK_CORNER_DP.dp))
+                                .background(eventColor.copy(alpha = 0.15f), RoundedCornerShape(EVENT_BLOCK_CORNER_DP.dp))
+                                .border(1.5.dp, eventColor, RoundedCornerShape(EVENT_BLOCK_CORNER_DP.dp))
                                 .pointerInput(event) {
                                     detectTapGestures(
                                         onTap = { onEventClick(event) },
@@ -282,12 +295,13 @@ fun DayColumnWithPicker(
                                     )
                                 }
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
+                                .zIndex(3f)
                         ) {
                             Column {
                                 Text(
                                     text = event.title,
-                                    fontSize = if (durationMin < 30) 10.sp else 12.sp,
-                                    color = Color.White,
+                                    fontSize = if (durationMin < 30) 10.sp else 13.sp,
+                                    color = eventColor,
                                     fontWeight = FontWeight.SemiBold,
                                     maxLines = if (durationMin < 30) 1 else 2,
                                     overflow = TextOverflow.Ellipsis
@@ -295,8 +309,8 @@ fun DayColumnWithPicker(
                                 if (durationMin >= 20) {
                                     Text(
                                         text = "${IntervalUtils.formatMinutes(startMin)} – ${IntervalUtils.formatMinutes(endMin)}",
-                                        fontSize = 9.sp,
-                                        color = Color.White.copy(alpha = 0.85f),
+                                        fontSize = 10.sp,
+                                        color = eventColor.copy(alpha = 0.8f),
                                         fontWeight = FontWeight.Normal,
                                         maxLines = 1
                                     )
@@ -304,6 +318,7 @@ fun DayColumnWithPicker(
                             }
                         }
                     }
+
 
                 // Picker (draggable scheduling block)
                 if (pickerState.draggableEvent != null) {

@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -58,21 +59,41 @@ private data class StatusStyle(
     val dotColor: Color
 )
 
-private fun resolveStatusStyle(status: String): StatusStyle = when (status.lowercase()) {
-    "active" -> StatusStyle(
-        label       = "Active",
-        textColor   = Color(0xFF1A7F4B),
-        bgColor     = Color(0xFFEAF7F0),
-        borderColor = Color(0xFFA3D9BC),
-        dotColor    = Color(0xFF34C759)
-    )
-    else -> StatusStyle(
-        label       = "Inactive",
-        textColor   = Color(0xFFB02020),
-        bgColor     = Color(0xFFFFF0F0),
-        borderColor = Color(0xFFF5BABA),
-        dotColor    = Color(0xFFFF3B30)
-    )
+private fun resolveStatusStyle(status: String, dark: Boolean): StatusStyle = when (status.lowercase()) {
+    "active" -> if (dark) {
+        StatusStyle(
+            label       = "Active",
+            textColor   = Color(0xFF86EFAC),
+            bgColor     = Color(0xFF14532D),
+            borderColor = Color(0xFF166534),
+            dotColor    = Color(0xFF34C759)
+        )
+    } else {
+        StatusStyle(
+            label       = "Active",
+            textColor   = Color(0xFF1A7F4B),
+            bgColor     = Color(0xFFEAF7F0),
+            borderColor = Color(0xFFA3D9BC),
+            dotColor    = Color(0xFF34C759)
+        )
+    }
+    else -> if (dark) {
+        StatusStyle(
+            label       = "Inactive",
+            textColor   = Color(0xFFFCA5A5),
+            bgColor     = Color(0xFF450A0A),
+            borderColor = Color(0xFF7F1D1D),
+            dotColor    = Color(0xFFFF3B30)
+        )
+    } else {
+        StatusStyle(
+            label       = "Inactive",
+            textColor   = Color(0xFFB02020),
+            bgColor     = Color(0xFFFFF0F0),
+            borderColor = Color(0xFFF5BABA),
+            dotColor    = Color(0xFFFF3B30)
+        )
+    }
 }
 
   
@@ -137,6 +158,7 @@ fun ParticipantsScreen(
                     when (uiState.selectedTab) {
                         ParticipantsTab.ALL_PARTICIPANTS -> {
                             DirectoryContent(
+                                modifier = Modifier.weight(1f),
                                 participants       = uiState.participants,
                                 searchQuery        = uiState.searchQuery,
                                 onSearchQueryChanged = viewModel::onSearchQueryChanged,
@@ -156,6 +178,7 @@ fun ParticipantsScreen(
                         }
                         ParticipantsTab.CUSTOM_GROUPS -> {
                             CustomGroupsDirectoryContent(
+                                modifier = Modifier.weight(1f),
                                 groups = filteredCustomGroups,
                                 searchQuery = uiState.searchQuery,
                                 onSearchQueryChanged = viewModel::onSearchQueryChanged,
@@ -187,6 +210,7 @@ fun ParticipantsScreen(
                                 }
                             }
                             DepartmentsDirectoryContent(
+                                modifier = Modifier.weight(1f),
                                 departments = filteredDepartments,
                                 searchQuery = uiState.searchQuery,
                                 onSearchQueryChanged = viewModel::onSearchQueryChanged
@@ -235,7 +259,7 @@ fun ParticipantsScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White)
+                    .background(MaterialTheme.colorScheme.surface)
                     .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
                 Row(
@@ -264,10 +288,10 @@ fun ParticipantsScreen(
                             .height(50.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFEBEBF5),
-                            contentColor = Color(0xFF1C1C1E),
-                            disabledContainerColor = Color(0xFFF2F2F7),
-                            disabledContentColor = Color(0xFF3C3C43).copy(alpha = 0.3f)
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                         )
                     ) {
                         Icon(Icons.Outlined.Edit, contentDescription = "Edit", modifier = Modifier.size(18.dp))
@@ -289,10 +313,10 @@ fun ParticipantsScreen(
                             .height(50.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFFFD4D4),
-                            contentColor = Color(0xFF1C1C1E),
-                            disabledContainerColor = Color(0xFFF2F2F7),
-                            disabledContentColor = Color(0xFF3C3C43).copy(alpha = 0.3f)
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                         )
                     ) {
                         Icon(Icons.Outlined.Delete, contentDescription = "Delete", modifier = Modifier.size(18.dp))
@@ -324,6 +348,7 @@ fun ParticipantsScreen(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CustomGroupsDirectoryContent(
+    modifier: Modifier = Modifier,
     groups: List<CustomGroup>,
     searchQuery: String,
     onSearchQueryChanged: (String) -> Unit,
@@ -336,12 +361,12 @@ fun CustomGroupsDirectoryContent(
     onSelectionChanged: (Long, Boolean) -> Unit = { _, _ -> },
     onLongPress: () -> Unit = {}
 ) {
-    Column {
+    Column(modifier = modifier) {
         Text(
             text = "Members Directory",
             fontWeight = FontWeight.SemiBold,
             fontSize = 17.sp,
-            color = Color(0xFF1C1C1E),
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
         )
 
@@ -353,6 +378,7 @@ fun CustomGroupsDirectoryContent(
         Spacer(modifier = Modifier.height(8.dp))
 
         LazyColumn(
+            modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(bottom = 80.dp)
         ) {
             items(groups, key = { it.id }) { group ->
@@ -456,22 +482,22 @@ fun CustomGroupCard(
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
-            color = Color.White,
-            border = BorderStroke(1.dp, Color(0xFF3C3C43).copy(alpha = 0.15f))
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
                     text = group.name,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
-                    color = Color(0xFF1C1C1E)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 if (group.description.isNotBlank()) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = group.description,
                         fontSize = 14.sp,
-                        color = Color(0xFF3C3C43).copy(alpha = 0.65f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontStyle = FontStyle.Italic
                     )
                 }
@@ -487,20 +513,20 @@ fun CustomGroupCard(
                     Icon(
                         imageVector = Icons.Outlined.AccountCircle,
                         contentDescription = null,
-                        tint = Color(0xFF3C3C43).copy(alpha = 0.55f),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "Members : ${group.memberCount}",
                         fontSize = 14.sp,
-                        color = Color(0xFF3C3C43).copy(alpha = 0.75f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.weight(1f)
                     )
                     Icon(
                         imageVector = Icons.Outlined.KeyboardArrowDown,
                         contentDescription = if (isExpanded) "Collapse" else "Expand",
-                        tint = Color(0xFF3C3C43).copy(alpha = 0.55f),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier
                             .size(20.dp)
                             .rotate(chevronRotation)
@@ -517,17 +543,17 @@ fun CustomGroupCard(
                             memberDisplayNames.forEach { name ->
                                 Surface(
                                     shape = RoundedCornerShape(20.dp),
-                                    color = Color(0xFFF2F2F7),
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
                                     border = BorderStroke(
                                         0.5.dp,
-                                        Color(0xFF3C3C43).copy(alpha = 0.12f)
+                                        MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
                                     )
                                 ) {
                                     Text(
                                         text = name,
                                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                         fontSize = 13.sp,
-                                        color = Color(0xFF1C1C1E),
+                                        color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
@@ -543,16 +569,17 @@ fun CustomGroupCard(
 
 @Composable
 fun DepartmentsDirectoryContent(
+    modifier: Modifier = Modifier,
     departments: List<Department>,
     searchQuery: String,
     onSearchQueryChanged: (String) -> Unit
 ) {
-    Column {
+    Column(modifier = modifier) {
         Text(
             text       = "Departments",
             fontWeight = FontWeight.SemiBold,
             fontSize   = 17.sp,
-            color      = Color(0xFF1C1C1E),
+            color      = MaterialTheme.colorScheme.onSurface,
             modifier   = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
         )
 
@@ -564,6 +591,7 @@ fun DepartmentsDirectoryContent(
         Spacer(modifier = Modifier.height(8.dp))
 
         LazyColumn(
+            modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(bottom = 80.dp)
         ) {
             items(departments, key = { it.id }) { department ->
@@ -584,22 +612,22 @@ fun DepartmentCard(department: Department) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape  = RoundedCornerShape(20.dp),
-            color  = Color.White,
-            border = BorderStroke(1.dp, Color(0xFF3C3C43).copy(alpha = 0.15f))
+            color  = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
                     text       = department.departmentName,
                     fontWeight = FontWeight.Bold,
                     fontSize   = 18.sp,
-                    color      = Color(0xFF1C1C1E)
+                    color      = MaterialTheme.colorScheme.onSurface
                 )
                 if (!department.description.isNullOrBlank()) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text      = department.description,
                         fontSize  = 14.sp,
-                        color     = Color(0xFF3C3C43).copy(alpha = 0.65f),
+                        color     = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontStyle = FontStyle.Italic
                     )
                 }
@@ -723,6 +751,7 @@ fun ParticipantsTabItem(
 
 @Composable
 fun DirectoryContent(
+    modifier: Modifier = Modifier,
     participants: List<Participant>,
     searchQuery: String,
     onSearchQueryChanged: (String) -> Unit,
@@ -731,7 +760,7 @@ fun DirectoryContent(
     onSelectionChanged: (Long, Boolean) -> Unit = { _, _ -> },
     onLongPress: () -> Unit = {}
 ) {
-    Column {
+    Column(modifier = modifier) {
         Text(
             text       = "Members Directory",
             fontWeight = FontWeight.SemiBold,
@@ -748,6 +777,7 @@ fun DirectoryContent(
         Spacer(modifier = Modifier.height(8.dp))
 
         LazyColumn(
+            modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(bottom = 80.dp)
         ) {
             items(participants, key = { it.id }) { participant ->
@@ -780,7 +810,7 @@ fun DirectorySearchBar(
         placeholder   = {
             Text(
                 "Search by name, email, or department...",
-                color    = Color(0xFF3C3C43).copy(alpha = 0.4f),
+                color    = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
                 fontSize = 14.sp
             )
         },
@@ -788,7 +818,7 @@ fun DirectorySearchBar(
             Icon(
                 Icons.Outlined.Search,
                 contentDescription = null,
-                tint               = Color(0xFF3C3C43).copy(alpha = 0.4f),
+                tint               = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
                 modifier           = Modifier.size(18.dp)
             )
         },
@@ -797,10 +827,10 @@ fun DirectorySearchBar(
             .padding(horizontal = 16.dp),
         shape     = RoundedCornerShape(12.dp),
         colors    = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor     = Color(0xFF007AFF).copy(alpha = 0.5f),
-            unfocusedBorderColor   = Color(0xFF3C3C43).copy(alpha = 0.15f),
-            focusedContainerColor  = Color(0xFFF2F2F7),
-            unfocusedContainerColor = Color(0xFFF2F2F7)
+            focusedBorderColor     = MaterialTheme.colorScheme.primary.copy(alpha = 0.55f),
+            unfocusedBorderColor   = MaterialTheme.colorScheme.outline.copy(alpha = 0.45f),
+            focusedContainerColor  = MaterialTheme.colorScheme.surfaceVariant,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
         singleLine = true,
         textStyle  = LocalTextStyle.current.copy(fontSize = 14.sp)
@@ -869,8 +899,8 @@ fun ParticipantCard(
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape  = RoundedCornerShape(20.dp),
-            color  = Color.White,
-            border = BorderStroke(1.dp, Color(0xFF3C3C43).copy(alpha = 0.15f))
+            color  = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
         ) {
             Column(
                 modifier = Modifier
@@ -887,19 +917,19 @@ fun ParticipantCard(
                         text       = participant.name,
                         fontWeight = FontWeight.SemiBold,
                         fontSize   = 16.sp,
-                        color      = Color(0xFF1C1C1E)
+                        color      = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text     = participant.position,
                         fontSize = 13.sp,
-                        color    = Color(0xFF3C3C43).copy(alpha = 0.55f)
+                        color    = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text     = participant.department,
                         fontSize = 13.sp,
-                        color    = Color(0xFF3C3C43).copy(alpha = 0.55f)
+                        color    = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 if (participant.status.equals("active", ignoreCase = true)) {
@@ -911,7 +941,7 @@ fun ParticipantCard(
 
             //    Divider                                        
             HorizontalDivider(
-                color     = Color(0xFF3C3C43).copy(alpha = 0.08f),
+                color     = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
                 thickness = 0.5.dp
             )
 
@@ -929,9 +959,9 @@ fun ParticipantCard(
                     ContactRow(icon = Icons.Outlined.Phone, text = participant.phone)
                 }
             }
+            }
         }
     }
-}
 }
 
   
@@ -943,7 +973,7 @@ fun StatusPill(
     status: String,
     modifier: Modifier = Modifier
 ) {
-    val style = resolveStatusStyle(status)
+    val style = resolveStatusStyle(status, dark = isSystemInDarkTheme())
 
     Row(
         modifier = modifier

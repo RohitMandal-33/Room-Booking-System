@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -125,12 +126,16 @@ fun DateRangeSheet(
         }
     }
 
+    val sheetMaxW = minOf(560.dp, LocalConfiguration.current.screenWidthDp.dp - 24.dp)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
         dragHandle = null,
-        modifier = Modifier.wrapContentHeight()
+        modifier = Modifier
+            .fillMaxWidth()
+            .widthIn(max = sheetMaxW)
+            .wrapContentHeight()
     ) {
         Column(modifier = Modifier.fillMaxWidth().navigationBarsPadding()) {
 
@@ -209,7 +214,7 @@ fun DateRangeSheet(
                         modifier = Modifier
                             .clip(RoundedCornerShape(20.dp))
                             .border(0.5.dp, if (isOn) Purple200 else BorderLight, RoundedCornerShape(20.dp))
-                            .background(if (isOn) Purple50 else Color.White)
+                            .background(if (isOn) Purple50 else MaterialTheme.colorScheme.surface)
                             .clickable { applyPreset(key) }
                             .padding(horizontal = 14.dp, vertical = 6.dp)
                     )
@@ -278,7 +283,7 @@ fun DateRangeSheet(
                                     else             -> Color.Transparent
                                 }
                                 val textColor = when {
-                                    isStart || isEnd -> Color.White
+                                    isStart || isEnd -> MaterialTheme.colorScheme.onPrimary
                                     inRange          -> Purple600
                                     else             -> TextPrimary
                                 }

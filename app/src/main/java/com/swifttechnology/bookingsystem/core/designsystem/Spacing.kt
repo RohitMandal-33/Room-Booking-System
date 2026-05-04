@@ -1,8 +1,14 @@
 package com.swifttechnology.bookingsystem.core.designsystem
 
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
+/** Layout constants that are not “rhythm” spacing but belong with the design tokens. */
+object Layout {
+    val navigationDrawerWidth: Dp = 280.dp
+}
 
 object Spacing {
     val none: Dp = 0.dp
@@ -38,4 +44,18 @@ object Elevation {
     val md: Dp = 4.dp
     val lg: Dp = 8.dp
     val xl: Dp = 16.dp
+}
+
+/**
+ * Horizontal inset for primary screen content so phones, tablets, and unfolded devices
+ * stay visually balanced without duplicating magic numbers in every screen.
+ */
+@Composable
+fun adaptiveHorizontalScreenPadding(): Dp {
+    val widthDp = LocalConfiguration.current.screenWidthDp
+    return when {
+        widthDp >= 900 -> Spacing.xl
+        widthDp >= 600 -> Spacing.lg
+        else -> Spacing.md
+    }
 }

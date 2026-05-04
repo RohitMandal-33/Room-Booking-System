@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -80,7 +81,7 @@ fun TableFooter(vm: ReportsAnalyticsViewModel) {
                 Icon(
                     painter = painterResource(id = R.drawable.outline_download_24),
                     contentDescription = "Export",
-                    tint = Color.White,
+                    tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(13.dp)
                 )
                 Text(
@@ -88,7 +89,7 @@ fun TableFooter(vm: ReportsAnalyticsViewModel) {
                     style = TextStyle(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
                 )
             }
@@ -166,7 +167,7 @@ fun PaginationButton(
                 fontSize = 13.sp,
                 fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
                 color = when {
-                    active  -> Color.White
+                    active  -> MaterialTheme.colorScheme.onPrimary
                     enabled -> ColorPrimaryMedium
                     else    -> ColorOnSurfaceVar.copy(alpha = 0.4f)
                 }

@@ -27,14 +27,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.swifttechnology.bookingsystem.core.designsystem.ThemeMode
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.MeetingTypeDTO
 
 // ── Brand colors ──────────────────────────────────────────────
 private val Purple = Color(0xFF6109C0) // Updated to match palette
-private val Background = Color(0xFFF9FAFB) // Adjusted for light theme consistency
-private val CardBackground = Color.White
-private val SectionLabel = Color(0xFF9CA3AF)
-private val InputBackground = Color(0xFFF3F4F6)
 
 // ── Color helpers ────────────────────────────────────────────
 
@@ -111,7 +108,7 @@ private fun SettingsCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
@@ -127,7 +124,7 @@ private fun SettingsCard(
 private fun SectionHeader(title: String) {
     Text(
         text = title,
-        color = SectionLabel,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         fontSize = 14.sp,
         fontWeight = FontWeight.Medium,
         letterSpacing = 0.5.sp
@@ -148,25 +145,93 @@ private fun SettingsTextField(
         value = value,
         onValueChange = onValueChange,
         placeholder = {
-            Text(placeholder, color = Color(0xFFBDBDBD), fontSize = 14.sp)
+            Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
         },
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp)),
         colors = TextFieldDefaults.colors(
-            unfocusedContainerColor = InputBackground,
-            focusedContainerColor = InputBackground,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
             unfocusedIndicatorColor = Color.Transparent,
             focusedIndicatorColor = Color.Transparent,
             cursorColor = Purple,
-            focusedTextColor = Color(0xFF1F2937),
-            unfocusedTextColor = Color(0xFF1F2937)
+            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
         ),
         visualTransformation = if (isPassword) PasswordVisualTransformation() else
             androidx.compose.ui.text.input.VisualTransformation.None,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         singleLine = true
     )
+}
+
+@Composable
+private fun ThemeControlCard(
+    selected: ThemeMode,
+    onSelected: (ThemeMode) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        SectionHeader("Theme")
+        SettingsCard {
+            ThemeOptionRow(
+                title = "Device default",
+                subtitle = "Follow system setting",
+                selected = selected == ThemeMode.SYSTEM,
+                onClick = { onSelected(ThemeMode.SYSTEM) }
+            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+            ThemeOptionRow(
+                title = "Light mode",
+                subtitle = "Always use light theme",
+                selected = selected == ThemeMode.LIGHT,
+                onClick = { onSelected(ThemeMode.LIGHT) }
+            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+            ThemeOptionRow(
+                title = "Dark mode",
+                subtitle = "Always use dark theme",
+                selected = selected == ThemeMode.DARK,
+                onClick = { onSelected(ThemeMode.DARK) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun ThemeOptionRow(
+    title: String,
+    subtitle: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = subtitle,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp
+            )
+        }
+        RadioButton(
+            selected = selected,
+            onClick = onClick,
+            colors = RadioButtonDefaults.colors(selectedColor = Purple)
+        )
+    }
 }
 
 //  2. MEETING VISUALS
@@ -225,7 +290,7 @@ fun MeetingVisualsCard(
                     // Colour palette swatches
                     Text(
                         text = "Choose a colour",
-                        color = Color(0xFF6B7280),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp
                     )
 
@@ -253,7 +318,7 @@ fun MeetingVisualsCard(
                                         .then(
                                             if (isSelected)
                                                 Modifier.border(3.dp, Color.White, CircleShape)
-                                                    .border(5.dp, Color(0xFF374151), CircleShape)
+                                                    .border(5.dp, MaterialTheme.colorScheme.outline, CircleShape)
                                             else Modifier
                                         )
                                         .clickable(enabled = !isTaken) { 
@@ -325,7 +390,7 @@ fun MeetingVisualsCard(
             if (meetingTypes.isEmpty()) {
                 Text(
                     text = "No meeting types found.",
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 14.sp,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
@@ -345,7 +410,7 @@ fun MeetingVisualsCard(
                         Text(
                             text = meeting.name ?: "Unknown",
                             modifier = Modifier.weight(1f),
-                            color = Color(0xFF1F2937),
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Normal
                         )
@@ -355,10 +420,10 @@ fun MeetingVisualsCard(
                             onCheckedChange = { onChangeStatus(meeting.id!!, meeting.status ?: "INACTIVE") },
                             modifier = Modifier.padding(end = 8.dp),
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.White,
+                                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                                 checkedTrackColor = Purple,
-                                uncheckedThumbColor = Color.White,
-                                uncheckedTrackColor = Color(0xFFD1D5DB)
+                                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
                             )
                         )
                         IconButton(
@@ -381,7 +446,7 @@ fun MeetingVisualsCard(
                         }
                     }
                     if (index < meetingTypes.lastIndex) {
-                        HorizontalDivider(color = Color(0xFFF3F4F6), thickness = 1.dp)
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
                     }
                 }
             }
@@ -408,7 +473,7 @@ fun GlobalRulesCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "DURATION (MIN)",
-                        color = Color(0xFF9CA3AF),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = 0.8.sp
@@ -421,13 +486,13 @@ fun GlobalRulesCard(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(10.dp)),
                         colors = TextFieldDefaults.colors(
-                            unfocusedContainerColor = InputBackground,
-                            focusedContainerColor = InputBackground,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                             unfocusedIndicatorColor = Color.Transparent,
                             focusedIndicatorColor = Color.Transparent,
                             cursorColor = Purple,
-                            focusedTextColor = Color(0xFF1F2937),
-                            unfocusedTextColor = Color(0xFF1F2937)
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                         ),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true
@@ -436,7 +501,7 @@ fun GlobalRulesCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "BUFFER (MIN)",
-                        color = Color(0xFF9CA3AF),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = 0.8.sp
@@ -449,13 +514,13 @@ fun GlobalRulesCard(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(10.dp)),
                         colors = TextFieldDefaults.colors(
-                            unfocusedContainerColor = InputBackground,
-                            focusedContainerColor = InputBackground,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                             unfocusedIndicatorColor = Color.Transparent,
                             focusedIndicatorColor = Color.Transparent,
                             cursorColor = Purple,
-                            focusedTextColor = Color(0xFF1F2937),
-                            unfocusedTextColor = Color(0xFF1F2937)
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                         ),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true
@@ -471,13 +536,13 @@ fun GlobalRulesCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "Smart Conflict Resolution",
-                        color = Color(0xFF1F2937),
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold
                     )
                     Text(
                         text = "Auto-decline double bookings",
-                        color = Color(0xFF9CA3AF),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp
                     )
                 }
@@ -485,10 +550,10 @@ fun GlobalRulesCard(
                     checked = smartConflict,
                     onCheckedChange = { onRulesChanged(duration, buffer, it) },
                     colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
+                        checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                         checkedTrackColor = Purple,
-                        uncheckedThumbColor = Color.White,
-                        uncheckedTrackColor = Color(0xFFD1D5DB)
+                        uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                        uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
                     )
                 )
             }
@@ -512,7 +577,7 @@ fun SecurityCard(
         SettingsCard {
             // Current Password
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Current Password", color = Color(0xFF374151), fontSize = 13.sp)
+                Text("Current Password", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                 SettingsTextField(
                     value = currentPassword,
                     onValueChange = { currentPassword = it },
@@ -522,7 +587,7 @@ fun SecurityCard(
             }
             // New Password
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("New Password", color = Color(0xFF374151), fontSize = 13.sp)
+                Text("New Password", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                 SettingsTextField(
                     value = newPassword,
                     onValueChange = { newPassword = it },
@@ -532,7 +597,7 @@ fun SecurityCard(
             }
             // Confirm Password
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Confirm Password", color = Color(0xFF374151), fontSize = 13.sp)
+                Text("Confirm Password", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                 SettingsTextField(
                     value = confirmPassword,
                     onValueChange = { confirmPassword = it },
@@ -541,7 +606,7 @@ fun SecurityCard(
                 )
             }
 
-            HorizontalDivider(color = Color(0xFFF3F4F6), thickness = 1.dp)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
 
             TextButton(
                 onClick = { 
@@ -592,7 +657,7 @@ fun SettingsScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = Background
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -606,6 +671,11 @@ fun SettingsScreen(
                     .padding(horizontal = 20.dp, vertical = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(28.dp)
             ) {
+                ThemeControlCard(
+                    selected = uiState.themeMode,
+                    onSelected = viewModel::setThemeMode
+                )
+
                 MeetingVisualsCard(
                     meetingTypes = uiState.meetingTypes,
                     onAddMeetingType = { name, color -> viewModel.addMeetingType(name, color) },

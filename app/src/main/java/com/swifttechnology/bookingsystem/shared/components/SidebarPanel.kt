@@ -2,9 +2,12 @@ package com.swifttechnology.bookingsystem.shared.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.runtime.Composable
@@ -21,28 +24,28 @@ fun SidebarPanel(
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier.background(MaterialTheme.customColors.neutral100),
+    LazyColumn(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.customColors.neutral100),
+        contentPadding = PaddingValues(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        // Small top spacer so items don't start at the very edge
-        Spacer(modifier = Modifier.height(8.dp))
-
-        items.forEach { item ->
+        items(items, key = { it.route }) { item ->
             SidebarTile(
                 item = item,
                 isActive = item.route == selectedItem.route,
                 onClick = { onItemSelected(item) }
             )
         }
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        SidebarTile(
-            item = SidebarItem("Logout", Icons.AutoMirrored.Outlined.Logout),
-            isActive = false,
-            onClick = onLogout
-        )
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+            SidebarTile(
+                item = SidebarItem("Logout", Icons.AutoMirrored.Outlined.Logout),
+                isActive = false,
+                onClick = onLogout
+            )
+        }
     }
 }
 

@@ -22,14 +22,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.RectangleShape
@@ -69,6 +72,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -79,6 +83,8 @@ import androidx.compose.ui.unit.dp
 import com.swifttechnology.bookingsystem.core.designsystem.Success
 import com.swifttechnology.bookingsystem.core.designsystem.Warning
 import com.swifttechnology.bookingsystem.core.designsystem.Error
+import com.swifttechnology.bookingsystem.core.designsystem.Spacing
+import com.swifttechnology.bookingsystem.core.designsystem.adaptiveHorizontalScreenPadding
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.features.calendar.presentation.MeetingEvent
 import java.time.LocalDate
@@ -94,6 +100,8 @@ fun MeetingDetailBottomSheet(
     onEdit: (String) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val isDark = isSystemInDarkTheme()
+    val horizontalPad = adaptiveHorizontalScreenPadding()
 
     val meetingTypeUpper = event.meetingType.uppercase()
 
@@ -105,8 +113,8 @@ fun MeetingDetailBottomSheet(
     }
 
     val typeBg = when (meetingTypeUpper) {
-        "CLIENT"    -> Color(0xFFFFF7ED)
-        "INTERNAL"  -> Color(0xFFEFF6FF)
+        "CLIENT"    -> if (isDark) Color(0xFF3D2918) else Color(0xFFFFF7ED)
+        "INTERNAL"  -> if (isDark) Color(0xFF1A2A3D) else Color(0xFFEFF6FF)
         "EXECUTIVE" -> MaterialTheme.customColors.primaryLight
         else        -> MaterialTheme.customColors.primaryLight
     }
@@ -133,29 +141,32 @@ fun MeetingDetailBottomSheet(
         else -> Success
     }
 
+    val sheetMaxWidth = minOf(560.dp, LocalConfiguration.current.screenWidthDp.dp - 24.dp)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
+        modifier = Modifier
+            .fillMaxWidth()
+            .widthIn(max = sheetMaxWidth),
         containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = null,
-        contentWindowInsets = { WindowInsets(0, 0, 0, 0) },
+        contentWindowInsets = { WindowInsets.systemBars },
         shape = RectangleShape
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight()
-                .statusBarsPadding()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 24.dp)
+                .padding(horizontal = horizontalPad)
+                .navigationBarsPadding()
+                .padding(bottom = Spacing.lg)
         ) {
             SheetHeader(
                 title = "Meeting details",
                 onClose = onDismiss
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(Spacing.ms))
 
             HeroCard(
                 title = event.title,
@@ -168,10 +179,10 @@ fun MeetingDetailBottomSheet(
                 timeText = "${event.startTime.format(DateTimeFormatter.ofPattern("hh:mm a"))} – ${event.endTime.format(DateTimeFormatter.ofPattern("hh:mm a"))}"
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Spacing.md))
 
             SectionTitle(title = "Information")
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(Spacing.sm + Spacing.xxs))
 
             DetailSectionCard {
                 DetailItem(
@@ -213,16 +224,16 @@ fun MeetingDetailBottomSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Spacing.md))
 
             SectionTitle(title = "Attendees")
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(Spacing.sm + Spacing.xxs))
 
             DetailSectionCard {
                 ExpandableAttendeesItem(event = event)
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(Spacing.ml - Spacing.xxs))
 
             ActionBar(
                 event = event,

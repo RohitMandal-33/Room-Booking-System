@@ -14,6 +14,7 @@ private val LightColorScheme = lightColorScheme(
     primary = Primary,
     onPrimary = OnPrimary,
     primaryContainer = SurfaceVariant,
+    onPrimaryContainer = OnSurface,
     secondary = Secondary,
     onSecondary = OnSecondary,
     background = Background,
@@ -21,13 +22,18 @@ private val LightColorScheme = lightColorScheme(
     surfaceVariant = SurfaceVariant,
     onBackground = OnBackground,
     onSurface = OnSurface,
-    error = Error
+    onSurfaceVariant = TextSecondary,
+    outline = Neutral400,
+    outlineVariant = Divider,
+    error = Error,
+    onError = OnPrimary
 )
 
 private val DarkColorScheme = darkColorScheme(
     primary = Primary,
     onPrimary = OnPrimary,
     primaryContainer = SurfaceVariantDark,
+    onPrimaryContainer = OnSurfaceDark,
     secondary = Secondary,
     onSecondary = OnSecondary,
     background = BackgroundDark,
@@ -35,7 +41,11 @@ private val DarkColorScheme = darkColorScheme(
     surfaceVariant = SurfaceVariantDark,
     onBackground = OnBackgroundDark,
     onSurface = OnSurfaceDark,
-    error = Error
+    onSurfaceVariant = TextSecondaryDark,
+    outline = Neutral400Dark,
+    outlineVariant = DividerDark,
+    error = Error,
+    onError = OnPrimary
 )
 
 @Immutable
@@ -163,9 +173,14 @@ val MaterialTheme.customColors: CustomColors
  */
 @Composable
 fun MeetingRoomBookingTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    themeMode: ThemeMode = ThemeMode.SYSTEM,
     content: @Composable () -> Unit
 ) {
+    val darkTheme = when (themeMode) {
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+    }
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
     val customColors = if (darkTheme) DarkCustomColors else LightCustomColors
 
