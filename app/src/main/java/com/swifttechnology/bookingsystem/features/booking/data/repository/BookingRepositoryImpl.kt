@@ -107,6 +107,13 @@ class BookingRepositoryImpl @Inject constructor(
         response.data
     }
 
+    override suspend fun getCalendarDateInterval(startDate: String, endDate: String): Result<List<BookingResponseDTO>> = runCatching {
+        val request = com.swifttechnology.bookingsystem.features.booking.data.dtos.CalenderTimelineBetweenRequestDTO(startDate = startDate, endDate = endDate)
+        val response = api.getCalendarDateInterval(request)
+        if (!response.success || response.data == null) throw Exception(response.message)
+        response.data
+    }
+
     override suspend fun getBookingDetails(bookingId: Long): Result<BookingResponseDTO> = runCatching {
         val response = api.getBookedRoomById(bookingId)
         if (!response.success || response.data == null) throw Exception(response.message)

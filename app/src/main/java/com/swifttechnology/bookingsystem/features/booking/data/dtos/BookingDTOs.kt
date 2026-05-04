@@ -18,7 +18,8 @@ data class RoomBookingRequestDTO(
     val recurrenceEndDate: String? = null,
     val recurrenceType: String? = null,
     val weekDays: List<String>? = null,
-    val dates: List<String>? = null
+    val dates: List<String>? = null,
+    val bookingIds: List<Long>? = null
 )
 
 /**
@@ -26,6 +27,14 @@ data class RoomBookingRequestDTO(
  */
 data class CalenderRequestDTO(
     val date: String // yyyy-MM-dd
+)
+
+/**
+ * Request body for Calendar Date Interval API.
+ */
+data class CalenderTimelineBetweenRequestDTO(
+    val startDate: String, // yyyy-MM-dd
+    val endDate: String    // yyyy-MM-dd
 )
 
 

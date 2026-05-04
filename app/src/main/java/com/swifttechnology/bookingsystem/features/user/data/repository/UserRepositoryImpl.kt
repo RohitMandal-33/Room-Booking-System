@@ -109,4 +109,10 @@ class UserRepositoryImpl @Inject constructor(
         if (!response.success || response.data == null) throw Exception(response.message)
         response.data
     }
+
+    override suspend fun getCurrentUser(): Result<UserDetailsDTO> = runCatching {
+        val response = api.getCurrentUser()
+        if (!response.success || response.data == null) throw Exception(response.message)
+        response.data
+    }
 }

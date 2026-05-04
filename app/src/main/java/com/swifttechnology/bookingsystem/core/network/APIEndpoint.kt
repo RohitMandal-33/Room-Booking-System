@@ -23,6 +23,7 @@ object APIEndpoint {
     const val USER_SEARCH = "api/v1/user/search"
     const val USER_UPDATE = "api/v1/user/{id}/update"
     const val USER_CHANGE_STATUS = "api/v1/user/{id}/change-status"
+    const val USERS_CURRENT_USER = "api/v1/users/current-user"
 
     // Meeting Rooms
     const val ROOM_ADD = "api/v1/room/add"
@@ -42,8 +43,11 @@ object APIEndpoint {
     const val BOOKED_ROOM_BY_ID = "api/v1/get-booked-room/{roomBookingId}"
 
     // Department
-    const val DEPARTMENT_ADD = "api/v1/department/add"
+    const val DEPARTMENT_ADD = "api/v1/department/"
+    const val DEPARTMENT_UPDATE = "api/v1/department/{id}"
+    const val DEPARTMENT_CHANGE_STATUS = "api/v1/department/{id}"
     const val DEPARTMENT_LIST = "api/v1/department/list"
+    const val DEPARTMENT_ACTIVE_LIST = "api/v1/department/active-list"
 
     // Custom Group
     const val GROUP_ADD = "api/v1/group/add"
@@ -71,6 +75,7 @@ object APIEndpoint {
     const val CALENDAR_WEEK = "api/v1/calender/week"
     const val CALENDAR_MONTH = "api/v1/calender/month"
     const val CALENDAR_DAY = "api/v1/calender/day"
+    const val CALENDAR_DATE_INTERVAL = "api/v1/calender/dateInterval"
 
     // New Room APIs
     const val ROOM_RESOURCE = "api/v1/room/resource"

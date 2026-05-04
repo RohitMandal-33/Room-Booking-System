@@ -28,4 +28,32 @@ class DepartmentRepositoryImpl @Inject constructor(
             )
         }
     }
+
+    override suspend fun updateDepartment(id: Long, departmentName: String, description: String?): Result<Unit> = runCatching {
+        val response = api.updateDepartment(
+            id,
+            AddDepartmentRequestDTO(departmentName = departmentName, description = description)
+        )
+        if (!response.success) throw Exception(response.message)
+    }
+
+    override suspend fun changeDepartmentStatus(id: Long, status: String): Result<Unit> = runCatching {
+        val response = api.changeDepartmentStatus(
+            id,
+            com.swifttechnology.bookingsystem.features.meetingrooms.data.dtos.StatusChangeRequestDTO(status = status)
+        )
+        if (!response.success) throw Exception(response.message)
+    }
+
+    override suspend fun getActiveDepartments(): Result<List<Department>> = runCatching {
+        val response = api.getActiveDepartments()
+        if (!response.success || response.data == null) throw Exception(response.message)
+        response.data.map {
+            Department(
+                id = it.id,
+                departmentName = it.departmentName,
+                description = it.description
+            )
+        }
+    }
 }

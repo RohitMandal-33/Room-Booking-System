@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.IntrinsicSize
 import com.swifttechnology.bookingsystem.core.designsystem.*
 import com.swifttechnology.bookingsystem.features.announcements.domain.model.Announcement
 import java.time.OffsetDateTime
@@ -61,15 +62,6 @@ fun AnnouncementSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Filled.PushPin,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .size(16.dp)
-                        .rotate(-30f)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = "Announcements",
                     style = MaterialTheme.typography.titleMedium,
@@ -109,7 +101,7 @@ fun AnnouncementSection(
 
         Spacer(modifier = Modifier.height(Spacing.sm))
 
-        //  States
+        // States
         when {
             isLoading -> {
                 Box(
@@ -153,7 +145,6 @@ fun AnnouncementSection(
             }
 
             else -> {
-                // Pager
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier.fillMaxWidth(),
@@ -171,97 +162,85 @@ fun AnnouncementSection(
                         ),
                         elevation = CardDefaults.cardElevation(defaultElevation = Elevation.none)
                     ) {
-                        // Colored top accent bar
-                        Box(
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(3.dp)
-                                .background(
-                                    Brush.horizontalGradient(
-                                        listOf(accentColor, accentColor.copy(alpha = 0.2f))
-                                    )
-                                )
-                        )
-
-                        Column(
-                            modifier = Modifier
-                                .padding(horizontal = 14.dp, vertical = Spacing.md)
-                                .fillMaxWidth()
+                                .height(IntrinsicSize.Min)
                         ) {
-                            // Date row
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.End
+                            // Left accent bar
+                            Box(
+                                modifier = Modifier
+                                    .width(3.dp)
+                                    .fillMaxHeight()
+                                    .background(
+                                        Brush.verticalGradient(
+                                            listOf(accentColor, accentColor.copy(alpha = 0.2f))
+                                        )
+                                    )
+                            )
+
+                            Column(
+                                modifier = Modifier
+                                    .padding(horizontal = 14.dp, vertical = Spacing.md)
+                                    .fillMaxWidth()
                             ) {
+                                // Author (left) + Date (right)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = item.authorName,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Text(
+                                        text = formatDateForCarousel(item.createdAt),
+                                        color = MaterialTheme.customColors.textSecondary,
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                // Title with pin icon
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Filled.PushPin,
+                                        contentDescription = null,
+                                        tint = accentColor,
+                                        modifier = Modifier
+                                            .size(13.dp)
+                                            .rotate(-20f)
+                                    )
+                                    Spacer(modifier = Modifier.width(5.dp))
+                                    Text(
+                                        text = item.title,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            fontWeight = FontWeight.Bold
+                                        ),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(6.dp))
+
+                                // Message
                                 Text(
-                                    text = formatDateForCarousel(item.createdAt),
+                                    text = item.message,
                                     color = MaterialTheme.customColors.textSecondary,
-                                    style = MaterialTheme.typography.labelSmall
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            // Title with pin icon
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Filled.PushPin,
-                                    contentDescription = null,
-                                    tint = accentColor,
-                                    modifier = Modifier
-                                        .size(13.dp)
-                                        .rotate(-20f)
-                                )
-                                Spacer(modifier = Modifier.width(5.dp))
-                                Text(
-                                    text = item.title,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        fontWeight = FontWeight.Bold
-                                    ),
-                                    maxLines = 1,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    lineHeight = 18.sp,
+                                    minLines = 2,
+                                    maxLines = 2,
                                     overflow = TextOverflow.Ellipsis
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(6.dp))
-
-                            // Message
-                            Text(
-                                text = item.message,
-                                color = MaterialTheme.customColors.textSecondary,
-                                style = MaterialTheme.typography.bodySmall,
-                                lineHeight = 18.sp,
-                                minLines = 2,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
-                            )
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            HorizontalDivider(
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                                thickness = 0.6.dp
-                            )
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            // Author row
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = item.authorName,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                Text(
-                                    text = "${page + 1} / ${announcements.size}",
-                                    color = MaterialTheme.customColors.textSecondary,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontSize = 10.sp
                                 )
                             }
                         }
@@ -270,7 +249,7 @@ fun AnnouncementSection(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                //  Dot indicators
+                // Dot indicators
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,

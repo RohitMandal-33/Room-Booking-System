@@ -59,6 +59,9 @@ interface BookingApiService {
     @POST(APIEndpoint.CALENDAR_DAY)
     suspend fun getCalendarDay(@Body request: CalenderRequestDTO): GlobalResponse<List<BookingResponseDTO>>
 
+    @POST(APIEndpoint.CALENDAR_DATE_INTERVAL)
+    suspend fun getCalendarDateInterval(@Body request: com.swifttechnology.bookingsystem.features.booking.data.dtos.CalenderTimelineBetweenRequestDTO): GlobalResponse<List<BookingResponseDTO>>
+
     // Meeting Types
     @POST(APIEndpoint.MEETING_TYPE_ADD)
     suspend fun createMeetingType(@Body request: com.swifttechnology.bookingsystem.features.booking.data.dtos.MeetingTypeRequestDTO): GlobalResponse<Unit>

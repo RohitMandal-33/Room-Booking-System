@@ -23,5 +23,6 @@ interface BookingRepository {
     suspend fun getCalendarMonth(date: String): Result<List<BookingResponseDTO>>
     suspend fun getCalendarWeek(date: String): Result<List<BookingResponseDTO>>
     suspend fun getCalendarDay(date: String): Result<List<BookingResponseDTO>>
+    suspend fun getCalendarDateInterval(startDate: String, endDate: String): Result<List<BookingResponseDTO>>
     suspend fun getBookingDetails(bookingId: Long): Result<BookingResponseDTO>
 }

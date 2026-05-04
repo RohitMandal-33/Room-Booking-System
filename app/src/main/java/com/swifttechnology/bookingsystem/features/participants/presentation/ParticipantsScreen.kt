@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -617,37 +618,45 @@ fun ParticipantsTabRow(
     customGroupsCount: Int,
     departmentsCount: Int
 ) {
-    Surface(color = Color.Transparent) {
-        Row(
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Surface(color = Color.Transparent) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 2.dp)
+            ) {
+                ParticipantsTabItem(
+                    label      = "All Members",
+                    icon       = Icons.Outlined.People,
+                    isSelected = selectedTab == ParticipantsTab.ALL_PARTICIPANTS,
+                    modifier   = Modifier.weight(1f),
+                    onClick    = { onTabSelected(ParticipantsTab.ALL_PARTICIPANTS) }
+                )
+                ParticipantsTabItem(
+                    label      = "Custom Groups",
+                    icon       = Icons.Outlined.FolderOpen,
+                    isSelected = selectedTab == ParticipantsTab.CUSTOM_GROUPS,
+                    modifier   = Modifier.weight(1f),
+                    onClick    = { onTabSelected(ParticipantsTab.CUSTOM_GROUPS) }
+                )
+                ParticipantsTabItem(
+                    label      = "Departments",
+                    icon       = Icons.Outlined.Business,
+                    isSelected = selectedTab == ParticipantsTab.DEPARTMENTS,
+                    modifier   = Modifier.weight(1f),
+                    onClick    = { onTabSelected(ParticipantsTab.DEPARTMENTS) }
+                )
+            }
+        }
+        
+        // Line with shadow effect that shows the toggle boundary
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 4.dp)
-        ) {
-            ParticipantsTabItem(
-                label      = "All Members",
-                icon       = Icons.Outlined.People,
-                isSelected = selectedTab == ParticipantsTab.ALL_PARTICIPANTS,
-                badge      = null,
-                modifier   = Modifier.weight(1f),
-                onClick    = { onTabSelected(ParticipantsTab.ALL_PARTICIPANTS) }
-            )
-            ParticipantsTabItem(
-                label      = "Custom Groups",
-                icon       = Icons.Outlined.FolderOpen,
-                isSelected = selectedTab == ParticipantsTab.CUSTOM_GROUPS,
-                badge      = customGroupsCount,
-                modifier   = Modifier.weight(1f),
-                onClick    = { onTabSelected(ParticipantsTab.CUSTOM_GROUPS) }
-            )
-            ParticipantsTabItem(
-                label      = "Departments",
-                icon       = Icons.Outlined.Business,
-                isSelected = selectedTab == ParticipantsTab.DEPARTMENTS,
-                badge      = departmentsCount,
-                modifier   = Modifier.weight(1f),
-                onClick    = { onTabSelected(ParticipantsTab.DEPARTMENTS) }
-            )
-        }
+                .height(1.dp)
+                .shadow(elevation = 3.dp)
+                .background(Color(0xFFE5E5EA))
+        )
     }
 }
 
@@ -656,7 +665,6 @@ fun ParticipantsTabItem(
     label: String,
     icon: ImageVector,
     isSelected: Boolean,
-    badge: Int?,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
@@ -667,54 +675,43 @@ fun ParticipantsTabItem(
     Column(
         modifier = modifier
             .clickable(onClick = onClick)
-            .padding(vertical = 10.dp),
+            .padding(top = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(
             verticalAlignment   = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp)
         ) {
             Icon(
                 imageVector    = icon,
                 contentDescription = null,
                 tint           = tint,
-                modifier       = Modifier.size(16.dp)
+                modifier       = Modifier.size(14.dp)
             )
-            Spacer(modifier = Modifier.width(5.dp))
+            Spacer(modifier = Modifier.width(4.dp))
             Text(
                 text       = label,
                 color      = tint,
-                fontSize   = 14.sp,
-                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                fontSize   = 12.sp,
+                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                maxLines   = 1,
+                overflow   = TextOverflow.Ellipsis,
+                modifier   = Modifier.weight(1f, fill = false)
             )
-            if (badge != null) {
-                Spacer(modifier = Modifier.width(5.dp))
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(
-                            if (isSelected) activeColor
-                            else Color(0xFF3C3C43).copy(alpha = 0.2f)
-                        )
-                        .padding(horizontal = 6.dp, vertical = 1.dp)
-                ) {
-                    Text(
-                        text       = badge.toString(),
-                        color      = if (isSelected) Color.White else Color(0xFF3C3C43),
-                        fontSize   = 11.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Box(
             modifier = Modifier
-                .fillMaxWidth(0.7f)
-                .height(2.dp)
-                .clip(RoundedCornerShape(1.dp))
+                .fillMaxWidth(0.8f)
+                .height(3.dp)
+                .shadow(
+                    elevation = if (isSelected) 2.dp else 0.dp,
+                    shape = RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp)
+                )
+                .clip(RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp))
                 .background(if (isSelected) activeColor else Color.Transparent)
         )
     }

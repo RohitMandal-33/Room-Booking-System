@@ -54,4 +54,7 @@ interface UserApiService {
 
     @GET(APIEndpoint.USER_ADMIN)
     suspend fun adminOnly(): String
+
+    @GET(APIEndpoint.USERS_CURRENT_USER)
+    suspend fun getCurrentUser(): GlobalResponse<UserDetailsDTO>
 }
