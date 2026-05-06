@@ -59,6 +59,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import com.swifttechnology.bookingsystem.core.designsystem.CalendarTodayPurple
 
 
   
@@ -157,8 +158,8 @@ fun CalendarPreviewSection(
             .fillMaxWidth()
             .padding(horizontal = Spacing.md, vertical = Spacing.sm),
         shape     = RoundedCornerShape(AppCornerRadius.xl),
-        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(Elevation.sm)
+        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
+        elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Column(
             modifier = Modifier
@@ -402,7 +403,7 @@ private fun MonthDayCell(
 
     val bgColor = when {
         isStart || isEnd -> MaterialTheme.colorScheme.primary
-        cell.isToday     -> primaryLight
+        cell.isToday     -> CalendarTodayPurple    // solid today circle
         isInRange        -> MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
         else             -> Color.Transparent
     }
@@ -410,7 +411,7 @@ private fun MonthDayCell(
     val textColor = when {
         isStart || isEnd     -> MaterialTheme.colorScheme.onPrimary
         !cell.isCurrentMonth -> MaterialTheme.customColors.textBody.copy(alpha = 0.3f)
-        cell.isToday         -> MaterialTheme.colorScheme.primary
+        cell.isToday         -> Color.White                      // white on the purple circle
         else                 -> MaterialTheme.colorScheme.onSurface
     }
 

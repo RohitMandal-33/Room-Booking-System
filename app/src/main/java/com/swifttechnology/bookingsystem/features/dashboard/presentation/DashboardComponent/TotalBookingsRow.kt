@@ -27,7 +27,7 @@ fun TotalBookingsRow(room: String) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
+            .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = Spacing.md, vertical = Spacing.sm)
     ) {
         Row(

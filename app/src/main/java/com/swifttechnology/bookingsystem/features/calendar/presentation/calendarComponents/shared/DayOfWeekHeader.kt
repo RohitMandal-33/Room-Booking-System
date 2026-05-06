@@ -24,7 +24,7 @@ fun DayOfWeekHeader(withTimeColumn: Boolean = false) {
         if (withTimeColumn) {
             Spacer(modifier = Modifier.width(50.dp))
         }
-        val days = listOf("SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT")
+        val days = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
         days.forEach { day ->
             Text(
                 text = day,

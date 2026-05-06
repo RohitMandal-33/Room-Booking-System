@@ -5,6 +5,8 @@ import com.swifttechnology.bookingsystem.features.booking.data.dtos.BookingRespo
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.MeetingTypeDTO
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.RoomBookingRequestDTO
 import com.swifttechnology.bookingsystem.features.booking.domain.repository.BookingRepository
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import javax.inject.Inject
 
 class BookingRepositoryImpl @Inject constructor(
@@ -50,7 +52,24 @@ class BookingRepositoryImpl @Inject constructor(
     override suspend fun getUpcomingMeetings(): Result<List<BookingResponseDTO>> = runCatching {
         val response = api.getUpcomingMeetings()
         if (!response.success || response.data == null) throw Exception(response.message)
-        response.data
+        val data = response.data
+        
+        val flattenedRecurrences = data.recurrenceRoomBookings.flatMap { recurring ->
+            if (!recurring.dates.isNullOrEmpty()) {
+                recurring.dates.map { recurrenceDate ->
+                    recurring.copy(
+                        id = recurrenceDate.meetingId ?: recurring.id,
+                        meetingId = recurrenceDate.meetingId,
+                        date = recurrenceDate.date
+                    )
+                }
+            } else {
+                listOf(recurring)
+            }
+        }
+        
+        val allMeetings = data.singleRoomBookings + flattenedRecurrences
+        allMeetings.sortedWith(compareBy({ it.date }, { it.startTimeString }))
     }
 
     override suspend fun getRoomMeetings(roomId: Long): Result<List<BookingResponseDTO>> = runCatching {

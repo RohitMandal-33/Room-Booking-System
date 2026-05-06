@@ -21,15 +21,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.swifttechnology.bookingsystem.core.designsystem.CalendarTodayPurple
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.features.calendar.presentation.MeetingEvent
 import java.time.LocalDate
 import java.time.YearMonth
 
-private val PurplePrimary = Color(0xFF6C3EE8)
 private val MaxVisibleEvents = 3
-private val TileCornerRadius = 10.dp
-private val PillHeight = 14.dp
+private val PillHeight      = 14.dp
+private val TileHeight      = 100.dp
+private val TileCorner      = 8.dp
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -40,44 +41,51 @@ fun MonthView(
     onDateClick: (LocalDate) -> Unit,
     onEventClick: (MeetingEvent) -> Unit
 ) {
-    val today = LocalDate.now()
+    val today        = LocalDate.now()
     val firstDayOfMonth = yearMonth.atDay(1)
-    val firstDayOfWeek = firstDayOfMonth.dayOfWeek.value % 7 // Sunday = 0
-    val daysInMonth = yearMonth.lengthOfMonth()
+    val firstDayOfWeek  = firstDayOfMonth.dayOfWeek.value % 7   // Sunday = 0
+    val daysInMonth     = yearMonth.lengthOfMonth()
+
+    // Tile surface — uses the --bg-surface token via colorScheme.surface
+    val tileBg     = MaterialTheme.colorScheme.surface
+    val tileStroke = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface)
+//            .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(rememberScrollState())
     ) {
         for (row in 0 until 6) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f)
+                    .height(TileHeight)
             ) {
-
                 for (col in 0 until 7) {
                     val dayIndex = row * 7 + col - firstDayOfWeek + 1
                     if (dayIndex in 1..daysInMonth) {
-                        val date = yearMonth.atDay(dayIndex)
+                        val date      = yearMonth.atDay(dayIndex)
                         val isSelected = date == selectedDate
-                        val isToday = date == today
+                        val isToday   = date == today
                         val dayEvents = events.filter { it.date == date }
 
                         MonthDayTile(
-                            dayNumber = dayIndex,
-                            isSelected = isSelected,
-                            isToday = isToday,
-                            events = dayEvents,
-                            modifier = Modifier
+                            dayNumber   = dayIndex,
+                            isSelected  = isSelected,
+                            isToday     = isToday,
+                            events      = dayEvents,
+                            tileBg      = tileBg,
+                            tileStroke  = tileStroke,
+                            modifier    = Modifier
                                 .weight(1f)
+                                .fillMaxHeight()
                                 .padding(2.dp),
-                            onClick = { onDateClick(date) },
+                            onClick      = { onDateClick(date) },
                             onEventClick = onEventClick
                         )
                     } else {
-                        // Empty cell or overflow day for adjacent months
+                        // Adjacent-month overflow — same surface tile, muted text
                         val date = if (dayIndex < 1) {
                             val prevMonth = yearMonth.minusMonths(1)
                             prevMonth.atDay(prevMonth.lengthOfMonth() + dayIndex)
@@ -85,24 +93,22 @@ fun MonthView(
                             val nextMonth = yearMonth.plusMonths(1)
                             nextMonth.atDay(dayIndex - daysInMonth)
                         }
-                        
+
                         Box(
                             modifier = Modifier
                                 .weight(1f)
+                                .fillMaxHeight()
                                 .padding(2.dp)
-                                .clip(RoundedCornerShape(TileCornerRadius))
-                                .border(
-                                    0.5.dp,
-                                    MaterialTheme.customColors.divider,
-                                    RoundedCornerShape(TileCornerRadius)
-                                )
+                                .clip(RoundedCornerShape(TileCorner))
+                                .background(tileBg)
+                                .border(0.5.dp, tileStroke, RoundedCornerShape(TileCorner))
                                 .clickable { onDateClick(date) }
                         ) {
                             Text(
-                                text = date.dayOfMonth.toString(),
+                                text     = date.dayOfMonth.toString(),
                                 modifier = Modifier.padding(6.dp),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.customColors.textSecondary.copy(alpha = 0.4f)
+                                style    = MaterialTheme.typography.bodySmall,
+                                color    = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                             )
                         }
                     }
@@ -119,6 +125,8 @@ private fun MonthDayTile(
     isSelected: Boolean,
     isToday: Boolean,
     events: List<MeetingEvent>,
+    tileBg: Color,
+    tileStroke: Color,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
     onEventClick: (MeetingEvent) -> Unit
@@ -126,32 +134,51 @@ private fun MonthDayTile(
     val visibleEvents = events.take(MaxVisibleEvents)
     val overflowCount = events.size - visibleEvents.size
 
+    // Tile card: surface background + hairline border.
+    // Selected tile gets a CalendarTodayPurple accent border; today uses its circle instead.
+    val borderColor = when {
+        isSelected -> CalendarTodayPurple
+        else       -> tileStroke
+    }
+    val borderWidth = if (isSelected) 1.5.dp else 0.5.dp
+
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(TileCornerRadius))
-            .background(MaterialTheme.colorScheme.surface)
-            .border(
-                width = if (isSelected) 1.5.dp else 0.5.dp,
-                color = if (isSelected) PurplePrimary else MaterialTheme.customColors.divider,
-                shape = RoundedCornerShape(TileCornerRadius)
-            )
+            .clip(RoundedCornerShape(TileCorner))
+            .background(tileBg)
+            .border(borderWidth, borderColor, RoundedCornerShape(TileCorner))
             .clickable(onClick = onClick)
             .padding(4.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            // Day number highlight
+            // Day number — always solid purple circle for today; selected-only circle otherwise
             Box(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.TopCenter
             ) {
-                if (isSelected) {
+                if (isToday) {
+                    // Single solid purple circle for today's date
                     Box(
                         modifier = Modifier
                             .size(24.dp)
                             .clip(CircleShape)
-                            .background(
-                                if (isToday) PurplePrimary else MaterialTheme.colorScheme.primary
-                            ),
+                            .background(CalendarTodayPurple),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = dayNumber.toString(),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = Color.White
+                        )
+                    }
+                } else if (isSelected) {
+                    Box(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -166,8 +193,8 @@ private fun MonthDayTile(
                     Text(
                         text = dayNumber.toString(),
                         style = MaterialTheme.typography.bodySmall,
-                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isToday) PurplePrimary else MaterialTheme.customColors.textPrimary,
+                        fontWeight = FontWeight.Normal,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(top = 2.dp)
                     )
                 }
@@ -176,8 +203,7 @@ private fun MonthDayTile(
             // Event pills
             visibleEvents.forEach { event ->
                 EventPill(
-                    event = event,
-                    onClick = onClick
+                    event = event
                 )
             }
 
@@ -185,7 +211,7 @@ private fun MonthDayTile(
             if (overflowCount > 0) {
                 Text(
                     text = "+$overflowCount more",
-                    color = PurplePrimary,
+                    color = CalendarTodayPurple,
                     fontWeight = FontWeight.Bold,
                     fontSize = 10.sp,
                     modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -199,8 +225,7 @@ private fun MonthDayTile(
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun EventPill(
-    event: MeetingEvent,
-    onClick: () -> Unit
+    event: MeetingEvent
 ) {
     val pillColor = event.backendColor ?: event.color
     Box(
@@ -208,9 +233,8 @@ private fun EventPill(
             .fillMaxWidth()
             .height(PillHeight)
             .clip(RoundedCornerShape(4.dp))
-            .background(pillColor.copy(alpha = 0.3f))
+            .background(pillColor.copy(alpha = 0.35f))
             .border(1.dp, pillColor, RoundedCornerShape(4.dp))
-            .clickable(onClick = onClick)
             .padding(horizontal = 4.dp),
         contentAlignment = Alignment.CenterStart
     ) {

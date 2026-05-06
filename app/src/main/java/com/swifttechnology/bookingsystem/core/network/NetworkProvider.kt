@@ -40,10 +40,15 @@ object NetworkProvider {
             .build()
     }
 
-    fun buildRetrofit(client: OkHttpClient): Retrofit =
-        Retrofit.Builder()
+    fun buildRetrofit(client: OkHttpClient): Retrofit {
+        val gson = com.google.gson.GsonBuilder()
+            .registerTypeAdapter(GlobalResponse::class.java, GlobalResponseDeserializer())
+            .create()
+            
+        return Retrofit.Builder()
             .baseUrl(APIEndpoint.BASE_URL)
             .client(client)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
+    }
 }

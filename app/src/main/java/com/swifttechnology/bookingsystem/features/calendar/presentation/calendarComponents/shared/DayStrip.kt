@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.swifttechnology.bookingsystem.core.designsystem.CalendarTodayPurple
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -38,7 +39,6 @@ import java.time.format.TextStyle
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
-private val PurplePrimary = Color(0xFF6C3EE8)
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -56,7 +56,7 @@ fun DayStrip(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Only show header (Month/Year + arrows) if navigation callbacks are provided.
         // This removes the non-functional/duplicate header in screens like CalendarScreen.
@@ -114,35 +114,36 @@ fun DayStrip(
                         .padding(horizontal = 4.dp, vertical = 2.dp)
                 ) {
                     val isToday = day == LocalDate.now()
+                    // Day-of-week abbreviation — TextStyle.SHORT gives Title Case (Mon, Tue …)
                     Text(
                         text = day.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)
                             .take(3),
                         fontSize = 10.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal
+                        fontWeight = FontWeight.Normal
                     )
                     Spacer(modifier = Modifier.height(2.dp))
+                    // Date number — solid purple circle for today, primary circle for selected, transparent otherwise
                     Box(
                         modifier = Modifier
                             .size(30.dp)
                             .clip(CircleShape)
                             .background(
-                                if (isSelected && isToday) PurplePrimary
-                                else if (isSelected) MaterialTheme.colorScheme.primary
-                                else Color.Transparent
+                                when {
+                                    isToday   -> CalendarTodayPurple          // today always gets the fill
+                                    isSelected -> MaterialTheme.colorScheme.primary
+                                    else       -> Color.Transparent
+                                }
                             ),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = day.dayOfMonth.toString(),
                             fontSize = 13.sp,
-                            fontWeight = if (isSelected || day == LocalDate.now()) FontWeight.Bold else FontWeight.Normal,
-                            color = if (isSelected) {
-                                MaterialTheme.colorScheme.onPrimary
-                            } else if (day == LocalDate.now()) {
-                                PurplePrimary
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
+                            fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal,
+                            color = when {
+                                isToday || isSelected -> Color.White
+                                else                  -> MaterialTheme.colorScheme.onSurface
                             }
                         )
                     }

@@ -74,12 +74,12 @@ fun ReportScreen(
 
  
 // Analytics Screen
- 
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ReportsAnalyticsScreen(vm: ReportsAnalyticsViewModel) {
     val horizontalPadding = adaptiveHorizontalScreenPadding()
-    Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
+    Scaffold { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -98,5 +98,3 @@ fun ReportsAnalyticsScreen(vm: ReportsAnalyticsViewModel) {
         }
     }
 }
-
- 

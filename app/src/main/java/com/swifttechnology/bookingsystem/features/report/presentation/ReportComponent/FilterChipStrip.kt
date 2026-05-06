@@ -4,9 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -44,9 +44,6 @@ fun FilterChipStrip(vm: ReportsAnalyticsViewModel) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
-            .background(MaterialTheme.colorScheme.surface)
             .padding(horizontal = 20.dp, vertical = 10.dp)
     ) {
         Row(
@@ -58,7 +55,7 @@ fun FilterChipStrip(vm: ReportsAnalyticsViewModel) {
                 style = TextStyle(
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = ColorPrimary
+                    color = MaterialTheme.colorScheme.primary
                 ),
                 modifier = Modifier
                     .clickable { vm.clearFilters() }
@@ -126,19 +123,22 @@ fun MeetingTypeFilterChip(vm: ReportsAnalyticsViewModel) {
     val selected = vm.selectedMeetingType
     val isActive = selected != null
     val displayText = selected?.name ?: "Type"
+    val isDark = isSystemInDarkTheme()
+
+    val idleBorder = MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isDark) 0.95f else 1f)
 
     Box {
         Row(
             modifier = Modifier
                 .clip(RoundedCornerShape(20.dp))
                 .border(
-                    0.5.dp,
-                    if (isActive) Color(0xFFAFA9EC) else ColorChipBorder,
+                    if (isActive) 1.dp else 1.dp,
+                    if (isActive) MaterialTheme.colorScheme.primary else idleBorder,
                     RoundedCornerShape(20.dp)
                 )
                 .background(
                     if (isActive) MaterialTheme.colorScheme.primaryContainer
-                    else MaterialTheme.colorScheme.surface
+                    else MaterialTheme.colorScheme.surface.copy(alpha = if (isDark) 0.28f else 1f)
                 )
                 .clickable { expanded = !expanded }
                 .padding(horizontal = 12.dp, vertical = 8.dp),
@@ -149,14 +149,14 @@ fun MeetingTypeFilterChip(vm: ReportsAnalyticsViewModel) {
                 imageVector = Icons.Default.Category,
                 contentDescription = null,
                 modifier = Modifier.size(15.dp),
-                tint = if (isActive) Color(0xFF534AB7) else ColorOnSurfaceVar
+                tint = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
                 text = displayText,
                 style = TextStyle(
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
-                    color = if (isActive) Color(0xFF534AB7) else ColorOnSurface
+                    color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                 ),
                 maxLines = 1
             )
@@ -164,7 +164,7 @@ fun MeetingTypeFilterChip(vm: ReportsAnalyticsViewModel) {
                 imageVector = Icons.Default.KeyboardArrowDown,
                 contentDescription = null,
                 modifier = Modifier.size(15.dp),
-                tint = if (isActive) Color(0xFF534AB7) else ColorOnSurfaceVar
+                tint = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
@@ -175,7 +175,6 @@ fun MeetingTypeFilterChip(vm: ReportsAnalyticsViewModel) {
                 .widthIn(min = 160.dp, max = menuMaxW)
                 .heightIn(max = menuMaxH)
                 .background(MaterialTheme.colorScheme.surface)
-                .verticalScroll(rememberScrollState())
         ) {
             DropdownMenuItem(
                 text = { Text("All", style = TextStyle(fontSize = 14.sp)) },
@@ -190,7 +189,7 @@ fun MeetingTypeFilterChip(vm: ReportsAnalyticsViewModel) {
                             style = TextStyle(
                                 fontSize = 14.sp,
                                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                color = if (isSelected) Color(0xFF534AB7) else ColorOnSurface
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                             )
                         )
                     },
@@ -221,19 +220,21 @@ fun DropdownFilterChip(
         minOf(420.dp, LocalConfiguration.current.screenWidthDp.dp - 32.dp).coerceAtLeast(160.dp)
     val isActive = selected != "All" && selected != "Asc"
     val displayText = if (isActive) selected else label
+    val isDark = isSystemInDarkTheme()
+    val idleBorder = MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isDark) 0.95f else 1f)
 
     Box {
         Row(
             modifier = Modifier
                 .clip(RoundedCornerShape(20.dp))
                 .border(
-                    0.5.dp,
-                    if (isActive) Color(0xFFAFA9EC) else ColorChipBorder,
+                    1.dp,
+                    if (isActive) MaterialTheme.colorScheme.primary else idleBorder,
                     RoundedCornerShape(20.dp)
                 )
                 .background(
                     if (isActive) MaterialTheme.colorScheme.primaryContainer
-                    else MaterialTheme.colorScheme.surface
+                    else MaterialTheme.colorScheme.surface.copy(alpha = if (isDark) 0.28f else 1f)
                 )
                 .clickable { expanded = !expanded }
                 .padding(horizontal = 12.dp, vertical = 8.dp),
@@ -244,14 +245,14 @@ fun DropdownFilterChip(
                 imageVector = icon,
                 contentDescription = null,
                 modifier = Modifier.size(15.dp),
-                tint = if (isActive) Color(0xFF534AB7) else ColorOnSurfaceVar
+                tint = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
                 text = displayText,
                 style = TextStyle(
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
-                    color = if (isActive) Color(0xFF534AB7) else ColorOnSurface
+                    color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                 ),
                 maxLines = 1
             )
@@ -259,7 +260,7 @@ fun DropdownFilterChip(
                 imageVector = Icons.Default.KeyboardArrowDown,
                 contentDescription = null,
                 modifier = Modifier.size(15.dp),
-                tint = if (isActive) Color(0xFF534AB7) else ColorOnSurfaceVar
+                tint = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
@@ -270,7 +271,6 @@ fun DropdownFilterChip(
                 .widthIn(min = 160.dp, max = menuMaxW)
                 .heightIn(max = menuMaxH)
                 .background(MaterialTheme.colorScheme.surface)
-                .verticalScroll(rememberScrollState())
         ) {
             options.forEach { option ->
                 val isSelected = option == selected
@@ -281,7 +281,7 @@ fun DropdownFilterChip(
                             style = TextStyle(
                                 fontSize = 14.sp,
                                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                color = if (isSelected) Color(0xFF534AB7) else ColorOnSurface
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                             )
                         )
                     },

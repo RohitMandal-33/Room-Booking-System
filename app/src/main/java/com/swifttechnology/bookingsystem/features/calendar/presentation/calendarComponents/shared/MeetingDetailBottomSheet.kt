@@ -155,6 +155,7 @@ fun MeetingDetailBottomSheet(
     ) {
         Column(
             modifier = Modifier
+                .fillMaxHeight()
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = horizontalPad)

@@ -28,7 +28,6 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.clip
@@ -39,6 +38,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.swifttechnology.bookingsystem.core.designsystem.*
@@ -138,11 +138,8 @@ fun CalendarScreen(
         onNext = viewModel::onNext,
         onDateSelected = viewModel::onDateSelected,
         onMonthTileClick = { date ->
-            if (uiState.selectedDate == date) {
-                viewModel.onViewChange(CalendarView.DAY)
-            } else {
-                viewModel.onDateSelected(date)
-            }
+            viewModel.onDateSelected(date)
+            viewModel.onViewChange(CalendarView.DAY)
         },
 
 
@@ -208,7 +205,7 @@ private fun CalendarContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.customColors.whitePure)
+//            .background(MaterialTheme.colorScheme.background)
     ) {
         TopBar(
             currentView = uiState.currentView,
@@ -425,7 +422,7 @@ private fun TopBar(
                     modifier = Modifier
                         .clip(CircleShape)
                         .border(1.dp, Color(0xFF9D74FE), CircleShape)
-                        .background(MaterialTheme.colorScheme.surface)
+                        .background(MaterialTheme.colorScheme.background)
                         .clickable { expanded = true }
                         .padding(horizontal = 12.dp)
                         .height(32.dp),
@@ -547,20 +544,18 @@ fun DayOfWeekHeader(withTimeColumn: Boolean = false, isCurrentMonth: Boolean = t
         if (withTimeColumn) {
             Spacer(modifier = Modifier.width(50.dp))
         }
-        val days = listOf("SUN", "MON", "TUE", "WED", "THUR", "FRI", "SAT")
-        val todayStr = java.time.LocalDate.now().dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.ENGLISH).uppercase()
-
+        // Title Case 3-letter abbreviations; today column highlight removed —
+        // the today circle on the date number already communicates the current day.
+        val days = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
         days.forEach { day ->
-            val isToday = isCurrentMonth && day.take(3) == todayStr.take(3)
             Text(
                 text = day,
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.labelSmall,
-                fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
-                color = if (isToday) PurplePrimary else MaterialTheme.customColors.textSecondary
+                fontWeight = FontWeight.Normal,
+                color = MaterialTheme.customColors.textSecondary
             )
         }
     }
 }
-

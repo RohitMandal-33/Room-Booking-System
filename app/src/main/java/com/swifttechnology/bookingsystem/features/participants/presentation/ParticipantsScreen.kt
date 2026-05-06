@@ -259,7 +259,7 @@ fun ParticipantsScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface)
+                    .background(MaterialTheme.colorScheme.background)
                     .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
                 Row(
@@ -482,7 +482,7 @@ fun CustomGroupCard(
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
-            color = MaterialTheme.colorScheme.surface,
+            color = MaterialTheme.colorScheme.background,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -612,7 +612,7 @@ fun DepartmentCard(department: Department) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape  = RoundedCornerShape(20.dp),
-            color  = MaterialTheme.colorScheme.surface,
+            color  = MaterialTheme.colorScheme.background,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
         ) {
             Column(modifier = Modifier.padding(16.dp)) {

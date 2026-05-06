@@ -272,7 +272,7 @@ private fun WeekCalendarGrid(
             Column(
                 modifier = Modifier
                     .width(50.dp)
-                    .background(MaterialTheme.colorScheme.surface)
+                    .background(MaterialTheme.colorScheme.background)
             ) {
                 timeSlots.forEachIndexed { index, label ->
                     Box(
@@ -280,7 +280,7 @@ private fun WeekCalendarGrid(
                             .fillMaxWidth()
                             .height(60.dp)
                             .border(width = 0.5.dp, color = gridBorder.copy(alpha = 0.5f))
-                            .background(MaterialTheme.colorScheme.surface),
+                            .background(MaterialTheme.colorScheme.background),
                         contentAlignment = Alignment.TopCenter
                     ) {
                         Text(
@@ -356,7 +356,7 @@ private fun DayColumn(
                     .fillMaxWidth()
                     .height((duration).dp)
                     .offset(y = (startMinutes).dp)
-                    .background(eventColor.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                    .background(eventColor.copy(alpha = 0.35f), RoundedCornerShape(4.dp))
                     .border(1.dp, eventColor, RoundedCornerShape(4.dp))
                     .clickable { onEventClick(event) }
                     .padding(4.dp)

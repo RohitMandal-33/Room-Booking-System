@@ -286,7 +286,7 @@ fun DayColumnWithPicker(
                                 .height(with(density) { heightPx.toDp() })
                                 .padding(horizontal = 2.dp, vertical = 1.dp)
                                 .clip(RoundedCornerShape(EVENT_BLOCK_CORNER_DP.dp))
-                                .background(eventColor.copy(alpha = 0.15f), RoundedCornerShape(EVENT_BLOCK_CORNER_DP.dp))
+                                .background(eventColor.copy(alpha = 0.35f), RoundedCornerShape(EVENT_BLOCK_CORNER_DP.dp))
                                 .border(1.5.dp, eventColor, RoundedCornerShape(EVENT_BLOCK_CORNER_DP.dp))
                                 .pointerInput(event) {
                                     detectTapGestures(

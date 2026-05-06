@@ -35,6 +35,15 @@ val SurfaceVariantDark = Color(0xFF21262D)
 val OnBackgroundDark = Color(0xFFE6EDF3)
 val OnSurfaceDark = Color(0xFFCDD5DF)
 
+// Design-token surface hierarchy (dark mode)
+// --bg-base  → page / screen background
+val BgBaseDark    = Color(0xFF0D0D12)
+// --bg-surface → cards, panels, modals
+val BgSurfaceDark = Color(0xFF16161E)
+
+// Shared calendar token — today's date circle
+val CalendarTodayPurple = Color(0xFF7F77DD)
+
 //Text
 val TextPrimary = Color(0xFF111827)
 val TextSecondary = Color(0xFF6B7280)

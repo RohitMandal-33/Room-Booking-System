@@ -44,7 +44,7 @@ import com.swifttechnology.bookingsystem.R
 import androidx.annotation.RequiresApi
 
 
-// ─── Design Tokens ────────────────────────────────────────────────────────────
+//     Design Tokens                                                             
 
 internal val ColorPrimary       = Color(0xFF4A2D9C)
 internal val ColorPrimaryLight  = Color(0xFFEDE9F8)
@@ -56,7 +56,7 @@ internal val ColorDivider       = Color(0xFFE4E0F0)
 internal val ColorChipBorder    = Color(0xFFCFC2D7)
 
 
-// ─── Column Definitions ───────────────────────────────────────────────────────
+//     Column Definitions                                                        
 
 /**
  * [minWidth] is the minimum column width used when the table must scroll horizontally.
@@ -79,7 +79,7 @@ internal val allColumns = listOf(
 )
 
 
-// ─── Activity Table Card ──────────────────────────────────────────────────────
+//     Activity Table Card                                                       
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -96,11 +96,10 @@ fun ActivityTableCard(vm: ReportsAnalyticsViewModel) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .background(MaterialTheme.colorScheme.surface)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
     ) {
 
-        // ── Header bar: date range + Columns button ──────────────────────────
+        //    Header bar: date range + Columns button                           
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -132,13 +131,13 @@ fun ActivityTableCard(vm: ReportsAnalyticsViewModel) {
                         text       = "Date From",
                         fontSize   = 12.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color      = ColorOnSurfaceVar.copy(alpha = 0.7f)
+                        color      = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     )
                     Text(
                         text       = "${startDate.format(fmt)} to ${endDate.format(fmt)}",
                         fontSize   = 12.sp,
                         fontWeight = FontWeight.Medium,
-                        color      = ColorOnSurfaceVar
+                        color      = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             } else {
@@ -149,7 +148,7 @@ fun ActivityTableCard(vm: ReportsAnalyticsViewModel) {
                 modifier = Modifier
                     .clip(RoundedCornerShape(12.dp))
                     .border(1.dp, ColorChipBorder, RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surface)
+                    .background(MaterialTheme.colorScheme.background)
                     .clickable { showColumnsSheet = true }
                     .padding(horizontal = 16.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -170,7 +169,7 @@ fun ActivityTableCard(vm: ReportsAnalyticsViewModel) {
 
         HorizontalDivider(color = ColorDivider)
 
-        // ── Scrollable table body ────────────────────────────────────────────
+        //    Scrollable table body                                             
         /**
          * Strategy:
          *  1. Measure the available container width via BoxWithConstraints.
@@ -215,7 +214,7 @@ fun ActivityTableCard(vm: ReportsAnalyticsViewModel) {
                         ) {
                             Text(
                                 "No results found",
-                                style = TextStyle(fontSize = 14.sp, color = ColorOnSurfaceVar)
+                                style = TextStyle(fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             )
                         }
                     } else {
@@ -238,7 +237,7 @@ fun ActivityTableCard(vm: ReportsAnalyticsViewModel) {
         TableFooter(vm)
     }
 
-    // ── Column-picker bottom sheet ───────────────────────────────────────────
+    //    Column-picker bottom sheet                                            
     if (showColumnsSheet) {
         ModalBottomSheet(
             onDismissRequest = { showColumnsSheet = false },
@@ -251,7 +250,7 @@ fun ActivityTableCard(vm: ReportsAnalyticsViewModel) {
             ) {
                 Text(
                     "Select Columns",
-                    style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 18.sp, color = ColorOnSurface)
+                    style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -294,7 +293,7 @@ fun ActivityTableCard(vm: ReportsAnalyticsViewModel) {
 }
 
 
-// ─── Table Header Row ─────────────────────────────────────────────────────────
+//     Table Header Row                                                          
 
 /**
  * @param activeColumns   the ordered list of columns currently visible.
@@ -312,7 +311,7 @@ internal fun TableHeaderRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
+            .background(MaterialTheme.colorScheme.background)
             .padding(vertical = 14.dp)
     ) {
         activeColumns.forEachIndexed { index, col ->
@@ -330,7 +329,7 @@ internal fun TableHeaderRow(
                 style    = TextStyle(
                     fontWeight = FontWeight.Bold,
                     fontSize   = 14.sp,
-                    color      = ColorOnSurface
+                    color      = MaterialTheme.colorScheme.onSurface
                 ),
                 maxLines  = 1,
                 overflow  = TextOverflow.Ellipsis
@@ -340,7 +339,7 @@ internal fun TableHeaderRow(
 }
 
 
-// ─── Table Body Row ───────────────────────────────────────────────────────────
+//     Table Body Row                                                            
 
 @Composable
 internal fun TableBodyRow(
@@ -363,7 +362,7 @@ internal fun TableBodyRow(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                if (isEven) MaterialTheme.colorScheme.surface
+                if (isEven) MaterialTheme.colorScheme.background
                 else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
             )
             .padding(vertical = 14.dp),
@@ -384,7 +383,7 @@ internal fun TableBodyRow(
                 style    = TextStyle(
                     fontWeight = if (col.isFixed) FontWeight.Medium else FontWeight.Normal,
                     fontSize   = 14.sp,
-                    color      = if (col.isFixed) ColorOnSurface else ColorOnSurfaceVar
+                    color      = if (col.isFixed) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                 ),
                 maxLines  = 2,
                 overflow  = TextOverflow.Ellipsis

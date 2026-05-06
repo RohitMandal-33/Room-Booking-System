@@ -98,6 +98,12 @@ data class RoomBookerDTO(
     val phoneNumber: String? = null
 )
 
+data class RecurrenceDateDTO(
+    val meetingId: Long? = null,
+    val date: String? = null
+)
+
+
 /**
  * Booking details returned from the API.
  */
@@ -121,7 +127,8 @@ data class BookingResponseDTO(
     val externalParticipant: List<ExternalParticipantDTO>? = null,
     /** Populated when this booking is part of a recurring series. */
     val recurrenceId: String? = null,
-    val recurrenceType: String? = null   // "NONE" | "DAILY" | "WEEKDAY" | "WEEKLY" | "MONTHLY" | "YEARLY" | "CUSTOM"
+    val recurrenceType: String? = null,  // "NONE" | "DAILY" | "WEEKDAY" | "WEEKLY" | "MONTHLY" | "YEARLY" | "CUSTOM"
+    val dates: List<RecurrenceDateDTO>? = null
 ) {
     val meetingType: String?
         get() = when (meetingTypeObj) {
@@ -172,3 +179,11 @@ data class BookingResponseDTO(
             else -> null
         }
 }
+
+/**
+ * Response for the Upcoming Meetings API endpoint.
+ */
+data class UpcomingMeetingsResponseDTO(
+    val recurrenceRoomBookings: List<BookingResponseDTO> = emptyList(),
+    val singleRoomBookings: List<BookingResponseDTO> = emptyList()
+)

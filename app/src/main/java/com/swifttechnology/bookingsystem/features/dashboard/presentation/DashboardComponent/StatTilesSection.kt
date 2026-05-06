@@ -26,13 +26,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.swifttechnology.bookingsystem.core.designsystem.CornerRadius
 import com.swifttechnology.bookingsystem.core.designsystem.Elevation
 import com.swifttechnology.bookingsystem.core.designsystem.Primary
 import com.swifttechnology.bookingsystem.core.designsystem.Spacing
-import com.swifttechnology.bookingsystem.core.designsystem.TextSecondary
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.features.dashboard.data.dtos.DashboardResponseDTO
 
@@ -71,9 +71,18 @@ fun StatTilesSection(stats: DashboardResponseDTO? = null) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .padding(horizontal = Spacing.md, vertical = Spacing.ms)
     ) {
+        // Section header
+        Text(
+            text = "Overview",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Spacer(modifier = Modifier.height(Spacing.sm))
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -82,8 +91,6 @@ fun StatTilesSection(stats: DashboardResponseDTO? = null) {
         ) {
             statTiles.forEach { tile -> StatTileCard(tile) }
         }
-
-        Spacer(modifier = Modifier.height(Spacing.ms))
     }
 }
 
@@ -102,13 +109,13 @@ private fun StatTileCard(tile: StatTile) {
                 Text(
                     tile.label,
                     style    = MaterialTheme.typography.labelMedium,
-                    color    = TextSecondary,
+                    color    = MaterialTheme.customColors.textSecondary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
             Spacer(modifier = Modifier.height(Spacing.sm))
-            Text(tile.value, style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface)
+            Text(tile.value, style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
             Spacer(modifier = Modifier.height(Spacing.xxs))
         }
     }

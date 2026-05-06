@@ -6,6 +6,7 @@ import com.swifttechnology.bookingsystem.features.booking.data.dtos.BookingRespo
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.CalenderRequestDTO
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.MeetingTypeDTO
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.RoomBookingRequestDTO
+import com.swifttechnology.bookingsystem.features.booking.data.dtos.UpcomingMeetingsResponseDTO
 import retrofit2.http.*
 
 interface BookingApiService {
@@ -32,7 +33,7 @@ interface BookingApiService {
     suspend fun getAllBookings(): GlobalResponse<List<BookingResponseDTO>>
 
     @GET(APIEndpoint.UPCOMING_MEETING)
-    suspend fun getUpcomingMeetings(): GlobalResponse<List<BookingResponseDTO>>
+    suspend fun getUpcomingMeetings(): GlobalResponse<UpcomingMeetingsResponseDTO>
 
     @PATCH(APIEndpoint.BOOKED_ROOM_CHANGE_STATUS)
     suspend fun changeBookedRoomStatus(

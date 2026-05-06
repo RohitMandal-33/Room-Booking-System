@@ -38,7 +38,6 @@ import com.swifttechnology.bookingsystem.core.designsystem.CornerRadius
 import com.swifttechnology.bookingsystem.core.designsystem.Elevation
 import com.swifttechnology.bookingsystem.core.designsystem.Primary
 import com.swifttechnology.bookingsystem.core.designsystem.Spacing
-import com.swifttechnology.bookingsystem.core.designsystem.TextSecondary
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
 
 @Composable
@@ -51,7 +50,7 @@ fun RoomBookingHeader(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
+            .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -63,7 +62,7 @@ fun RoomBookingHeader(
         Spacer(modifier = Modifier.height(Spacing.ms))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Room :", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+            Text("Room :", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.customColors.textSecondary)
             Spacer(modifier = Modifier.width(Spacing.sm))
 
             OutlinedCard(
@@ -78,7 +77,7 @@ fun RoomBookingHeader(
                         )
                     },
                 shape  = RoundedCornerShape(CornerRadius.md),
-                colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+                colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.background),
                 border = BorderStroke(1.dp, MaterialTheme.customColors.divider)
             ) {
                 Row(

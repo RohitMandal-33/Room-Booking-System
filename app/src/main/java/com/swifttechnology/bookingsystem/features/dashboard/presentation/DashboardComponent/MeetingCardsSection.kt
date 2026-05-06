@@ -77,38 +77,34 @@ fun MeetingCardsSection(
 ) {
     var selectedMeeting by remember { mutableStateOf<BookingResponseDTO?>(null) }
 
-    Card(
-        modifier  = Modifier.fillMaxWidth(),
-        shape     = RoundedCornerShape(0.dp),
-        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(0.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.md, vertical = Spacing.ms)
     ) {
-        Column(modifier = Modifier.padding(vertical = Spacing.ms)) {
-
-            //    Section header
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = Spacing.md)
-                    .padding(bottom = Spacing.ms),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment     = Alignment.CenterVertically
-            ) {
+        // Section header
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = Spacing.ms),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment     = Alignment.CenterVertically
+        ) {
+            Text(
+                text  = "Upcoming Meetings",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            if (!isLoading && meetings.isNotEmpty()) {
                 Text(
-                    text  = "Upcoming Meetings",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    text  = "${meetings.size} meeting${if (meetings.size > 1) "s" else ""}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.customColors.textBody
                 )
-                if (!isLoading && meetings.isNotEmpty()) {
-                    Text(
-                        text  = "${meetings.size} meeting${if (meetings.size > 1) "s" else ""}",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.customColors.textBody
-                    )
-                }
             }
-            //                                                                                                                                  
+        }
+
 
             when {
                 isLoading -> {
@@ -142,7 +138,7 @@ fun MeetingCardsSection(
                     Column(
                         modifier              = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = Spacing.md, vertical = Spacing.lg),
+                            .padding(vertical = Spacing.lg),
                         horizontalAlignment   = Alignment.CenterHorizontally,
                         verticalArrangement   = Arrangement.spacedBy(Spacing.sm)
                     ) {
@@ -168,7 +164,7 @@ fun MeetingCardsSection(
 
                 else -> {
                     LazyRow(
-                        contentPadding        = PaddingValues(horizontal = Spacing.md),
+                        contentPadding        = PaddingValues(horizontal = 0.dp),
                         horizontalArrangement = Arrangement.spacedBy(Spacing.ms),
                         modifier              = Modifier.fillMaxWidth()
                     ) {
@@ -193,7 +189,7 @@ fun MeetingCardsSection(
                     Spacer(modifier = Modifier.height(10.dp))
                     androidx.compose.material3.TextButton(
                         onClick = {},
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.md)
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
                             text = "View All",
@@ -203,7 +199,6 @@ fun MeetingCardsSection(
                     }
                 }
             }
-        }
     }
 
     selectedMeeting?.let { meeting ->
@@ -292,8 +287,8 @@ private fun MeetingCardItem(card: MeetingCard, onViewDetails: () -> Unit) {
     Card(
         modifier  = Modifier.width(260.dp),
         shape     = RoundedCornerShape(CornerRadius.lg),
-        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(Elevation.sm)
+        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -305,7 +300,7 @@ private fun MeetingCardItem(card: MeetingCard, onViewDetails: () -> Unit) {
                     card.title,
                     style    = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color    = MaterialTheme.colorScheme.onSurface,
+                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.weight(1f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
