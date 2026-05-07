@@ -29,8 +29,23 @@ class AnnouncementRepositoryImpl @Inject constructor(
         response.data.content?.map { it.toDomain() } ?: emptyList()
     }
 
-    override suspend fun getTargetedPinnedAnnouncements(): Result<List<Announcement>> =
-        getPinnedAnnouncements()
+    override suspend fun getTargetedPinnedAnnouncements(): Result<List<Announcement>> = runCatching {
+        val request = com.swifttechnology.bookingsystem.features.announcements.data.dtos.AnnouncementPinStatusRequestDTO(
+            pageNo   = 0,
+            pageSize = 50,
+            pinStatus = true
+        )
+        val response = api.getAnnouncementsByPinStatus(request)
+        if (!response.success || response.data == null) throw Exception(response.message)
+        response.data.content?.map { it.toDomain() } ?: emptyList()
+    }
+
+    override suspend fun getScheduledAnnouncements(): Result<List<Announcement>> = runCatching {
+        val request = com.swifttechnology.bookingsystem.features.meetingrooms.data.dtos.PaginatedDataRequestDTO(pageNo = 0, pageSize = 50)
+        val response = api.getScheduledAnnouncements(request)
+        if (!response.success || response.data == null) throw Exception(response.message)
+        response.data.content?.map { it.toDomain() } ?: emptyList()
+    }
 
     override suspend fun addAnnouncement(request: AnnouncementRequestDTO): Result<Unit> = runCatching {
         val response = api.addAnnouncement(request)
@@ -75,6 +90,7 @@ class AnnouncementRepositoryImpl @Inject constructor(
         createdAt      = createdAt.orEmpty(),
         startDate      = startDate,
         endDate        = endDate,
-        isRead         = read ?: isRead ?: false
+        isRead         = read ?: isRead ?: false,
+        scheduled      = scheduled ?: false
     )
 }

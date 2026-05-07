@@ -5,7 +5,7 @@ import com.swifttechnology.bookingsystem.navigation.ScreenRoutes
 import com.swifttechnology.bookingsystem.shared.components.SidebarItem
 import com.swifttechnology.bookingsystem.shared.components.defaultSidebarItems
 
-enum class AnnouncementTab { ALL, PINNED }
+enum class AnnouncementTab { ALL, PINNED, SCHEDULED }
 
 data class AnnouncementsUiState(
     // Navigation
@@ -23,6 +23,7 @@ data class AnnouncementsUiState(
     // Data
     val allAnnouncements: List<Announcement> = emptyList(),
     val pinnedAnnouncements: List<Announcement> = emptyList(),
+    val scheduledAnnouncements: List<Announcement> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
 
@@ -40,6 +41,7 @@ data class AnnouncementsUiState(
             val source = when (selectedTab) {
                 AnnouncementTab.ALL    -> allAnnouncements
                 AnnouncementTab.PINNED -> pinnedAnnouncements
+                AnnouncementTab.SCHEDULED -> scheduledAnnouncements
             }
             return if (searchQuery.isBlank()) source
             else source.filter {

@@ -186,7 +186,7 @@ private fun CalendarContent(
     onDateSelected: (LocalDate) -> Unit,
     onMonthTileClick: (LocalDate) -> Unit,
     onEventSelected: (MeetingEvent?) -> Unit,
-    onRoomSelected: (Room) -> Unit,
+    onRoomSelected: (Room?) -> Unit,
     onGridLongPress: (Int) -> Unit,
     onPickerDragStarted: () -> Unit,
     onPickerPreviewChanged: (TimeRange) -> Unit,
@@ -375,7 +375,7 @@ private fun TopBar(
     showRoomPicker: Boolean,
     selectedRoom: Room?,
     rooms: List<Room>,
-    onRoomSelected: (Room) -> Unit
+    onRoomSelected: (Room?) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -430,7 +430,7 @@ private fun TopBar(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = selectedRoom?.name ?: "Meeting Room",
+                        text = selectedRoom?.name ?: "All Rooms",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.customColors.textPrimary
@@ -450,6 +450,13 @@ private fun TopBar(
                         .widthIn(max = menuMaxW)
                         .heightIn(max = menuMaxH)
                 ) {
+                    DropdownMenuItem(
+                        text = { Text("All Rooms") },
+                        onClick = {
+                            onRoomSelected(null)
+                            expanded = false
+                        }
+                    )
                     rooms.forEach { room ->
                         DropdownMenuItem(
                             text = { Text(room.name) },

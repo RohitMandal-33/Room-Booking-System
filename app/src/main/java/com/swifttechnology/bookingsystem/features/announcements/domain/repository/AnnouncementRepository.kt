@@ -6,6 +6,7 @@ import com.swifttechnology.bookingsystem.features.announcements.data.dtos.Announ
 interface AnnouncementRepository {
     suspend fun getAllAnnouncements(): Result<List<Announcement>>
     suspend fun getPinnedAnnouncements(): Result<List<Announcement>>
+    suspend fun getScheduledAnnouncements(): Result<List<Announcement>>
     suspend fun getTargetedPinnedAnnouncements(): Result<List<Announcement>>
     suspend fun addAnnouncement(request: AnnouncementRequestDTO): Result<Unit>
     suspend fun updateAnnouncement(id: Long, request: AnnouncementRequestDTO): Result<Unit>

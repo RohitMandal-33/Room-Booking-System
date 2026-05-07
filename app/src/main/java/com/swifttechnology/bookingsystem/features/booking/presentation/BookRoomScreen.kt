@@ -29,15 +29,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,8 +57,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.swifttechnology.bookingsystem.R
-import com.swifttechnology.bookingsystem.core.designsystem.Neutral400
-import com.swifttechnology.bookingsystem.core.designsystem.Neutral700
 import com.swifttechnology.bookingsystem.core.designsystem.Spacing
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.features.booking.presentation.components.BookingClickableField
@@ -71,13 +72,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import com.swifttechnology.bookingsystem.features.booking.presentation.components.SelectedParticipantChip
 
-/**
- * Parses all colour string formats the backend may return:
- *  - "#RRGGBB"
- *  - "rgb(R,G,B)"
- *  - bare "(R,G,B)" (missing the 'rgb' prefix)
- * Falls back to a default purple on any parse failure.
- */
 private fun parseMeetingTypeColor(colorCode: String?): Color {
     val fallback = Color(0xFF6C3EE8)
     if (colorCode.isNullOrBlank()) return fallback
@@ -94,6 +88,29 @@ private fun parseMeetingTypeColor(colorCode: String?): Color {
             else -> fallback
         }
     } catch (e: Exception) { fallback }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+private fun parseDisplayDateToMillis(displayDate: String): Long? {
+    if (displayDate.isBlank()) return null
+    return try {
+        val format = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault())
+        format.parse(displayDate)?.time
+    } catch (e: Exception) {
+        null
+    }
+}
+
+private fun formatMillisToDisplayDate(millis: Long): String {
+    val format = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault())
+    return format.format(java.util.Date(millis))
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+private object PastDateValidator : SelectableDates {
+    override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+        return utcTimeMillis >= (System.currentTimeMillis() - 3600000)
+    }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -117,7 +134,6 @@ fun BookRoomScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Show success callback
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             if (event is BookRoomEvent.NavigateBack) {
@@ -127,7 +143,6 @@ fun BookRoomScreen(
         }
     }
 
-    // Show error Snackbar
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let { error ->
             snackbarHostState.showSnackbar(
@@ -139,14 +154,10 @@ fun BookRoomScreen(
     }
 
     val wasPrefilledRef = remember { mutableStateOf(false) }
-    // Include availableParticipants in the key set so this re-fires once the participant
-    // list arrives from the API (it loads asynchronously via a Flow).
+
     LaunchedEffect(uiState.availableRooms, uiState.availableMeetingTypes, uiState.availableParticipants, initialRoomName, initialDetails) {
         if (uiState.availableRooms.isNotEmpty() && !wasPrefilledRef.value) {
-            // Wait for meeting types too before pre-filling so meetingTypeId resolves correctly
             if (initialDetails != null && uiState.availableMeetingTypes.isEmpty()) return@LaunchedEffect
-            // If this booking has internal participants, wait until the participant list has
-            // loaded so that the prefill can actually match them by id.
             if (initialDetails != null
                 && initialDetails.internalParticipantIds.isNotEmpty()
                 && uiState.availableParticipants.isEmpty()
@@ -154,21 +165,21 @@ fun BookRoomScreen(
             if (initialDetails != null) {
                 wasPrefilledRef.value = true
                 viewModel.prefillBookingDetails(
-                    bookingId             = initialDetails.bookingId,
-                    roomName              = initialDetails.roomName,
-                    date                  = initialDetails.date,
-                    startTime             = initialDetails.startTime,
-                    endTime               = initialDetails.endTime,
-                    meetingTitle          = initialDetails.meetingTitle,
-                    meetingType           = initialDetails.meetingType,
+                    bookingId              = initialDetails.bookingId,
+                    roomName               = initialDetails.roomName,
+                    date                   = initialDetails.date,
+                    startTime              = initialDetails.startTime,
+                    endTime                = initialDetails.endTime,
+                    meetingTitle           = initialDetails.meetingTitle,
+                    meetingType            = initialDetails.meetingType,
                     meetingTypeId          = initialDetails.meetingTypeId,
-                    description           = initialDetails.description,
+                    description            = initialDetails.description,
                     internalParticipantIds = initialDetails.internalParticipantIds,
-                    externalMembers       = initialDetails.externalMembers,
-                    recurrenceId          = initialDetails.recurrenceId,
-                    isRecurring           = initialDetails.isRecurring,
-                    recurrenceType        = initialDetails.recurrenceType,
-                    updateScope           = initialDetails.updateScope
+                    externalMembers        = initialDetails.externalMembers,
+                    recurrenceId           = initialDetails.recurrenceId,
+                    isRecurring            = initialDetails.isRecurring,
+                    recurrenceType         = initialDetails.recurrenceType,
+                    updateScope            = initialDetails.updateScope
                 )
             } else if (initialRoomName != null) {
                 wasPrefilledRef.value = true
@@ -194,10 +205,9 @@ fun BookRoomScreen(
     val formState = uiState.formState
 
     var showDatePicker by remember { mutableStateOf(false) }
-    var showEndDatePicker by remember { mutableStateOf(false) }
+    var showDateRangePicker by remember { mutableStateOf(false) }
     var showMeetingTypeDropdown by remember { mutableStateOf(false) }
     var showRecurringDropdown by remember { mutableStateOf(false) }
-    // Two separate bottom sheet flags
     var showInternalSheet by remember { mutableStateOf(false) }
     var showExternalSheet by remember { mutableStateOf(false) }
     var showRoomDropdown by remember { mutableStateOf(false) }
@@ -205,13 +215,28 @@ fun BookRoomScreen(
     val internalSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val externalSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
+    val singleDateInitialMillis = remember(formState.date) { parseDisplayDateToMillis(formState.date) }
+    val rangeStartInitialMillis = remember(formState.date) { parseDisplayDateToMillis(formState.date) }
+    val rangeEndInitialMillis   = remember(formState.recurrenceEndDate) { parseDisplayDateToMillis(formState.recurrenceEndDate) }
+
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = singleDateInitialMillis,
+        selectableDates           = PastDateValidator
+    )
+
+    val dateRangePickerState = rememberDateRangePickerState(
+        initialSelectedStartDateMillis = rangeStartInitialMillis,
+        initialSelectedEndDateMillis   = rangeEndInitialMillis,
+        selectableDates                = PastDateValidator
+    )
+
     val meetingTypes = uiState.availableMeetingTypes.mapNotNull { it.name }.ifEmpty { listOf("Internal", "Client", "Executive") }
-    
+
     val meetingTypeIcons: Map<String, @Composable () -> Unit> = remember(uiState.availableMeetingTypes) {
         if (uiState.availableMeetingTypes.isEmpty()) {
             mapOf(
-                "Internal" to { Box(modifier = Modifier.size(14.dp).clip(CircleShape).background(Color(0xFF2196F3))) },
-                "Client" to { Box(modifier = Modifier.size(14.dp).clip(CircleShape).background(Color(0xFFFF9800))) },
+                "Internal"  to { Box(modifier = Modifier.size(14.dp).clip(CircleShape).background(Color(0xFF2196F3))) },
+                "Client"    to { Box(modifier = Modifier.size(14.dp).clip(CircleShape).background(Color(0xFFFF9800))) },
                 "Executive" to { Box(modifier = Modifier.size(14.dp).clip(CircleShape).background(Color(0xFF9C27B0))) }
             )
         } else {
@@ -231,7 +256,6 @@ fun BookRoomScreen(
         }
     }
 
-    // Resolve the colour of the currently-selected meeting type for the trigger field
     val selectedMeetingTypeColor: Color? = remember(formState.meetingType, uiState.availableMeetingTypes) {
         uiState.availableMeetingTypes
             .find { it.name.equals(formState.meetingType, ignoreCase = true) }
@@ -255,12 +279,12 @@ fun BookRoomScreen(
         AnimatedVisibility(
             visible = isContentVisible,
             enter = fadeIn(animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)) +
-                slideInVertically(
-                    initialOffsetY = { fullHeight -> (fullHeight * 0.15f).toInt() },
-                    animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
-                ),
+                    slideInVertically(
+                        initialOffsetY = { fullHeight -> (fullHeight * 0.15f).toInt() },
+                        animationSpec  = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+                    ),
             exit = fadeOut(animationSpec = tween(durationMillis = 200)) +
-                slideOutVertically(targetOffsetY = { fullHeight -> (fullHeight * 0.1f).toInt() })
+                    slideOutVertically(targetOffsetY = { fullHeight -> (fullHeight * 0.1f).toInt() })
         ) {
             Column(
                 modifier = Modifier
@@ -268,29 +292,27 @@ fun BookRoomScreen(
                     .verticalScroll(scrollState),
                 verticalArrangement = Arrangement.spacedBy(Spacing.ml)
             ) {
-                // 1. Meeting Title
                 BookingTextField(
-                    label = "Meeting Title",
-                    value = formState.meetingTitle,
-                    placeholder = "Enter meeting title",
-                    isRequired = true,
+                    label         = "Meeting Title",
+                    value         = formState.meetingTitle,
+                    placeholder   = "Enter meeting title",
+                    isRequired    = true,
                     onValueChange = { viewModel.onFormStateChanged(formState.copy(meetingTitle = it)) }
                 )
 
-                // 2. Select Room
                 BookingDropdownField(
-                    label = "Select Room",
-                    value = formState.selectedRoom,
-                    placeholder = "Choose a meeting room",
-                    isRequired = true,
-                    expanded = showRoomDropdown,
-                    options = availableRooms,
-                    onExpandChange = { showRoomDropdown = it },
+                    label            = "Select Room",
+                    value            = formState.selectedRoom,
+                    placeholder      = "Choose a meeting room",
+                    isRequired       = true,
+                    expanded         = showRoomDropdown,
+                    options          = availableRooms,
+                    onExpandChange   = { showRoomDropdown = it },
                     onOptionSelected = { selected ->
                         val selectedRoom = uiState.availableRooms.find { it.name == selected }
                         viewModel.onFormStateChanged(
                             formState.copy(
-                                selectedRoom = selected,
+                                selectedRoom   = selected,
                                 selectedRoomId = selectedRoom?.id
                             )
                         )
@@ -298,22 +320,21 @@ fun BookRoomScreen(
                     }
                 )
 
-                // Room info card when a room is selected
                 uiState.availableRooms.find { it.name == formState.selectedRoom }?.let {
                     RoomInfoCard(room = it)
                 }
 
                 AnimatedVisibility(visible = formState.recurringType == "Does not repeat") {
                     BookingClickableField(
-                        label = "Date",
-                        value = formState.date,
+                        label       = "Date",
+                        value       = formState.date,
                         placeholder = "Select date",
-                        isRequired = true,
+                        isRequired  = true,
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.DateRange,
                                 contentDescription = "Date",
-                                tint = Neutral700,
+                                tint     = MaterialTheme.customColors.neutral700,
                                 modifier = Modifier.size(Spacing.lg)
                             )
                         },
@@ -321,43 +342,42 @@ fun BookRoomScreen(
                     )
                 }
 
-                // Start / End Time
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier             = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(Spacing.ms)
                 ) {
                     Box(modifier = Modifier.weight(1f)) {
                         BookingClickableField(
-                            label = "Start Time",
-                            value = formState.startTime,
+                            label       = "Start Time",
+                            value       = formState.startTime,
                             placeholder = "Select time",
-                            isRequired = true,
+                            isRequired  = true,
                             trailingIcon = {
                                 Icon(
                                     painter = painterResource(android.R.drawable.ic_menu_recent_history),
                                     contentDescription = "Time",
-                                    tint = Neutral400,
+                                    tint     = MaterialTheme.customColors.neutral400,
                                     modifier = Modifier.size(Spacing.ml)
                                 )
                             },
                             onClick = {
                                 onNavigateToCalendar(
                                     PendingBookingDetails(
-                                        bookingId = formState.bookingId,
-                                        roomName = formState.selectedRoom,
-                                        date = formState.date,
-                                        startTime = formState.startTime,
-                                        endTime = formState.endTime,
-                                        meetingTitle = formState.meetingTitle,
-                                        meetingType = formState.meetingType,
-                                        meetingTypeId = formState.meetingTypeId,
-                                        description = formState.description,
+                                        bookingId              = formState.bookingId,
+                                        roomName               = formState.selectedRoom,
+                                        date                   = formState.date,
+                                        startTime              = formState.startTime,
+                                        endTime                = formState.endTime,
+                                        meetingTitle           = formState.meetingTitle,
+                                        meetingType            = formState.meetingType,
+                                        meetingTypeId          = formState.meetingTypeId,
+                                        description            = formState.description,
                                         internalParticipantIds = formState.participants.map { it.id },
-                                        externalMembers = formState.externalMembers,
-                                        recurrenceId = formState.recurrenceId,
-                                        isRecurring = formState.isRecurring,
-                                        recurrenceType = formState.recurrenceType,
-                                        updateScope = formState.updateScope
+                                        externalMembers        = formState.externalMembers,
+                                        recurrenceId           = formState.recurrenceId,
+                                        isRecurring            = formState.isRecurring,
+                                        recurrenceType         = formState.recurrenceType,
+                                        updateScope            = formState.updateScope
                                     )
                                 )
                             }
@@ -365,36 +385,36 @@ fun BookRoomScreen(
                     }
                     Box(modifier = Modifier.weight(1f)) {
                         BookingClickableField(
-                            label = "End Time",
-                            value = formState.endTime,
+                            label       = "End Time",
+                            value       = formState.endTime,
                             placeholder = "Select time",
-                            isRequired = true,
+                            isRequired  = true,
                             trailingIcon = {
                                 Icon(
                                     painter = painterResource(android.R.drawable.ic_menu_recent_history),
                                     contentDescription = "Time",
-                                    tint = Neutral400,
+                                    tint     = MaterialTheme.customColors.neutral400,
                                     modifier = Modifier.size(Spacing.ml)
                                 )
                             },
                             onClick = {
                                 onNavigateToCalendar(
                                     PendingBookingDetails(
-                                        bookingId = formState.bookingId,
-                                        roomName = formState.selectedRoom,
-                                        date = formState.date,
-                                        startTime = formState.startTime,
-                                        endTime = formState.endTime,
-                                        meetingTitle = formState.meetingTitle,
-                                        meetingType = formState.meetingType,
-                                        meetingTypeId = formState.meetingTypeId,
-                                        description = formState.description,
+                                        bookingId              = formState.bookingId,
+                                        roomName               = formState.selectedRoom,
+                                        date                   = formState.date,
+                                        startTime              = formState.startTime,
+                                        endTime                = formState.endTime,
+                                        meetingTitle           = formState.meetingTitle,
+                                        meetingType            = formState.meetingType,
+                                        meetingTypeId          = formState.meetingTypeId,
+                                        description            = formState.description,
                                         internalParticipantIds = formState.participants.map { it.id },
-                                        externalMembers = formState.externalMembers,
-                                        recurrenceId = formState.recurrenceId,
-                                        isRecurring = formState.isRecurring,
-                                        recurrenceType = formState.recurrenceType,
-                                        updateScope = formState.updateScope
+                                        externalMembers        = formState.externalMembers,
+                                        recurrenceId           = formState.recurrenceId,
+                                        isRecurring            = formState.isRecurring,
+                                        recurrenceType         = formState.recurrenceType,
+                                        updateScope            = formState.updateScope
                                     )
                                 )
                             }
@@ -402,14 +422,13 @@ fun BookRoomScreen(
                     }
                 }
 
-                // Meeting Type
                 BookingDropdownField(
-                    label = "Meeting Type",
-                    value = formState.meetingType,
-                    placeholder = "Select meeting type",
-                    isRequired = true,
-                    expanded = showMeetingTypeDropdown,
-                    options = meetingTypes,
+                    label            = "Meeting Type",
+                    value            = formState.meetingType,
+                    placeholder      = "Select meeting type",
+                    isRequired       = true,
+                    expanded         = showMeetingTypeDropdown,
+                    options          = meetingTypes,
                     optionLeadingIcons = meetingTypeIcons,
                     selectedLeadingIcon = selectedMeetingTypeColor?.let { color ->
                         {
@@ -421,12 +440,12 @@ fun BookRoomScreen(
                             )
                         }
                     },
-                    onExpandChange = { showMeetingTypeDropdown = it },
+                    onExpandChange   = { showMeetingTypeDropdown = it },
                     onOptionSelected = { selectedName ->
                         val selectedType = uiState.availableMeetingTypes.find { it.name.equals(selectedName, ignoreCase = true) }
                         viewModel.onFormStateChanged(
                             formState.copy(
-                                meetingType = selectedName,
+                                meetingType   = selectedName,
                                 meetingTypeId = selectedType?.id
                             )
                         )
@@ -434,23 +453,22 @@ fun BookRoomScreen(
                     }
                 )
 
-                // Recurring
                 BookingDropdownField(
-                    label = "Recurring",
-                    value = formState.recurringType,
-                    placeholder = "Does not repeat",
-                    isRequired = false,
-                    expanded = showRecurringDropdown,
-                    options = recurringOptions,
-                    leadingIcon = {
+                    label            = "Recurring",
+                    value            = formState.recurringType,
+                    placeholder      = "Does not repeat",
+                    isRequired       = false,
+                    expanded         = showRecurringDropdown,
+                    options          = recurringOptions,
+                    leadingIcon      = {
                         Icon(
                             painter = painterResource(R.drawable.ic_repeat),
                             contentDescription = "Recurring",
-                            tint = Neutral700,
+                            tint     = MaterialTheme.customColors.neutral700,
                             modifier = Modifier.size(Spacing.ml)
                         )
                     },
-                    onExpandChange = { showRecurringDropdown = it },
+                    onExpandChange   = { showRecurringDropdown = it },
                     onOptionSelected = {
                         viewModel.onFormStateChanged(formState.copy(recurringType = it))
                         showRecurringDropdown = false
@@ -463,7 +481,7 @@ fun BookRoomScreen(
                             .fillMaxWidth()
                             .padding(horizontal = Spacing.md),
                         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+                        verticalArrangement   = Arrangement.spacedBy(Spacing.sm)
                     ) {
                         listOf("Sun", "Mon", "Tues", "Wed", "Thu", "Fri", "Sat").forEach { day ->
                             val isSelected = formState.selectedWeekDays.contains(day)
@@ -479,9 +497,9 @@ fun BookRoomScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = day,
+                                    text  = day,
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else Neutral700
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.customColors.neutral700
                                 )
                             }
                         }
@@ -490,65 +508,64 @@ fun BookRoomScreen(
 
                 AnimatedVisibility(visible = formState.recurringType != "Does not repeat") {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.xs),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Spacing.xs),
                         horizontalArrangement = Arrangement.spacedBy(Spacing.ms)
                     ) {
                         Box(modifier = Modifier.weight(1f)) {
                             BookingClickableField(
-                                label = "Start Date",
-                                value = formState.date,
+                                label       = "Start Date",
+                                value       = formState.date,
                                 placeholder = "Start Date",
-                                isRequired = true,
+                                isRequired  = true,
                                 leadingIcon = {
                                     Icon(
                                         imageVector = Icons.Default.DateRange,
                                         contentDescription = "Start Date",
-                                        tint = Neutral700,
+                                        tint     = MaterialTheme.customColors.neutral700,
                                         modifier = Modifier.size(Spacing.lg)
                                     )
                                 },
-                                onClick = { showDatePicker = true }
+                                onClick = { showDateRangePicker = true }
                             )
                         }
                         Box(modifier = Modifier.weight(1f)) {
                             BookingClickableField(
-                                label = "End Date",
-                                value = formState.recurrenceEndDate,
+                                label       = "End Date",
+                                value       = formState.recurrenceEndDate,
                                 placeholder = "End Date",
-                                isRequired = true,
+                                isRequired  = true,
                                 leadingIcon = {
                                     Icon(
                                         imageVector = Icons.Default.DateRange,
                                         contentDescription = "End Date",
-                                        tint = Neutral700,
+                                        tint     = MaterialTheme.customColors.neutral700,
                                         modifier = Modifier.size(Spacing.lg)
                                     )
                                 },
-                                onClick = { showEndDatePicker = true }
+                                onClick = { showDateRangePicker = true }
                             )
                         }
                     }
                 }
 
-                // Description
                 BookingTextField(
-                    label = "Description",
-                    value = formState.description,
-                    placeholder = "Add meeting description (optional)",
-                    isRequired = false,
+                    label         = "Description",
+                    value         = formState.description,
+                    placeholder   = "Add meeting description (optional)",
+                    isRequired    = false,
                     onValueChange = { viewModel.onFormStateChanged(formState.copy(description = it)) }
                 )
 
-                //    Add Member row (Internal + External side-by-side)               
-                // Label row
                 Row(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = "Add Member",
+                        text  = "Add Member",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.customColors.bookRoomLabel
                     )
                     Text(
-                        text = " *",
+                        text  = " *",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -557,13 +574,13 @@ fun BookRoomScreen(
                 val hasAnySelected = formState.participants.isNotEmpty() || formState.externalMembers.isNotEmpty()
                 if (hasAnySelected) {
                     FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier              = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+                        verticalArrangement   = Arrangement.spacedBy(Spacing.xs)
                     ) {
                         formState.participants.forEach { member ->
                             SelectedParticipantChip(
-                                name = member.name,
+                                name     = member.name,
                                 onRemove = {
                                     viewModel.onFormStateChanged(
                                         formState.copy(participants = formState.participants - member)
@@ -573,7 +590,7 @@ fun BookRoomScreen(
                         }
                         formState.externalMembers.forEach { member ->
                             SelectedParticipantChip(
-                                name = member.name,
+                                name     = member.name,
                                 onRemove = {
                                     viewModel.onFormStateChanged(
                                         formState.copy(externalMembers = formState.externalMembers - member)
@@ -590,18 +607,17 @@ fun BookRoomScreen(
                         .padding(horizontal = Spacing.md),
                     horizontalArrangement = Arrangement.spacedBy(Spacing.ms)
                 ) {
-                    // Internal field
                     Box(modifier = Modifier.weight(1f)) {
                         BookingClickableField(
-                            label = "",           // label handled above
-                            value = "",           // never show names here
+                            label       = "",
+                            value       = "",
                             placeholder = "Add Internal",
-                            isRequired = false,   // asterisk shown on the shared label above
+                            isRequired  = false,
                             leadingIcon = {
                                 Icon(
                                     painter = painterResource(R.drawable.outline_groups_24),
                                     contentDescription = null,
-                                    tint = Neutral700,
+                                    tint     = MaterialTheme.customColors.neutral700,
                                     modifier = Modifier.size(Spacing.ml)
                                 )
                             },
@@ -609,18 +625,17 @@ fun BookRoomScreen(
                         )
                     }
 
-                    // External field
                     Box(modifier = Modifier.weight(1f)) {
                         BookingClickableField(
-                            label = "",
-                            value = "",
+                            label       = "",
+                            value       = "",
                             placeholder = "Add External",
-                            isRequired = false,
+                            isRequired  = false,
                             leadingIcon = {
                                 Icon(
                                     painter = painterResource(R.drawable.outline_groups_24),
                                     contentDescription = null,
-                                    tint = Neutral700,
+                                    tint     = MaterialTheme.customColors.neutral700,
                                     modifier = Modifier.size(Spacing.ml)
                                 )
                             },
@@ -628,11 +643,9 @@ fun BookRoomScreen(
                         )
                     }
                 }
-                //    end Add Member row                                              
 
                 Spacer(modifier = Modifier.height(Spacing.sm))
 
-                // Book button
                 PrimaryButton(
                     text = if (uiState.isSubmitting) {
                         if (formState.bookingId != null) "Updating..." else "Booking..."
@@ -650,32 +663,39 @@ fun BookRoomScreen(
             }
         }
 
-        // Snackbar host overlaid at the bottom
         SnackbarHost(
             hostState = snackbarHostState,
-            modifier = Modifier.align(Alignment.BottomCenter)
+            modifier  = Modifier.align(Alignment.BottomCenter)
         )
-    } // end Box
+    }
 
-    //    Date picker dialog                                                     
     if (showDatePicker) {
-        val datePickerState = rememberDatePickerState()
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
-                TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let { millis ->
-                        val formatted = java.text.SimpleDateFormat(
-                            "dd MMM yyyy", java.util.Locale.getDefault()
-                        ).format(java.util.Date(millis))
-                        viewModel.onFormStateChanged(formState.copy(date = formatted))
+                TextButton(
+                    enabled = datePickerState.selectedDateMillis != null,
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let { millis ->
+                            viewModel.onFormStateChanged(
+                                formState.copy(date = formatMillisToDisplayDate(millis))
+                            )
+                        }
+                        showDatePicker = false
                     }
-                    showDatePicker = false
-                }) { Text("OK", color = MaterialTheme.colorScheme.primary) }
+                ) {
+                    Text(
+                        text  = "OK",
+                        color = if (datePickerState.selectedDateMillis != null)
+                            MaterialTheme.colorScheme.primary
+                        else
+                            MaterialTheme.customColors.neutral400
+                    )
+                }
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancel", color = Neutral700)
+                    Text("Cancel", color = MaterialTheme.customColors.neutral700)
                 }
             }
         ) {
@@ -683,75 +703,124 @@ fun BookRoomScreen(
         }
     }
 
-    //    End Date picker dialog                                                     
-    if (showEndDatePicker) {
-        val datePickerState = rememberDatePickerState()
+    if (showDateRangePicker) {
+        val bothSelected = dateRangePickerState.selectedStartDateMillis != null &&
+                dateRangePickerState.selectedEndDateMillis   != null
+
         DatePickerDialog(
-            onDismissRequest = { showEndDatePicker = false },
+            onDismissRequest = { showDateRangePicker = false },
             confirmButton = {
-                TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let { millis ->
-                        val formatted = java.text.SimpleDateFormat(
-                            "dd MMM yyyy", java.util.Locale.getDefault()
-                        ).format(java.util.Date(millis))
-                        viewModel.onFormStateChanged(formState.copy(recurrenceEndDate = formatted))
+                TextButton(
+                    enabled = bothSelected,
+                    onClick = {
+                        val startMillis = dateRangePickerState.selectedStartDateMillis
+                        val endMillis   = dateRangePickerState.selectedEndDateMillis
+                        if (startMillis != null && endMillis != null) {
+                            viewModel.onFormStateChanged(
+                                formState.copy(
+                                    date              = formatMillisToDisplayDate(startMillis),
+                                    recurrenceEndDate = formatMillisToDisplayDate(endMillis)
+                                )
+                            )
+                        }
+                        showDateRangePicker = false
                     }
-                    showEndDatePicker = false
-                }) { Text("OK", color = MaterialTheme.colorScheme.primary) }
+                ) {
+                    Text(
+                        text  = "OK",
+                        color = if (bothSelected) MaterialTheme.colorScheme.primary else MaterialTheme.customColors.neutral400
+                    )
+                }
             },
             dismissButton = {
-                TextButton(onClick = { showEndDatePicker = false }) {
-                    Text("Cancel", color = Neutral700)
+                TextButton(onClick = { showDateRangePicker = false }) {
+                    Text("Cancel", color = MaterialTheme.customColors.neutral700)
                 }
             }
         ) {
-            DatePicker(state = datePickerState)
+            DateRangePicker(
+                state          = dateRangePickerState,
+                modifier       = Modifier.height(500.dp),
+                showModeToggle = false,
+                title = {
+                    val startLabel = dateRangePickerState.selectedStartDateMillis
+                        ?.let { formatMillisToDisplayDate(it) } ?: "Start date"
+                    val endLabel   = dateRangePickerState.selectedEndDateMillis
+                        ?.let { formatMillisToDisplayDate(it) } ?: "End date"
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text(
+                                text  = "Start",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.customColors.neutral400
+                            )
+                            Text(
+                                text  = startLabel,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (dateRangePickerState.selectedStartDateMillis != null)
+                                    MaterialTheme.colorScheme.onSurface
+                                else MaterialTheme.customColors.neutral400
+                            )
+                        }
+
+                        Text("→", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.customColors.neutral400)
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                text  = "End",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.customColors.neutral400
+                            )
+                            Text(
+                                text  = endLabel,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (dateRangePickerState.selectedEndDateMillis != null)
+                                    MaterialTheme.colorScheme.onSurface
+                                else MaterialTheme.customColors.neutral400
+                            )
+                        }
+                    }
+                },
+                headline = null
+            )
         }
     }
 
-    //    Internal participants bottom sheet                                     
     if (showInternalSheet) {
         BottomSheetView(
-            onDismiss = { showInternalSheet = false },
+            onDismiss  = { showInternalSheet = false },
             sheetState = internalSheetState,
-            title = null
+            title      = null
         ) {
             InternalParticipantsBottomSheet(
-                formState = formState,
+                formState             = formState,
                 availableParticipants = uiState.availableParticipants,
-                onFormStateChanged = viewModel::onFormStateChanged,
-                onClose = { showInternalSheet = false },
-                searchQuery = uiState.participantSearchQuery,
-                onSearchQueryChange = viewModel::onParticipantSearchQueryChanged,
-                isSearching = uiState.isSearchingParticipants
+                onFormStateChanged    = viewModel::onFormStateChanged,
+                onClose               = { showInternalSheet = false },
+                searchQuery           = uiState.participantSearchQuery,
+                onSearchQueryChange   = viewModel::onParticipantSearchQueryChanged,
+                isSearching           = uiState.isSearchingParticipants
             )
         }
     }
 
-    //    External participants bottom sheet                                     
     if (showExternalSheet) {
         BottomSheetView(
-            onDismiss = { showExternalSheet = false },
+            onDismiss  = { showExternalSheet = false },
             sheetState = externalSheetState,
-            title = null
+            title      = null
         ) {
             ExternalParticipantsBottomSheet(
-                formState = formState,
+                formState          = formState,
                 onFormStateChanged = viewModel::onFormStateChanged,
-                onClose = { showExternalSheet = false }
+                onClose            = { showExternalSheet = false }
             )
         }
-    }
-
-    if (uiState.showRecurrenceScopeDialog) {
-        com.swifttechnology.bookingsystem.shared.components.ReusableAlertDialog(
-            style = com.swifttechnology.bookingsystem.shared.components.DialogStyle.INFO,
-            title = "Update Recurring Meeting",
-            message = "Do you want to update just this meeting or all meetings in the series?",
-            confirmText = "All occurrences",
-            onConfirm = { viewModel.submitWithScope("ALL") },
-            dismissText = "This occurrence only",
-            onDismiss = { viewModel.submitWithScope("THIS") }
-        )
     }
 }

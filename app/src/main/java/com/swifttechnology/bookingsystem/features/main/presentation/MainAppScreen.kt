@@ -33,6 +33,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.swifttechnology.bookingsystem.features.announcements.presentation.AnnouncementsScreen
 import com.swifttechnology.bookingsystem.features.booking.presentation.BookRoomScreen
@@ -51,11 +53,16 @@ import com.swifttechnology.bookingsystem.shared.components.DialogStyle
 import com.swifttechnology.bookingsystem.shared.components.ReusableAlertDialog
 import com.swifttechnology.bookingsystem.features.booking.presentation.RoomCalendarScreen
 import com.swifttechnology.bookingsystem.core.model.Room
+import com.swifttechnology.bookingsystem.core.model.RoomStatus
 import com.swifttechnology.bookingsystem.shared.layout.BottomSheetView
 import com.swifttechnology.bookingsystem.features.participants.domain.model.Participant
 import com.swifttechnology.bookingsystem.features.participants.domain.model.CustomGroup
 import com.swifttechnology.bookingsystem.features.calendar.presentation.MeetingEvent
 import com.swifttechnology.bookingsystem.features.booking.presentation.ExternalMember
+import com.swifttechnology.bookingsystem.core.utils.DateTimeUtils
+import com.swifttechnology.bookingsystem.features.booking.data.dtos.BookingResponseDTO
+import java.time.LocalDate
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -82,8 +89,11 @@ data class PendingBookingDetails(
 fun MainAppScreen(
     navController: NavHostController,
     onLogout: () -> Unit,
-    startRoute: String = ScreenRoutes.DASHBOARD
+    startRoute: String = ScreenRoutes.DASHBOARD,
+    mainViewModel: MainViewModel = hiltViewModel()
 ) {
+    val mainUiState by mainViewModel.uiState.collectAsStateWithLifecycle()
+    val currentUser = mainUiState.currentUser
     var navigationStack by rememberSaveable { mutableStateOf(listOf(startRoute)) }
     val currentRoute = navigationStack.last()
 
@@ -110,6 +120,8 @@ fun MainAppScreen(
     var pendingParticipantToEdit by remember { mutableStateOf<Participant?>(null) }
     var pendingCustomGroupToEdit by remember { mutableStateOf<CustomGroup?>(null) }
     var pendingTimeOnlyUpdate by remember { mutableStateOf<Triple<String, String, String>?>(null) }
+    // Maintenance dialog: holds the room name when a disabled room is tapped
+    var maintenanceRoomName by remember { mutableStateOf<String?>(null) }
     // Success toast shown on various screens after actions
     var globalSuccessMessage by remember { mutableStateOf<String?>(null) }
 
@@ -158,6 +170,25 @@ fun MainAppScreen(
         )
     }
 
+    // Under-Maintenance dialog for disabled rooms
+    maintenanceRoomName?.let { roomName ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { maintenanceRoomName = null },
+            title = { androidx.compose.material3.Text("Room Under Maintenance") },
+            text = {
+                androidx.compose.material3.Text(
+                    "\"$roomName\" is currently under maintenance and unavailable for booking. " +
+                    "Please try again later or choose a different room."
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = { maintenanceRoomName = null }) {
+                    androidx.compose.material3.Text("Got It")
+                }
+            }
+        )
+    }
+
     val screenTitle = when (currentRoute) {
         ScreenRoutes.DASHBOARD -> "Dashboard"
         ScreenRoutes.CALENDAR -> "Calendar"
@@ -175,6 +206,9 @@ fun MainAppScreen(
         sidebarItems = sidebarItems,
         selectedItem = selectedItem,
         title = screenTitle,
+        userName = currentUser?.let { "${it.firstname} ${it.lastname}".trim() } ?: "",
+        userEmail = currentUser?.email ?: "",
+        userRole = currentUser?.position ?: "",
         onSidebarItemSelected = { item ->
             navigationStack = listOf(item.route)
             searchQuery = ""
@@ -212,7 +246,46 @@ fun MainAppScreen(
             ScreenRoutes.DASHBOARD -> {
                 DashboardScreen(
                     searchQuery = searchQuery,
-                    onNavigate = navigateTo
+                    onNavigate = navigateTo,
+                    onEditMeeting = { meeting, scope ->
+                        val apiDate = meeting.date ?: meeting.startDate
+                        val displayDate = runCatching {
+                            apiDate?.let { LocalDate.parse(it) }
+                                ?.format(DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.getDefault()))
+                        }.getOrNull().orEmpty()
+
+                        val startDisplay = runCatching {
+                            DateTimeUtils.parseLocalTime(meeting.startTime)?.format(
+                                DateTimeFormatter.ofPattern("hh:mm a", Locale.getDefault())
+                            )
+                        }.getOrNull().orEmpty()
+
+                        val endDisplay = runCatching {
+                            DateTimeUtils.parseLocalTime(meeting.endTime)?.format(
+                                DateTimeFormatter.ofPattern("hh:mm a", Locale.getDefault())
+                            )
+                        }.getOrNull().orEmpty()
+
+                        pendingRoomName = meeting.room?.roomName ?: meeting.roomName
+                        pendingBookingDetails = PendingBookingDetails(
+                            bookingId              = meeting.id,
+                            roomName               = meeting.room?.roomName ?: meeting.roomName ?: "",
+                            date                   = displayDate,
+                            startTime              = startDisplay,
+                            endTime                = endDisplay,
+                            meetingTitle           = meeting.meetingTitle ?: "",
+                            meetingType            = meeting.meetingType ?: "",
+                            meetingTypeId          = meeting.meetingTypeId,
+                            description            = meeting.description ?: "",
+                            internalParticipantIds = meeting.internalParticipant?.mapNotNull { it.id } ?: emptyList(),
+                            externalMembers        = meeting.externalParticipant?.map { ExternalMember(it.name, it.email) } ?: emptyList(),
+                            recurrenceId           = meeting.recurrenceId,
+                            isRecurring            = !meeting.recurrenceId.isNullOrBlank(),
+                            recurrenceType         = meeting.recurrenceType,
+                            updateScope            = scope
+                        )
+                        navigateTo(ScreenRoutes.BOOK_ROOM)
+                    }
                 )
             }
             ScreenRoutes.CALENDAR -> {
@@ -269,8 +342,14 @@ fun MainAppScreen(
                         navController.navigate(ScreenRoutes.MEETING_ROOM_ADD)
                     },
                     onBookClick = { room ->
-                        pendingRoomName = room.name
-                        showRoomCalendarBottomSheet = true
+                        val isDisabled = room.status == RoomStatus.INACTIVE ||
+                            room.status == RoomStatus.DISABLED
+                        if (isDisabled) {
+                            maintenanceRoomName = room.name
+                        } else {
+                            pendingRoomName = room.name
+                            showRoomCalendarBottomSheet = true
+                        }
                     },
                     onEnterEditMode = {
                         isMeetingRoomsEditable = true
@@ -422,6 +501,7 @@ fun MainAppScreen(
             ScreenRoutes.SETTINGS -> {
                 SettingsScreen(
                     searchQuery = searchQuery,
+                    currentUser = currentUser,
                     onNavigate = navigateTo
                 )
             }

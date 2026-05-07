@@ -115,4 +115,18 @@ class UserRepositoryImpl @Inject constructor(
         if (!response.success || response.data == null) throw Exception(response.message)
         response.data
     }
+
+    override suspend fun changeUserStatus(id: Long, status: String): Result<Unit> =
+        try {
+            val response = api.changeUserStatus(
+                id = id,
+                request = com.swifttechnology.bookingsystem.features.meetingrooms.data.dtos.StatusChangeRequestDTO(status)
+            )
+            if (!response.success) Result.failure(Exception(response.message))
+            else Result.success(Unit)
+        } catch (e: HttpException) {
+            Result.failure(
+                Exception(messageFromErrorBody(e) ?: "Request failed (${e.code()})")
+            )
+        }
 }

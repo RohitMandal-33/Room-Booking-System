@@ -228,13 +228,9 @@ class BookRoomViewModel @Inject constructor(
                 it.name.equals(meetingType, ignoreCase = true) 
             }
 
-            // Map API meeting type (INTERNAL/CLIENT/EXECUTIVE) → display form (Internal/Client/Executive)
-            val displayType = matchedType?.name ?: when (meetingType.uppercase()) {
-                "INTERNAL"  -> "Internal"
-                "CLIENT"    -> "Client"
-                "EXECUTIVE" -> "Executive"
-                else        -> meetingType
-            }
+            // Use the name from matchedType (which comes from availableMeetingTypes) 
+            // or fallback to the provided meetingType string.
+            val displayType = matchedType?.name ?: meetingType.takeIf { it.isNotBlank() } ?: current.availableMeetingTypes.firstOrNull()?.name ?: ""
 
             // Match internal participants by id from current available participants
             val prefillInternal = current.availableParticipants.filter { it.id in internalParticipantIds }
@@ -258,7 +254,7 @@ class BookRoomViewModel @Inject constructor(
                     startTime       = startTime,
                     endTime         = endTime,
                     meetingType     = displayType,
-                    meetingTypeId   = meetingTypeId ?: matchedType?.id,
+                    meetingTypeId   = meetingTypeId ?: matchedType?.id ?: current.availableMeetingTypes.find { it.name.equals(displayType, ignoreCase = true) }?.id,
                     description     = description,
                     participants    = prefillInternal,
                     externalMembers = externalMembers,
@@ -321,10 +317,15 @@ class BookRoomViewModel @Inject constructor(
 
             val request = RoomBookingRequestDTO(
                 meetingTitle = state.meetingTitle.ifBlank { null },
-                date = convertDisplayDateToApiDate(state.date),
+                startDate = convertDisplayDateToApiDate(state.date),
+                endDate = if (state.recurringType != "Does not repeat") {
+                    convertDisplayDateToApiDate(state.recurrenceEndDate)
+                } else {
+                    convertDisplayDateToApiDate(state.date)
+                },
                 startTime = parseTimeString(state.startTime),
                 endTime = parseTimeString(state.endTime),
-                meetingTypeId = state.meetingTypeId, // Use the proper meeting type ID directly
+                meetingTypeId = state.meetingTypeId ?: _uiState.value.availableMeetingTypes.find { it.name.equals(state.meetingType, ignoreCase = true) }?.id,
                 description = state.description.ifBlank { null },
                 roomId = state.selectedRoomId,
                 internalParticipantIds = state.participants
@@ -436,7 +437,7 @@ class BookRoomViewModel @Inject constructor(
             state.date.isBlank() -> "Please select a date"
             state.startTime.isBlank() -> "Please select a start time"
             state.endTime.isBlank() -> "Please select an end time"
-            state.meetingType.isBlank() -> "Please select a meeting type"
+            state.meetingType.isBlank() || (state.meetingTypeId == null && _uiState.value.availableMeetingTypes.none { it.name.equals(state.meetingType, ignoreCase = true) }) -> "Please select a meeting type"
             state.recurringType != "Does not repeat" && state.recurrenceEndDate.isBlank() -> "Please select an end date for recurrence"
             state.recurringType == "Custom" && state.selectedWeekDays.isEmpty() -> "Please select at least one day for custom recurrence"
             else -> null

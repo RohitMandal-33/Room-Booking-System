@@ -25,8 +25,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.swifttechnology.bookingsystem.core.designsystem.CornerRadius
-import com.swifttechnology.bookingsystem.core.designsystem.Neutral300
-import com.swifttechnology.bookingsystem.core.designsystem.Neutral700
 import com.swifttechnology.bookingsystem.core.designsystem.Spacing
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
 
@@ -46,7 +44,7 @@ internal fun DragHandle() {
             modifier = Modifier
                 .size(width = 36.dp, height = 4.dp)
                 .clip(RoundedCornerShape(CornerRadius.full))
-                .background(Neutral300)
+                .background(MaterialTheme.customColors.neutral300)
         )
     }
 }
@@ -72,7 +70,7 @@ internal fun SheetHeader(title: String, onClose: () -> Unit) {
             Icon(
                 imageVector = Icons.Default.Close,
                 contentDescription = "Close",
-                tint = Neutral700
+                tint = MaterialTheme.customColors.neutral700
             )
         }
     }

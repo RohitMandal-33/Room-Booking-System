@@ -154,6 +154,18 @@ class ParticipantsViewModel @Inject constructor(
         }
     }
 
+    fun toggleParticipantStatus(participantId: Long, newStatus: String = "INACTIVE") {
+        viewModelScope.launch {
+            userRepository.changeUserStatus(participantId, newStatus)
+                .onSuccess {
+                    refresh() // Refresh list to reflect the new status
+                }
+                .onFailure {
+                    _uiState.update { state -> state.copy(error = it.message ?: "Failed to update status") }
+                }
+        }
+    }
+
     fun refresh() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }

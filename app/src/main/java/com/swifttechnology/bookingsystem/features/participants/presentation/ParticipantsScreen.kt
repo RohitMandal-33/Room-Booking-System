@@ -41,6 +41,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.platform.LocalDensity
 import com.swifttechnology.bookingsystem.features.meetingrooms.presentation.AddFab
 import com.swifttechnology.bookingsystem.shared.components.DialogStyle
 import com.swifttechnology.bookingsystem.shared.components.ReusableAlertDialog
@@ -151,70 +153,117 @@ fun ParticipantsScreen(
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            when {
-                uiState.isLoading    -> LoadingContent()
-                uiState.error != null -> ErrorContent(uiState.error!!)
-                else -> {
-                    when (uiState.selectedTab) {
-                        ParticipantsTab.ALL_PARTICIPANTS -> {
-                            DirectoryContent(
-                                modifier = Modifier.weight(1f),
-                                participants       = uiState.participants,
-                                searchQuery        = uiState.searchQuery,
-                                onSearchQueryChanged = viewModel::onSearchQueryChanged,
-                                isEditable         = isEditable,
-                                selectedParticipantIds = selectedParticipantIds,
-                                onSelectionChanged = { id, selected ->
-                                    selectedParticipantIds = if (selected) {
-                                        selectedParticipantIds + id
-                                    } else {
-                                        selectedParticipantIds - id
+            val density = LocalDensity.current
+            val swipeThreshold = with(density) { 100.dp.toPx() }
+            val tabs = ParticipantsTab.values()
+            val currentIndex = tabs.indexOf(uiState.selectedTab)
+            // Track whether a card swipe is in progress so tab-swipe is suppressed
+            var isCardSwiping by remember { mutableStateOf(false) }
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .pointerInput(uiState.selectedTab, isEditable) {
+                        // Tab-swipe is only active when NOT in edit mode and no card is being swiped
+                        if (isEditable) return@pointerInput
+                        var dragAccumulator = 0f
+                        detectHorizontalDragGestures(
+                            onDragStart = { isCardSwiping = false },
+                            onDragEnd = {
+                                if (!isCardSwiping) {
+                                    if (dragAccumulator > swipeThreshold) {
+                                        if (currentIndex > 0) {
+                                            viewModel.onTabSelected(tabs[currentIndex - 1])
+                                        }
+                                    } else if (dragAccumulator < -swipeThreshold) {
+                                        if (currentIndex < tabs.size - 1) {
+                                            viewModel.onTabSelected(tabs[currentIndex + 1])
+                                        }
                                     }
-                                },
-                                onLongPress = {
-                                    if (!isEditable) onEnterEditMode()
                                 }
-                            )
-                        }
-                        ParticipantsTab.CUSTOM_GROUPS -> {
-                            CustomGroupsDirectoryContent(
-                                modifier = Modifier.weight(1f),
-                                groups = filteredCustomGroups,
-                                searchQuery = uiState.searchQuery,
-                                onSearchQueryChanged = viewModel::onSearchQueryChanged,
-                                expandedGroupId = uiState.expandedCustomGroupId,
-                                participants = uiState.participants,
-                                resolvedUserNames = uiState.resolvedUserNames,
-                                onMembersRowClick = viewModel::onCustomGroupMembersClick,
-                                isEditable = isEditable,
-                                selectedGroupIds = selectedGroupIds,
-                                onSelectionChanged = { id, selected ->
-                                    selectedGroupIds = if (selected) {
-                                        selectedGroupIds + id
-                                    } else {
-                                        selectedGroupIds - id
-                                    }
-                                },
-                                onLongPress = {
-                                    if (!isEditable) onEnterEditMode()
-                                }
-                            )
-                        }
-                        ParticipantsTab.DEPARTMENTS -> {
-                            val filteredDepartments = if (uiState.searchQuery.isBlank()) {
-                                uiState.departments
-                            } else {
-                                uiState.departments.filter {
-                                    it.departmentName.contains(uiState.searchQuery, ignoreCase = true) ||
-                                    (it.description?.contains(uiState.searchQuery, ignoreCase = true) == true)
+                                dragAccumulator = 0f
+                                isCardSwiping = false
+                            },
+                            onDragCancel = {
+                                dragAccumulator = 0f
+                                isCardSwiping = false
+                            },
+                            onHorizontalDrag = { change, dragAmount ->
+                                if (!isCardSwiping) {
+                                    change.consume()
+                                    dragAccumulator += dragAmount
                                 }
                             }
-                            DepartmentsDirectoryContent(
-                                modifier = Modifier.weight(1f),
-                                departments = filteredDepartments,
-                                searchQuery = uiState.searchQuery,
-                                onSearchQueryChanged = viewModel::onSearchQueryChanged
-                            )
+                        )
+                    }
+            ) {
+                when {
+                    uiState.isLoading    -> LoadingContent()
+                    uiState.error != null -> ErrorContent(uiState.error!!)
+                    else -> {
+                        when (uiState.selectedTab) {
+                            ParticipantsTab.ALL_PARTICIPANTS -> {
+                                DirectoryContent(
+                                    modifier = Modifier.fillMaxSize(),
+                                    participants       = uiState.participants,
+                                    searchQuery        = uiState.searchQuery,
+                                    onSearchQueryChanged = viewModel::onSearchQueryChanged,
+                                    isEditable         = isEditable,
+                                    selectedParticipantIds = selectedParticipantIds,
+                                    onSelectionChanged = { id, selected ->
+                                        selectedParticipantIds = if (selected) {
+                                            selectedParticipantIds + id
+                                        } else {
+                                            selectedParticipantIds - id
+                                        }
+                                    },
+                                    onLongPress = {
+                                        if (!isEditable) onEnterEditMode()
+                                    },
+                                    onDisableParticipant = { id -> viewModel.toggleParticipantStatus(id, "INACTIVE") },
+                                    onEnableParticipant  = { id -> viewModel.toggleParticipantStatus(id, "ACTIVE") }
+                                )
+                            }
+                            ParticipantsTab.CUSTOM_GROUPS -> {
+                                CustomGroupsDirectoryContent(
+                                    modifier = Modifier.fillMaxSize(),
+                                    groups = filteredCustomGroups,
+                                    searchQuery = uiState.searchQuery,
+                                    onSearchQueryChanged = viewModel::onSearchQueryChanged,
+                                    expandedGroupId = uiState.expandedCustomGroupId,
+                                    participants = uiState.participants,
+                                    resolvedUserNames = uiState.resolvedUserNames,
+                                    onMembersRowClick = viewModel::onCustomGroupMembersClick,
+                                    isEditable = isEditable,
+                                    selectedGroupIds = selectedGroupIds,
+                                    onSelectionChanged = { id, selected ->
+                                        selectedGroupIds = if (selected) {
+                                            selectedGroupIds + id
+                                        } else {
+                                            selectedGroupIds - id
+                                        }
+                                    },
+                                    onLongPress = {
+                                        if (!isEditable) onEnterEditMode()
+                                    }
+                                )
+                            }
+                            ParticipantsTab.DEPARTMENTS -> {
+                                val filteredDepartments = if (uiState.searchQuery.isBlank()) {
+                                    uiState.departments
+                                } else {
+                                    uiState.departments.filter {
+                                        it.departmentName.contains(uiState.searchQuery, ignoreCase = true) ||
+                                        (it.description?.contains(uiState.searchQuery, ignoreCase = true) == true)
+                                    }
+                                }
+                                DepartmentsDirectoryContent(
+                                    modifier = Modifier.fillMaxSize(),
+                                    departments = filteredDepartments,
+                                    searchQuery = uiState.searchQuery,
+                                    onSearchQueryChanged = viewModel::onSearchQueryChanged
+                                )
+                            }
                         }
                     }
                 }
@@ -749,6 +798,7 @@ fun ParticipantsTabItem(
 // Directory content
   
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DirectoryContent(
     modifier: Modifier = Modifier,
@@ -758,8 +808,13 @@ fun DirectoryContent(
     isEditable: Boolean = false,
     selectedParticipantIds: Set<Long> = emptySet(),
     onSelectionChanged: (Long, Boolean) -> Unit = { _, _ -> },
-    onLongPress: () -> Unit = {}
+    onLongPress: () -> Unit = {},
+    onDisableParticipant: (Long) -> Unit = {},
+    onEnableParticipant:  (Long) -> Unit = {}
 ) {
+    var participantToDisable by remember { mutableStateOf<Participant?>(null) }
+    var participantToEnable  by remember { mutableStateOf<Participant?>(null) }
+
     Column(modifier = modifier) {
         Text(
             text       = "Members Directory",
@@ -781,20 +836,137 @@ fun DirectoryContent(
             contentPadding = PaddingValues(bottom = 80.dp)
         ) {
             items(participants, key = { it.id }) { participant ->
-                ParticipantCard(
-                    participant = participant,
-                    isEditable = isEditable,
-                    isSelected = selectedParticipantIds.contains(participant.id),
-                    onSelectionChange = { selected ->
-                        onSelectionChanged(participant.id, selected)
+                val isActive = participant.status.equals("active", ignoreCase = true)
+
+                val dismissState = rememberSwipeToDismissBoxState(
+                    confirmValueChange = { dismissValue ->
+                        if (dismissValue == SwipeToDismissBoxValue.StartToEnd) {
+                            if (isActive) {
+                                participantToDisable = participant
+                            } else {
+                                participantToEnable = participant
+                            }
+                            false // always snap back; action confirmed via dialog
+                        } else {
+                            false
+                        }
                     },
-                    onLongPress = {
-                        onLongPress()
-                        onSelectionChanged(participant.id, true)
-                    }
+                    positionalThreshold = { it * 0.5f }
                 )
+
+                // Disable the SwipeToDismissBox entirely while in edit mode to avoid
+                // conflict with checkbox selection gestures
+                val swipeEnabled = !isEditable
+
+                SwipeToDismissBox(
+                    state = dismissState,
+                    enableDismissFromStartToEnd = swipeEnabled,
+                    enableDismissFromEndToStart = false,
+                    backgroundContent = {
+                        // Animate the background alpha so it only becomes visible AFTER
+                        // the checkbox AnimatedVisibility exit animation finishes (250 ms).
+                        // - Entering edit mode  → go to 0 immediately (no delay)
+                        // - Exiting  edit mode  → wait 250 ms, then fade in over 150 ms
+                        val bgAlpha by animateFloatAsState(
+                            targetValue    = if (isEditable) 0f else 1f,
+                            animationSpec  = if (isEditable)
+                                tween(durationMillis = 0)
+                            else
+                                tween(durationMillis = 150, delayMillis = 250),
+                            label = "swipeBgAlpha"
+                        )
+
+                        // Nothing to draw until the alpha is meaningful
+                        if (bgAlpha == 0f) return@SwipeToDismissBox
+
+                        val bgColor  = if (isActive) Color(0xFFFF3B30).copy(alpha = 0.18f * bgAlpha)
+                                       else          Color(0xFF007AFF).copy(alpha = 0.15f * bgAlpha)
+                        val iconTint = if (isActive) Color(0xFFFF3B30).copy(alpha = bgAlpha)
+                                       else          Color(0xFF007AFF).copy(alpha = bgAlpha)
+                        val icon     = if (isActive) Icons.Outlined.Block else Icons.Outlined.CheckCircle
+                        val iconDesc = if (isActive) "Disable" else "Enable"
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 12.dp, vertical = 4.dp)
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(bgColor)
+                                .padding(horizontal = 20.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            Icon(
+                                imageVector        = icon,
+                                contentDescription = iconDesc,
+                                tint               = iconTint,
+                                modifier           = Modifier.size(26.dp)
+                            )
+                        }
+                    }
+                ) {
+                    ParticipantCard(
+                        participant = participant,
+                        isEditable = isEditable,
+                        isSelected = selectedParticipantIds.contains(participant.id),
+                        onSelectionChange = { selected ->
+                            onSelectionChanged(participant.id, selected)
+                        },
+                        onLongPress = {
+                            onLongPress()
+                            onSelectionChanged(participant.id, true)
+                        }
+                    )
+                }
             }
         }
+    }
+
+    // Disable dialog
+    if (participantToDisable != null) {
+        AlertDialog(
+            onDismissRequest = { participantToDisable = null },
+            title = { Text("Disable User") },
+            text = { Text("Are you sure you want to disable ${participantToDisable?.name}? They will no longer be able to access the system.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDisableParticipant(participantToDisable!!.id)
+                        participantToDisable = null
+                    }
+                ) {
+                    Text("Disable", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { participantToDisable = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // Enable dialog
+    if (participantToEnable != null) {
+        AlertDialog(
+            onDismissRequest = { participantToEnable = null },
+            title = { Text("Enable User") },
+            text = { Text("Are you sure you want to re-enable ${participantToEnable?.name}? They will regain access to the system.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onEnableParticipant(participantToEnable!!.id)
+                        participantToEnable = null
+                    }
+                ) {
+                    Text("Enable", color = Color(0xFF007AFF))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { participantToEnable = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
@@ -852,7 +1024,7 @@ fun ParticipantCard(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 12.dp, vertical = 4.dp)
             .pointerInput(isEditable) {
                 detectTapGestures(
                     onTap = {
@@ -904,7 +1076,7 @@ fun ParticipantCard(
         ) {
             Column(
                 modifier = Modifier
-                    .padding(16.dp)
+                    .padding(10.dp)
             ) {
             //    Top row: name block + role badge               
             Row(
@@ -916,28 +1088,31 @@ fun ParticipantCard(
                     Text(
                         text       = participant.name,
                         fontWeight = FontWeight.SemiBold,
-                        fontSize   = 16.sp,
+                        fontSize   = 14.sp,
                         color      = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text     = participant.position,
-                        fontSize = 13.sp,
+                        fontSize = 11.sp,
                         color    = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text     = participant.department,
-                        fontSize = 13.sp,
+                        fontSize = 11.sp,
                         color    = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 if (participant.status.equals("active", ignoreCase = true)) {
                     RoleBadge(role = participant.role)
+                } else {
+                    // Show a "DISABLED" badge in place of the role badge
+                    DisabledBadge()
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             //    Divider                                        
             HorizontalDivider(
@@ -945,7 +1120,7 @@ fun ParticipantCard(
                 thickness = 0.5.dp
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             //    Bottom row: contact info + status pill         
             Row(
@@ -955,7 +1130,7 @@ fun ParticipantCard(
             ) {
                 Column {
                     ContactRow(icon = Icons.Outlined.Email, text = participant.email)
-                    Spacer(modifier = Modifier.height(5.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
                     ContactRow(icon = Icons.Outlined.Phone, text = participant.phone)
                 }
             }
@@ -1055,6 +1230,45 @@ fun RoleBadge(role: String) {
 }
 
   
+// Disabled badge (shown when participant status is not active)
+  
+
+@Composable
+fun DisabledBadge() {
+    val isDark = isSystemInDarkTheme()
+    val textColor   = if (isDark) Color(0xFFFCA5A5) else Color(0xFFB02020)
+    val bgColor     = if (isDark) Color(0xFF450A0A) else Color(0xFFFFF0F0)
+    val borderColor = if (isDark) Color(0xFF7F1D1D) else Color(0xFFF5BABA)
+
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(bgColor)
+            .border(
+                width = 0.5.dp,
+                color = borderColor,
+                shape = RoundedCornerShape(6.dp)
+            )
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Icon(
+            imageVector        = Icons.Outlined.Block,
+            contentDescription = null,
+            tint               = textColor,
+            modifier           = Modifier.size(10.dp)
+        )
+        Text(
+            text       = "DISABLED",
+            fontSize   = 11.sp,
+            color      = textColor,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+  
 // Contact row
   
 
@@ -1064,14 +1278,14 @@ fun ContactRow(icon: ImageVector, text: String) {
         Icon(
             imageVector        = icon,
             contentDescription = null,
-            tint               = Color(0xFF3C3C43).copy(alpha = 0.45f),
-            modifier           = Modifier.size(14.dp)
+            tint               = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier           = Modifier.size(12.dp)
         )
         Spacer(modifier = Modifier.width(6.dp))
         Text(
             text     = text,
-            fontSize = 13.sp,
-            color    = Color(0xFF3C3C43).copy(alpha = 0.7f),
+            fontSize = 12.sp,
+            color    = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )

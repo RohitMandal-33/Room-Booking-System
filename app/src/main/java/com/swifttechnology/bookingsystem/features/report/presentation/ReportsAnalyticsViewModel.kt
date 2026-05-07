@@ -78,7 +78,7 @@ class ReportsAnalyticsViewModel @Inject constructor(
             val request = ReportDataRequestDTO(
                 pageNo = currentPage,
                 pageSize = pageSize,
-                sortBy = "date",
+                sortBy = "startDate",
                 sortDir = selectedSort.lowercase(),
                 startDate = getFormattedStartDate(),
                 endDate = getFormattedEndDate(),
@@ -185,7 +185,7 @@ class ReportsAnalyticsViewModel @Inject constructor(
                 val request = ReportDataRequestDTO(
                     pageNo = null, // Export all
                     pageSize = null,
-                    sortBy = "date",
+                    sortBy = "startDate",
                     sortDir = selectedSort.lowercase(),
                     startDate = getFormattedStartDate(),
                     endDate = getFormattedEndDate(),

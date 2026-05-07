@@ -78,6 +78,11 @@ fun AnnouncementsScreen(
     var viewingAnnouncement by remember { 
         androidx.compose.runtime.mutableStateOf<com.swifttechnology.bookingsystem.features.announcements.domain.model.Announcement?>(null) 
     }
+    
+    var showDeleteConfirmDialog by remember { androidx.compose.runtime.mutableStateOf(false) }
+    var showEditConfirmDialog by remember { androidx.compose.runtime.mutableStateOf(false) }
+    var itemToDeleteFromDialog by remember { androidx.compose.runtime.mutableStateOf<Long?>(null) }
+    var itemToEditFromDialog by remember { androidx.compose.runtime.mutableStateOf<com.swifttechnology.bookingsystem.features.announcements.domain.model.Announcement?>(null) }
 
     // Clear selection when exiting edit mode
     LaunchedEffect(isEditable) {
@@ -209,16 +214,10 @@ fun AnnouncementsScreen(
                 canEdit = selectedIds.size == 1,
                 canDelete = selectedIds.isNotEmpty(),
                 onEdit = {
-                    val selected = uiState.displayedAnnouncements
-                        .firstOrNull { it.id == selectedIds.firstOrNull() }
-                    if (selected != null) {
-                        viewModel.openEditSheet(selected)
-                    }
+                    showEditConfirmDialog = true
                 },
                 onDelete = { 
-                    viewModel.deleteSelected(selectedIds)
-                    selectedIds = emptySet<Long>()
-                    onExitEditMode()
+                    showDeleteConfirmDialog = true
                 }
             )
         }
@@ -262,11 +261,91 @@ fun AnnouncementsScreen(
             onDismiss = { viewingAnnouncement = null },
             onEdit = {
                 viewingAnnouncement = null
-                viewModel.openEditSheet(announcement)
+                itemToEditFromDialog = announcement
+                showEditConfirmDialog = true
             },
             onDelete = {
                 viewingAnnouncement = null
-                viewModel.deleteSelected(setOf(announcement.id))
+                itemToDeleteFromDialog = announcement.id
+                showDeleteConfirmDialog = true
+            }
+        )
+    }
+
+    if (showDeleteConfirmDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { 
+                showDeleteConfirmDialog = false 
+                itemToDeleteFromDialog = null
+            },
+            title = { Text("Delete Announcement") },
+            text = { Text("Are you sure you want to delete ${if (itemToDeleteFromDialog != null || selectedIds.size == 1) "this announcement" else "these announcements"}? This action cannot be undone.") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        if (itemToDeleteFromDialog != null) {
+                            viewModel.deleteSelected(setOf(itemToDeleteFromDialog!!))
+                            itemToDeleteFromDialog = null
+                        } else {
+                            viewModel.deleteSelected(selectedIds)
+                            selectedIds = emptySet<Long>()
+                            onExitEditMode()
+                        }
+                        showDeleteConfirmDialog = false
+                    }
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = { 
+                        showDeleteConfirmDialog = false 
+                        itemToDeleteFromDialog = null
+                    }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showEditConfirmDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { 
+                showEditConfirmDialog = false 
+                itemToEditFromDialog = null
+            },
+            title = { Text("Edit Announcement") },
+            text = { Text("Are you sure you want to edit this announcement?") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        if (itemToEditFromDialog != null) {
+                            viewModel.openEditSheet(itemToEditFromDialog!!)
+                            itemToEditFromDialog = null
+                        } else {
+                            val selected = uiState.displayedAnnouncements
+                                .firstOrNull { it.id == selectedIds.firstOrNull() }
+                            if (selected != null) {
+                                viewModel.openEditSheet(selected)
+                            }
+                        }
+                        showEditConfirmDialog = false
+                    }
+                ) {
+                    Text("Edit", color = Primary)
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = { 
+                        showEditConfirmDialog = false 
+                        itemToEditFromDialog = null
+                    }
+                ) {
+                    Text("Cancel")
+                }
             }
         )
     }

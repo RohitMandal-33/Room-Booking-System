@@ -258,8 +258,8 @@ fun DayColumnWithPicker(
                                 .offset { IntOffset(0, (slot.startMinutes * minutePx).roundToInt()) }
                                 .fillMaxWidth()
                                 .height(with(density) { (slot.durationMinutes * minutePx).toDp() })
-                                .background(Color(0xFFFF7070))
-                                .border(0.5.dp, Color(0xFFCC5A5A), RoundedCornerShape(4.dp))
+                                .background(Color(0xFFEF4444).copy(alpha = 0.2f))
+                                .border(0.5.dp, Color(0xFFEF4444).copy(alpha = 0.4f), RoundedCornerShape(4.dp))
                                 .zIndex(1f)
                         )
                     }
@@ -286,8 +286,8 @@ fun DayColumnWithPicker(
                                 .height(with(density) { heightPx.toDp() })
                                 .padding(horizontal = 2.dp, vertical = 1.dp)
                                 .clip(RoundedCornerShape(EVENT_BLOCK_CORNER_DP.dp))
-                                .background(eventColor.copy(alpha = 0.35f), RoundedCornerShape(EVENT_BLOCK_CORNER_DP.dp))
-                                .border(1.5.dp, eventColor, RoundedCornerShape(EVENT_BLOCK_CORNER_DP.dp))
+                                .background(eventColor.copy(alpha = 0.25f), RoundedCornerShape(EVENT_BLOCK_CORNER_DP.dp))
+                                .border(1.dp, eventColor.copy(alpha = 0.6f), RoundedCornerShape(EVENT_BLOCK_CORNER_DP.dp))
                                 .pointerInput(event) {
                                     detectTapGestures(
                                         onTap = { onEventClick(event) },

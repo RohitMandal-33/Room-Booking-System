@@ -32,6 +32,7 @@ import com.swifttechnology.bookingsystem.navigation.ScreenRoutes
 fun DashboardScreen(
     searchQuery: String,
     onNavigate: (String) -> Unit,
+    onEditMeeting: (com.swifttechnology.bookingsystem.features.booking.data.dtos.BookingResponseDTO, String) -> Unit = { _, _ -> },
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -92,7 +93,8 @@ fun DashboardScreen(
         MeetingCardsSection(
             meetings  = uiState.upcomingMeetings,
             isLoading = uiState.isLoadingMeetings,
-            error     = uiState.error
+            error     = uiState.error,
+            onEditMeeting = onEditMeeting
         )
 
         Spacer(modifier = Modifier.height(Spacing.lg))

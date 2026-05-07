@@ -51,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -61,6 +62,7 @@ import com.swifttechnology.bookingsystem.core.designsystem.Spacing
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.core.utils.DateTimeUtils
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.BookingResponseDTO
+import com.swifttechnology.bookingsystem.R
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -73,7 +75,8 @@ private val BlueAccent   = Color(0xFF3B82F6)
 fun MeetingCardsSection(
     meetings: List<BookingResponseDTO> = emptyList(),
     isLoading: Boolean = false,
-    error: String? = null
+    error: String? = null,
+    onEditMeeting: (BookingResponseDTO, String) -> Unit = { _, _ -> }
 ) {
     var selectedMeeting by remember { mutableStateOf<BookingResponseDTO?>(null) }
 
@@ -180,23 +183,24 @@ fun MeetingCardsSection(
                                 room         = meeting.room?.roomName ?: "Unknown Room",
                                 by           = meeting.roomBooker?.email ?: meeting.roomBooker?.firstName ?: "System",
                                 participants = (meeting.internalParticipant?.size ?: 0) +
-                                              (meeting.externalParticipant?.size ?: 0)
+                                              (meeting.externalParticipant?.size ?: 0),
+                                isRecurring  = meeting.isRecurring()
                             )
                             MeetingCardItem(card = card, onViewDetails = { selectedMeeting = meeting })
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(10.dp))
-                    androidx.compose.material3.TextButton(
-                        onClick = {},
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            text = "View All",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
+//                    Spacer(modifier = Modifier.height(10.dp))
+//                    androidx.compose.material3.TextButton(
+//                        onClick = {},
+//                        modifier = Modifier.fillMaxWidth()
+//                    ) {
+//                        Text(
+//                            text = "View All",
+//                            style = MaterialTheme.typography.labelLarge,
+//                            color = MaterialTheme.colorScheme.primary
+//                        )
+//                    }
                 }
             }
     }
@@ -204,7 +208,11 @@ fun MeetingCardsSection(
     selectedMeeting?.let { meeting ->
         MeetingDetailDialog(
             meeting   = meeting,
-            onDismiss = { selectedMeeting = null }
+            onDismiss = { selectedMeeting = null },
+            onEdit = { scope ->
+                onEditMeeting(meeting, scope)
+                selectedMeeting = null
+            }
         )
     }
 }
@@ -269,6 +277,18 @@ private fun formatDateLabel(dateStr: String?): String {
     }
 }
 
+private fun formatRecurrenceType(type: String?): String {
+    return when (type?.uppercase()) {
+        "DAILY" -> "Repeats daily"
+        "WEEKDAY" -> "Repeats on weekdays"
+        "WEEKLY" -> "Repeats weekly"
+        "MONTHLY" -> "Repeats monthly"
+        "YEARLY" -> "Repeats yearly"
+        "CUSTOM" -> "Custom recurrence"
+        else -> "Does not repeat"
+    }
+}
+
 //      UI Components                                                                                                                           
 
 data class MeetingCard(
@@ -279,7 +299,8 @@ data class MeetingCard(
     val time: String,
     val room: String,
     val by: String,
-    val participants: Int
+    val participants: Int,
+    val isRecurring: Boolean
 )
 
 @Composable
@@ -296,15 +317,28 @@ private fun MeetingCardItem(card: MeetingCard, onViewDetails: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment     = Alignment.CenterVertically
             ) {
-                Text(
-                    card.title,
-                    style    = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                Row(
                     modifier = Modifier.weight(1f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (card.isRecurring) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_repeat),
+                            contentDescription = "Recurring meeting",
+                            tint = MaterialTheme.customColors.textBody,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
+                    Text(
+                        card.title,
+                        style    = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
                 Spacer(modifier = Modifier.width(8.dp))
                 Box(
                     modifier = Modifier
@@ -416,7 +450,8 @@ private fun MeetingCardItem(card: MeetingCard, onViewDetails: () -> Unit) {
 @Composable
 private fun MeetingDetailDialog(
     meeting: BookingResponseDTO,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onEdit: (String) -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -495,6 +530,24 @@ private fun MeetingDetailDialog(
                     subtitle = meeting.roomBooker?.email?.takeIf { it.isNotEmpty() } ?: "Unknown"
                 )
 
+                if (meeting.isRecurring()) {
+                    DetailItem(
+                        icon     = Icons.Outlined.Schedule,
+                        title    = "Recurrence",
+                        subtitle = buildString {
+                            append(formatRecurrenceType(meeting.recurrenceType))
+                            val start = meeting.startDate
+                            val end   = meeting.endDate
+                            if (!start.isNullOrBlank() && !end.isNullOrBlank()) {
+                                append(" • ")
+                                append(formatDateLabel(start))
+                                append(" - ")
+                                append(formatDateLabel(end))
+                            }
+                        }
+                    )
+                }
+
                 ExpandableAttendeesItem(meeting = meeting)
 
                 if (!meeting.description.isNullOrBlank()) {
@@ -508,10 +561,14 @@ private fun MeetingDetailDialog(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                Button(
+
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedButton(
                     onClick  = onDismiss,
                     modifier = Modifier.fillMaxWidth(),
-                    colors   = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                    border   = BorderStroke(1.dp, MaterialTheme.customColors.divider),
                     shape    = RoundedCornerShape(8.dp)
                 ) {
                     Text("Done")
@@ -519,6 +576,10 @@ private fun MeetingDetailDialog(
             }
         }
     }
+}
+
+private fun BookingResponseDTO.isRecurring(): Boolean {
+    return !recurrenceId.isNullOrBlank() && !recurrenceType.isNullOrBlank() && recurrenceType != "NONE"
 }
 
 @Composable

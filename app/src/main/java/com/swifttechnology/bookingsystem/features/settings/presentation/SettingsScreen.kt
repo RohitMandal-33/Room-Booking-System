@@ -30,7 +30,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.swifttechnology.bookingsystem.core.designsystem.ThemeMode
+import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.MeetingTypeDTO
+import com.swifttechnology.bookingsystem.features.user.data.dtos.UserDetailsDTO
 
 
 //  Color utilities
@@ -698,6 +700,7 @@ private fun PasswordField(
 @Composable
 fun SettingsScreen(
     searchQuery: String,
+    currentUser: UserDetailsDTO? = null,
     onNavigate: (String) -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -731,6 +734,9 @@ fun SettingsScreen(
                 contentPadding  = PaddingValues(horizontal = 20.dp, vertical = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(28.dp)
             ) {
+                item {
+                    ProfileCard(user = currentUser)
+                }
                 item {
                     ThemeControlCard(
                         selected   = uiState.themeMode,
@@ -768,4 +774,66 @@ fun SettingsScreen(
 private val TextButtonDefaults = object {
     @Composable
     fun textButtonColors(contentColor: Color) = ButtonDefaults.textButtonColors(contentColor = contentColor)
+}
+
+//  4. PROFILE CARD
+
+@Composable
+private fun ProfileCard(user: UserDetailsDTO?) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        SectionHeader("Profile Details")
+        SettingsSurface {
+            if (user == null) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                        strokeWidth = 2.dp
+                    )
+                }
+            } else {
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    ProfileDetailRow(label = "Name", value = "${user.firstname.orEmpty()} ${user.lastname.orEmpty()}".trim().ifBlank { "N/A" })
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), thickness = 0.5.dp)
+                    ProfileDetailRow(label = "Email", value = user.email)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), thickness = 0.5.dp)
+                    ProfileDetailRow(label = "Phone Number", value = user.phoneNo.takeIf { !it.isNullOrBlank() } ?: "N/A")
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), thickness = 0.5.dp)
+                    ProfileDetailRow(label = "Department", value = user.department.takeIf { !it.isNullOrBlank() } ?: "N/A")
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), thickness = 0.5.dp)
+                    ProfileDetailRow(label = "Role", value = user.role.takeIf { !it.isNullOrBlank() } ?: "N/A")
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), thickness = 0.5.dp)
+                    ProfileDetailRow(label = "Position", value = user.position.takeIf { !it.isNullOrBlank() } ?: "N/A")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileDetailRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium
+        )
+        Text(
+            text = value,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
 }

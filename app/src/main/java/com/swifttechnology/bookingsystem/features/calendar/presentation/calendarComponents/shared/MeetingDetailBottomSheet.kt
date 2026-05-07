@@ -216,9 +216,13 @@ fun MeetingDetailBottomSheet(
                         title = "Recurrence",
                         subtitle = buildString {
                             append(formatRecurrenceType(event.recurrenceType))
-                            event.recurrenceId?.let { id ->
-                                append(" • Series ID: ")
-                                append(id)
+                            val start = event.recurrenceStartDate
+                            val end = event.recurrenceEndDate
+                            if (start != null && end != null) {
+                                append(" • ")
+                                append(start.format(DateTimeFormatter.ofPattern("MMM d, yyyy")))
+                                append(" - ")
+                                append(end.format(DateTimeFormatter.ofPattern("MMM d, yyyy")))
                             }
                         }
                     )
@@ -238,7 +242,6 @@ fun MeetingDetailBottomSheet(
 
             ActionBar(
                 event = event,
-                onDismiss = onDismiss,
                 onEdit = onEdit
             )
         }
@@ -697,26 +700,14 @@ private fun AttendeeRow(
 @Composable
 private fun ActionBar(
     event: MeetingEvent,
-    onDismiss: () -> Unit,
     onEdit: (String) -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        OutlinedButton(
-            onClick = onDismiss,
-            modifier = Modifier.weight(1f),
-            shape = RoundedCornerShape(14.dp),
-            border = BorderStroke(1.dp, MaterialTheme.customColors.divider),
-            colors = ButtonDefaults.outlinedButtonColors(
-                contentColor = MaterialTheme.colorScheme.onSurface
-            )
-        ) {
-            Text("Close")
-        }
 
-        if (!event.recurrenceId.isNullOrBlank()) {
+        if (!event.recurrenceId.isNullOrBlank() && event.recurrenceType != "NONE") {
             OutlinedButton(
                 onClick = { onEdit("THIS") },
                 modifier = Modifier.weight(1f),

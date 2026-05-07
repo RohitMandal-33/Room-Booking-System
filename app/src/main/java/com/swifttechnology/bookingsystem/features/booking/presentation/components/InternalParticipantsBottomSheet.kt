@@ -55,10 +55,6 @@ import androidx.compose.ui.unit.sp
 import com.swifttechnology.bookingsystem.core.designsystem.CornerRadius
 import com.swifttechnology.bookingsystem.core.designsystem.Info
 import com.swifttechnology.bookingsystem.core.designsystem.MeetingRoomBookingTheme
-import com.swifttechnology.bookingsystem.core.designsystem.Neutral200
-import com.swifttechnology.bookingsystem.core.designsystem.Neutral300
-import com.swifttechnology.bookingsystem.core.designsystem.Neutral400
-import com.swifttechnology.bookingsystem.core.designsystem.Neutral700
 import com.swifttechnology.bookingsystem.core.designsystem.Spacing
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.features.booking.presentation.InternalMember
@@ -186,7 +182,7 @@ private fun InternalParticipantsContent(
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
                 .border(
                     width = 0.5.dp,
-                    color = Neutral300,
+                    color = MaterialTheme.customColors.divider,
                     shape = RoundedCornerShape(CornerRadius.full)
                 )
                 .padding(3.dp),
@@ -230,7 +226,7 @@ private fun InternalParticipantsContent(
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(CornerRadius.lg))
                 .background(MaterialTheme.colorScheme.surface)
-                .border(0.5.dp, Neutral300, RoundedCornerShape(CornerRadius.lg))
+                .border(0.5.dp, MaterialTheme.customColors.divider, RoundedCornerShape(CornerRadius.lg))
         ) {
             Row(
                 modifier = Modifier
@@ -245,7 +241,7 @@ private fun InternalParticipantsContent(
                         .height(50.dp)
                         .clip(RoundedCornerShape(CornerRadius.full))
                         .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
-                        .border(0.5.dp, Neutral300, RoundedCornerShape(CornerRadius.full))
+                        .border(0.5.dp, MaterialTheme.customColors.divider, RoundedCornerShape(CornerRadius.full))
                         .padding(horizontal = Spacing.sm),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -253,7 +249,7 @@ private fun InternalParticipantsContent(
                     Icon(
                         imageVector = Icons.Default.Search,
                         contentDescription = null,
-                        tint = Neutral400,
+                        tint = MaterialTheme.customColors.neutral400,
                         modifier = Modifier.size(15.dp)
                     )
                     OutlinedTextField(
@@ -262,7 +258,7 @@ private fun InternalParticipantsContent(
                         placeholder = {
                             Text(
                                 text = "Search name or email\u2026",
-                                color = Neutral400,
+                                color = MaterialTheme.customColors.neutral400,
                                 fontSize = 12.sp
                             )
                         },
@@ -282,7 +278,7 @@ private fun InternalParticipantsContent(
                 }
             }
 
-            HorizontalDivider(color = Neutral300, thickness = 0.5.dp)
+            HorizontalDivider(color = MaterialTheme.customColors.divider, thickness = 0.5.dp)
 
             if (groupBy == GroupBy.TEAMS) {
                 Box(
@@ -295,7 +291,7 @@ private fun InternalParticipantsContent(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(CornerRadius.lg))
                             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
-                            .border(0.5.dp, Neutral300, RoundedCornerShape(CornerRadius.lg))
+                            .border(0.5.dp, MaterialTheme.customColors.divider, RoundedCornerShape(CornerRadius.lg))
                             .clickable { departmentDropdownExpanded = true }
                             .padding(horizontal = Spacing.md, vertical = 10.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -305,13 +301,13 @@ private fun InternalParticipantsContent(
                             text = selectedDepartment ?: "Select Department",
                             fontSize = 13.sp,
                             color = if (selectedDepartment != null)
-                                MaterialTheme.customColors.bookRoomLabel else Neutral400
+                                MaterialTheme.customColors.bookRoomLabel else MaterialTheme.customColors.neutral400
                         )
                         Icon(
                             imageVector = if (departmentDropdownExpanded)
                                 Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                             contentDescription = null,
-                            tint = Neutral700,
+                            tint = MaterialTheme.customColors.neutral700,
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -335,7 +331,7 @@ private fun InternalParticipantsContent(
                                 departmentDropdownExpanded = false
                             }
                         )
-                        HorizontalDivider(color = Neutral300, thickness = 0.5.dp)
+                        HorizontalDivider(color = MaterialTheme.customColors.divider, thickness = 0.5.dp)
                         departments.forEach { dept ->
                             DropdownMenuItem(
                                 text = {
@@ -353,7 +349,7 @@ private fun InternalParticipantsContent(
                         }
                     }
                 }
-                HorizontalDivider(color = Neutral300, thickness = 0.5.dp)
+                HorizontalDivider(color = MaterialTheme.customColors.divider, thickness = 0.5.dp)
             }
 
             if (isSearching) {
@@ -362,7 +358,7 @@ private fun InternalParticipantsContent(
                         .fillMaxWidth()
                         .height(1.5.dp),
                     color = MaterialTheme.colorScheme.primary,
-                    trackColor = Neutral200
+                    trackColor = MaterialTheme.customColors.neutral200
                 )
             }
 
@@ -446,7 +442,7 @@ private fun InternalParticipantsContent(
                                 )
                                 if (members.last() != participant) {
                                     HorizontalDivider(
-                                        color = Neutral300,
+                                        color = MaterialTheme.customColors.divider,
                                         thickness = 0.5.dp,
                                         modifier = Modifier.padding(horizontal = Spacing.md)
                                     )
@@ -528,7 +524,7 @@ private fun InternalParticipantsContent(
                             )
                             if (displayList.last() != participant) {
                                 HorizontalDivider(
-                                    color = Neutral300,
+                                    color = MaterialTheme.customColors.divider,
                                     thickness = 0.5.dp,
                                     modifier = Modifier.padding(horizontal = Spacing.md)
                                 )
@@ -580,7 +576,7 @@ private fun InternalParticipantItem(
                 )
                 .border(
                     width = 1.5.dp,
-                    color = if (isSelected) MaterialTheme.colorScheme.primary else Neutral400,
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.customColors.neutral400,
                     shape = RoundedCornerShape(4.dp)
                 ),
             contentAlignment = Alignment.Center
@@ -609,7 +605,7 @@ private fun InternalParticipantItem(
             Text(
                 text = participant.email,
                 fontSize = 11.sp,
-                color = Neutral700,
+                color = MaterialTheme.customColors.neutral700,
                 lineHeight = 14.sp
             )
             Text(

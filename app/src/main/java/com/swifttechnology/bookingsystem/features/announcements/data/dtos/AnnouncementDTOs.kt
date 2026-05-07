@@ -19,7 +19,8 @@ data class AnnouncementRequestDTO(
     @SerializedName("message") val message: String,
     @SerializedName("pinned") val pinned: Boolean? = null,
     @SerializedName("startDate") val startDate: String? = null,
-    @SerializedName("endDate") val endDate: String? = null
+    @SerializedName("endDate") val endDate: String? = null,
+    @SerializedName("scheduled") val scheduled: Boolean? = null
 )
 
 /**
@@ -42,7 +43,8 @@ data class AnnouncementDTO(
     @SerializedName("startDate") val startDate: String? = null,
     @SerializedName("endDate") val endDate: String? = null,
     @SerializedName("read") val read: Boolean? = null,
-    @SerializedName("isRead") val isRead: Boolean? = null
+    @SerializedName("isRead") val isRead: Boolean? = null,
+    @SerializedName("scheduled") val scheduled: Boolean? = null
 )
 
 /**

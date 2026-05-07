@@ -7,7 +7,8 @@ import com.swifttechnology.bookingsystem.features.meetingrooms.data.dtos.RoomRes
  */
 data class RoomBookingRequestDTO(
     val meetingTitle: String? = null,
-    val date: String? = null,              // yyyy-MM-dd
+    val startDate: String? = null,         // yyyy-MM-dd
+    val endDate: String? = null,           // yyyy-MM-dd
     val startTime: String? = null,         // HH:mm:ss
     val endTime: String? = null,           // HH:mm:ss
     val meetingTypeId: Long? = null,
@@ -111,6 +112,10 @@ data class BookingResponseDTO(
     val id: Long? = null,
     val meetingTitle: String? = null,
     val date: String? = null,
+    /** Present in get-booked-room response for recurring series. */
+    val startDate: String? = null,
+    /** Present in get-booked-room response for recurring series. */
+    val endDate: String? = null,
     val startTime: Any? = null, // Can be String ("HH:mm:ss") or LocalTimeDTO object
     val endTime: Any? = null,   // Can be String ("HH:mm:ss") or LocalTimeDTO object
     @com.google.gson.annotations.SerializedName("meetingType")

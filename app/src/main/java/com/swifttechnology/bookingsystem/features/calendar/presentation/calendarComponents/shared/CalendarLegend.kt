@@ -24,7 +24,7 @@ import com.swifttechnology.bookingsystem.core.designsystem.Spacing
 fun CalendarLegendRow(
     modifier: Modifier = Modifier,
     unavailableColor: Color = Color(0xFFD0CCDD),
-    bookedColor: Color = Color(0xFFFF7070).copy(alpha = 0.75f),
+    bookedColor: Color = Color(0xFFEF4444).copy(alpha = 0.5f),
     selectionColor: Color = Color(0xFF9B6DFF).copy(alpha = 0.75f)
 ) {
     Row(

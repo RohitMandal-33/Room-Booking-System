@@ -54,11 +54,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.swifttechnology.bookingsystem.core.designsystem.CornerRadius
-import com.swifttechnology.bookingsystem.core.designsystem.Neutral300
-import com.swifttechnology.bookingsystem.core.designsystem.Neutral400
-import com.swifttechnology.bookingsystem.core.designsystem.Neutral700
 import com.swifttechnology.bookingsystem.core.designsystem.Spacing
-import com.swifttechnology.bookingsystem.core.designsystem.TextPrimary
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.foundation.text.KeyboardOptions
@@ -296,7 +292,7 @@ fun BookingDropdownField(
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowDown,
                         contentDescription = "Expand",
-                        tint = Neutral700,
+                        tint = MaterialTheme.customColors.neutral700,
                         modifier = Modifier
                             .size(20.dp)
                             .rotate(arrowRotation)
@@ -332,7 +328,7 @@ fun BookingDropdownField(
                                 Text(
                                     text = option,
                                     fontSize = 14.sp,
-                                    color = if (option == value) primaryColor else TextPrimary,
+                                    color = if (option == value) primaryColor else MaterialTheme.customColors.textPrimary,
                                     fontWeight = if (option == value) FontWeight.SemiBold else FontWeight.Normal
                                 )
                             }
@@ -351,7 +347,7 @@ fun BookingDropdownField(
                         HorizontalDivider(
                             modifier = Modifier.padding(horizontal = Spacing.md),
                             thickness = 0.5.dp,
-                            color = Neutral300
+                            color = MaterialTheme.customColors.divider
                         )
                     }
                 }
@@ -385,7 +381,7 @@ fun TimePickerDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = Neutral700)
+                Text("Cancel", color = MaterialTheme.customColors.neutral700)
             }
         },
         text = {

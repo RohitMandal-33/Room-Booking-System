@@ -108,8 +108,8 @@ fun MeetingRoomsScreen(
                         onEditClick = { roomToEdit ->
                             onOpenRoomEdit(roomToEdit.name)
                         },
-                        onDeleteClick = { roomToDelete ->
-                            viewModel.deleteRoom(roomToDelete)
+                        onToggleStatusClick = { roomToToggle ->
+                            viewModel.toggleRoomStatus(roomToToggle)
                         },
                         onBookClick = onBookClick,
                         onLongPress = onEnterEditMode

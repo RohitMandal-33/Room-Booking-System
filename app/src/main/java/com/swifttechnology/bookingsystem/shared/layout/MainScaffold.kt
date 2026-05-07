@@ -1,6 +1,8 @@
 package com.swifttechnology.bookingsystem.shared.layout
 
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -11,7 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.Color
 import com.swifttechnology.bookingsystem.core.designsystem.Layout
 import com.swifttechnology.bookingsystem.core.designsystem.Spacing
 import com.swifttechnology.bookingsystem.core.designsystem.adaptiveHorizontalScreenPadding
@@ -24,6 +26,7 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -53,6 +56,9 @@ fun MainScaffold(
     onTodayClick: () -> Unit = {},
     onEditClick: () -> Unit = {},
     onBackClick: (() -> Unit)? = null,
+    userName: String = "",
+    userEmail: String = "",
+    userRole: String = "",
     content: @Composable () -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -84,6 +90,9 @@ fun MainScaffold(
                             showLogoutDialog = true
                         }
                     },
+                    userName = userName,
+                    userEmail = userEmail,
+                    userRole = userRole,
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(Spacing.ms)
@@ -137,14 +146,16 @@ fun MainScaffold(
             }
 
             // Overlay to capture taps and close drawer when open
-            if (drawerState.isOpen) {
+            if (drawerState.targetValue != DrawerValue.Closed) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .pointerInput(Unit) {
-                            detectTapGestures {
-                                scope.launch { drawerState.close() }
-                            }
+                        .background(Color.Transparent)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            scope.launch { drawerState.close() }
                         }
                 )
             }

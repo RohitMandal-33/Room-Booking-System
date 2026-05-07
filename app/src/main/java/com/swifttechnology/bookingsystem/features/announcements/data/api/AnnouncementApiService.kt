@@ -31,6 +31,12 @@ interface AnnouncementApiService {
         @Body request: com.swifttechnology.bookingsystem.features.announcements.data.dtos.AnnouncementPinStatusRequestDTO
     ): GlobalResponse<AnnouncementPageDTO>
 
+    /** POST /api/v1/announcement/get-scheduled */
+    @POST(APIEndpoint.ANNOUNCEMENT_GET_SCHEDULED)
+    suspend fun getScheduledAnnouncements(
+        @Body request: com.swifttechnology.bookingsystem.features.meetingrooms.data.dtos.PaginatedDataRequestDTO
+    ): GlobalResponse<AnnouncementPageDTO>
+
     /** POST /api/v1/announcement/add */
     @POST(APIEndpoint.ANNOUNCEMENT_ADD)
     suspend fun addAnnouncement(

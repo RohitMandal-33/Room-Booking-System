@@ -132,7 +132,8 @@ class CalendarViewModel @Inject constructor(
                             meetingStatus = dto.meetingStatus ?: dto.status,
                             meetingTypeId = dto.meetingTypeId,
                             recurrenceId = dto.recurrenceId,
-                            recurrenceType = dto.recurrenceType
+                            recurrenceType = dto.recurrenceType,
+                            repeats = !dto.recurrenceId.isNullOrBlank() && dto.recurrenceType != "NONE"
                         )
                     } catch (e: Exception) {
                         null
@@ -219,13 +220,20 @@ class CalendarViewModel @Inject constructor(
             viewModelScope.launch {
                 bookingRepository.getBookingDetails(event.meetingId)
                     .onSuccess { dto ->
+                        val seriesStart = runCatching { dto.startDate?.let(LocalDate::parse) }.getOrNull()
+                        val seriesEnd = runCatching { dto.endDate?.let(LocalDate::parse) }.getOrNull()
                         val updatedEvent = event.copy(
                             description = dto.description ?: "",
                             internalParticipants = dto.internalParticipant ?: emptyList(),
                             externalParticipants = dto.externalParticipant ?: emptyList(),
                             createdBy = dto.roomBooker?.email ?: dto.roomBooker?.firstName ?: "Unknown",
                             meetingStatus = dto.meetingStatus ?: dto.status,
-                            meetingRoom = dto.room?.roomName ?: dto.roomName ?: event.meetingRoom
+                            meetingRoom = dto.room?.roomName ?: dto.roomName ?: event.meetingRoom,
+                            recurrenceId = dto.recurrenceId ?: event.recurrenceId,
+                            recurrenceType = dto.recurrenceType ?: event.recurrenceType,
+                            recurrenceStartDate = seriesStart ?: event.recurrenceStartDate,
+                            recurrenceEndDate = seriesEnd ?: event.recurrenceEndDate,
+                            repeats = !(dto.recurrenceId ?: event.recurrenceId).isNullOrBlank() && (dto.recurrenceType ?: event.recurrenceType) != "NONE"
                         )
                         _uiState.update { 
                             if (it.selectedEvent?.meetingId == event.meetingId) {
@@ -237,7 +245,7 @@ class CalendarViewModel @Inject constructor(
         }
     }
 
-    fun onRoomSelected(room: Room) {
+    fun onRoomSelected(room: Room?) {
         _uiState.update { it.copy(selectedRoom = room) }
         refreshBookings()
     }

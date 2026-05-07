@@ -38,27 +38,38 @@ fun RoomCard(
     room: Room,
     isEditable: Boolean = false,
     onEditClick: (Room) -> Unit = {},
-    onDeleteClick: (Room) -> Unit = {},
+    onToggleStatusClick: (Room) -> Unit = {},
     onBookClick: (Room) -> Unit = {},
     onLongPress: () -> Unit = {}
 ) {
-    var showDeleteConfirm by remember { mutableStateOf(false) }
+    val isDisabled = room.status == RoomStatus.INACTIVE || room.status == RoomStatus.DISABLED
+    var showToggleConfirm by remember { mutableStateOf(false) }
 
-    if (showDeleteConfirm) {
+    if (showToggleConfirm) {
         AlertDialog(
-            onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Delete Room") },
-            text = { Text("Are you sure you want to delete this room?") },
+            onDismissRequest = { showToggleConfirm = false },
+            title = { Text(if (isDisabled) "Enable Room" else "Disable Room") },
+            text = {
+                Text(
+                    if (isDisabled)
+                        "Are you sure you want to enable \"${room.name}\"? It will become available for booking."
+                    else
+                        "Are you sure you want to disable \"${room.name}\"? It will be marked as under maintenance."
+                )
+            },
             confirmButton = {
                 TextButton(onClick = {
-                    onDeleteClick(room)
-                    showDeleteConfirm = false
+                    onToggleStatusClick(room)
+                    showToggleConfirm = false
                 }) {
-                    Text("Delete", color = Color.Red)
+                    Text(
+                        if (isDisabled) "Enable" else "Disable",
+                        color = if (isDisabled) Color(0xFF2E7D32) else Color(0xFFD32F2F)
+                    )
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) {
+                TextButton(onClick = { showToggleConfirm = false }) {
                     Text("Cancel")
                 }
             }
@@ -189,19 +200,22 @@ fun RoomCard(
                         )
                     }
 
-                    // Delete button
+                    // Enable / Disable toggle button
+                    val toggleBg = if (isDisabled) Color(0xFFC8E6C9) else Color(0xFFFF9EA6)
+                    val toggleIcon = if (isDisabled) Icons.Outlined.CheckCircle else Icons.Outlined.Block
+                    val toggleDesc = if (isDisabled) "Enable Room" else "Disable Room"
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .height(32.dp)
                             .clip(RoundedCornerShape(CornerRadius.md))
-                            .background(Color(0xFFFF9EA6))
-                            .clickable { showDeleteConfirm = true },
+                            .background(toggleBg)
+                            .clickable { showToggleConfirm = true },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.Delete,
-                            contentDescription = "Delete",
+                            imageVector = toggleIcon,
+                            contentDescription = toggleDesc,
                             modifier = Modifier.size(18.dp),
                             tint = MaterialTheme.customColors.deepBlack
                         )
@@ -209,45 +223,91 @@ fun RoomCard(
                 }
             } else {
                 // Normal mode action button
-                val (btnBg, btnText, btnTextColor) = when (room.status) {
-                    RoomStatus.AVAILABLE, RoomStatus.ACTIVE -> Triple(
-                        MaterialTheme.customColors.deepBlack,
-                        "Book Now",
-                        MaterialTheme.customColors.whitePure
-                    )
-                    RoomStatus.BOOKED -> Triple(
-                        MaterialTheme.customColors.neutral200,
-                        "View Schedule",
-                        MaterialTheme.customColors.deepBlack
-                    )
-                    RoomStatus.DISABLED, RoomStatus.INACTIVE -> Triple(
-                        MaterialTheme.customColors.neutral200,
-                        "Inquire",
-                        MaterialTheme.customColors.deepBlack
-                    )
-                }
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(32.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(btnBg)
-                        .border(
-                            1.dp,
-                            MaterialTheme.customColors.neutral300,
-                            RoundedCornerShape(8.dp)
-                        )
-                        .clickable(enabled = room.status != RoomStatus.DISABLED) { onBookClick(room) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = btnText,
-                        fontSize = 14.sp,
-                        color = btnTextColor,
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.labelLarge
-                    )
+                when {
+                    isDisabled -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(32.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFFFFF3E0))
+                                .border(
+                                    1.dp,
+                                    Color(0xFFFFCC80),
+                                    RoundedCornerShape(8.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Construction,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp),
+                                    tint = Color(0xFFE65100)
+                                )
+                                Text(
+                                    text = "Not Available",
+                                    fontSize = 13.sp,
+                                    color = Color(0xFFE65100),
+                                    fontWeight = FontWeight.Medium,
+                                    textAlign = TextAlign.Center,
+                                    style = MaterialTheme.typography.labelLarge
+                                )
+                            }
+                        }
+                    }
+                    room.status == RoomStatus.BOOKED -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(32.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.customColors.neutral200)
+                                .border(
+                                    1.dp,
+                                    MaterialTheme.customColors.neutral300,
+                                    RoundedCornerShape(8.dp)
+                                )
+                                .clickable { onBookClick(room) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "View Schedule",
+                                fontSize = 14.sp,
+                                color = MaterialTheme.customColors.deepBlack,
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
+                    }
+                    else -> {
+                        // AVAILABLE / ACTIVE
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(32.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.customColors.deepBlack)
+                                .border(
+                                    1.dp,
+                                    MaterialTheme.customColors.neutral300,
+                                    RoundedCornerShape(8.dp)
+                                )
+                                .clickable { onBookClick(room) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Book Now",
+                                fontSize = 14.sp,
+                                color = MaterialTheme.customColors.whitePure,
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
+                    }
                 }
             }
         }

@@ -49,8 +49,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.swifttechnology.bookingsystem.core.designsystem.CornerRadius
 import com.swifttechnology.bookingsystem.core.designsystem.MeetingRoomBookingTheme
-import com.swifttechnology.bookingsystem.core.designsystem.Neutral300
-import com.swifttechnology.bookingsystem.core.designsystem.Neutral700
 import com.swifttechnology.bookingsystem.core.designsystem.Spacing
 import com.swifttechnology.bookingsystem.core.designsystem.Warning
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
@@ -147,7 +145,7 @@ private fun ExternalParticipantsContent(
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(CornerRadius.lg))
                 .background(MaterialTheme.colorScheme.surface)
-                .border(0.5.dp, Neutral300, RoundedCornerShape(CornerRadius.lg))
+                .border(0.5.dp, MaterialTheme.customColors.divider, RoundedCornerShape(CornerRadius.lg))
                 .padding(Spacing.md),
             verticalArrangement = Arrangement.spacedBy(Spacing.sm)
         ) {
@@ -169,7 +167,7 @@ private fun ExternalParticipantsContent(
                 )
             }
 
-            HorizontalDivider(color = Neutral300, thickness = 0.5.dp)
+            HorizontalDivider(color = MaterialTheme.customColors.divider, thickness = 0.5.dp)
 
             ExternalFormField(
                 label = "Name",
@@ -250,8 +248,8 @@ private fun ExternalParticipantsContent(
                         .weight(0.55f)
                         .height(44.dp),
                     shape = RoundedCornerShape(CornerRadius.lg),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Neutral700),
-                    border = androidx.compose.foundation.BorderStroke(0.5.dp, Neutral300)
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.customColors.neutral700),
+                    border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.customColors.divider)
                 ) {
                     Text("Clear", fontSize = 13.sp)
                 }
@@ -275,7 +273,7 @@ private fun ExternalParticipantsContent(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(CornerRadius.lg))
                     .background(MaterialTheme.colorScheme.surface)
-                    .border(0.5.dp, Neutral300, RoundedCornerShape(CornerRadius.lg))
+                    .border(0.5.dp, MaterialTheme.customColors.divider, RoundedCornerShape(CornerRadius.lg))
             ) {
                 formState.externalMembers.forEachIndexed { index, member ->
                     Row(
@@ -319,7 +317,7 @@ private fun ExternalParticipantsContent(
                                 Text(
                                     text = member.email,
                                     fontSize = 11.sp,
-                                    color = Neutral700,
+                                    color = MaterialTheme.customColors.neutral700,
                                     lineHeight = 14.sp
                                 )
                             }
@@ -344,7 +342,7 @@ private fun ExternalParticipantsContent(
 
                     if (index != formState.externalMembers.lastIndex) {
                         HorizontalDivider(
-                            color = Neutral300,
+                            color = MaterialTheme.customColors.divider,
                             thickness = 0.5.dp,
                             modifier = Modifier.padding(horizontal = Spacing.md)
                         )
@@ -407,7 +405,7 @@ private fun ExternalFormField(
                 focusedContainerColor   = MaterialTheme.customColors.bookRoomInputBackground,
                 unfocusedContainerColor = MaterialTheme.customColors.bookRoomInputBackground,
                 focusedBorderColor      = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
-                unfocusedBorderColor    = Neutral300,
+                unfocusedBorderColor    = MaterialTheme.customColors.divider,
                 focusedTextColor        = MaterialTheme.customColors.bookRoomLabel,
                 unfocusedTextColor      = MaterialTheme.customColors.bookRoomLabel,
                 cursorColor             = MaterialTheme.colorScheme.primary

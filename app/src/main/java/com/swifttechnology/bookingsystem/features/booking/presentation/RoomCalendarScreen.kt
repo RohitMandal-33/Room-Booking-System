@@ -68,6 +68,7 @@ fun RoomCalendarScreen(
     pickerViewModel: DayTimePickerViewModel = hiltViewModel(key = "room_calendar_picker"),
     calendarViewModel: CalendarViewModel = hiltViewModel()
 ) {
+
     val pickerUiState by pickerViewModel.uiState.collectAsStateWithLifecycle()
     val calendarUiState by calendarViewModel.uiState.collectAsStateWithLifecycle()
 

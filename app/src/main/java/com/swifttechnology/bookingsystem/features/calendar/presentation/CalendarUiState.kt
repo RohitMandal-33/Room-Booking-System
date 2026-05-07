@@ -50,6 +50,10 @@ data class MeetingEvent(
     val meetingStatus: String? = null,
     val meetingTypeId: Long? = null,
     val recurrenceId: String? = null,
-    val recurrenceType: String? = null
+    val recurrenceType: String? = null,
+    /** Series start/end date (from get-booked-room), when available. */
+    val recurrenceStartDate: LocalDate? = null,
+    /** Series start/end date (from get-booked-room), when available. */
+    val recurrenceEndDate: LocalDate? = null
 )
 

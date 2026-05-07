@@ -154,18 +154,36 @@ class MeetingRoomsViewModel @Inject constructor(
         }
     }
 
-    fun deleteRoom(room: Room) {
+    fun toggleRoomStatus(room: Room) {
         viewModelScope.launch {
-            // Optimistic removal
-            _uiState.update { current ->
-                current.copy(rooms = current.rooms.filterNot { it == room })
+            val newStatus = if (room.status == RoomStatus.INACTIVE || room.status == RoomStatus.DISABLED) {
+                RoomStatus.ACTIVE
+            } else {
+                RoomStatus.INACTIVE
             }
-            // Deactivate via API
+            val newApiStatus = if (newStatus == RoomStatus.ACTIVE) "ACTIVE" else "INACTIVE"
+
+            // Optimistic UI update
+            _uiState.update { current ->
+                current.copy(
+                    rooms = current.rooms.map { if (it == room) it.copy(status = newStatus) else it }
+                )
+            }
+
             if (room.id > 0) {
-                roomRepository.changeRoomStatus(room.id, "INACTIVE")
+                roomRepository.changeRoomStatus(room.id, newApiStatus)
+                    .onSuccess {
+                        val msg = if (newStatus == RoomStatus.ACTIVE) "Room enabled successfully!" else "Room disabled successfully!"
+                        _uiEvent.emit(MeetingRoomsEvent.ShowSnackbar(msg))
+                    }
                     .onFailure {
-                        // Revert on failure and reload
-                        loadRooms()
+                        // Revert on failure
+                        _uiState.update { current ->
+                            current.copy(
+                                rooms = current.rooms.map { if (it.status == newStatus && it.id == room.id) room else it }
+                            )
+                        }
+                        _uiEvent.emit(MeetingRoomsEvent.ShowSnackbar(it.message ?: "Failed to update room status"))
                     }
             }
         }

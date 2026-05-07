@@ -12,5 +12,6 @@ data class Announcement(
     val createdAt: String,       // raw ISO string, formatted in UI
     val startDate: String? = null,
     val endDate: String? = null,
-    val isRead: Boolean = false
+    val isRead: Boolean = false,
+    val scheduled: Boolean = false
 )

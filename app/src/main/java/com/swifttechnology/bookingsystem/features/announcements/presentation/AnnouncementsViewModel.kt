@@ -33,13 +33,16 @@ class AnnouncementsViewModel @Inject constructor(
     fun loadAnnouncements() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            val allResult     = repository.getAllAnnouncements()
-            val pinnedResult  = repository.getPinnedAnnouncements()
+            val allResult       = repository.getAllAnnouncements()
+            val pinnedResult    = repository.getPinnedAnnouncements()
+            val scheduledResult = repository.getScheduledAnnouncements()
             _uiState.update { state ->
+                val all = allResult.getOrDefault(emptyList())
                 state.copy(
                     isLoading           = false,
-                    allAnnouncements    = allResult.getOrDefault(emptyList()),
+                    allAnnouncements    = all,
                     pinnedAnnouncements = pinnedResult.getOrDefault(emptyList()),
+                    scheduledAnnouncements = scheduledResult.getOrDefault(emptyList()),
                     errorMessage        = allResult.exceptionOrNull()?.message
                 )
             }

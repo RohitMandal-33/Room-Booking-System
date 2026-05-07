@@ -33,4 +33,5 @@ interface UserRepository {
     suspend fun getUserById(id: Long): Result<UserDetailsDTO>
     suspend fun searchUsers(email: String? = null, departmentId: Long? = null, page: Int = 0, size: Int = 10): Result<UserPageDTO>
     suspend fun getCurrentUser(): Result<UserDetailsDTO>
+    suspend fun changeUserStatus(id: Long, status: String): Result<Unit>
 }

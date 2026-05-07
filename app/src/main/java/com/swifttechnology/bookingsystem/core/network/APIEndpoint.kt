@@ -22,7 +22,7 @@ object APIEndpoint {
     const val USER_GET_ALL_SIMPLE = "api/v1/user/get-all"
     const val USER_SEARCH = "api/v1/user/search"
     const val USER_UPDATE = "api/v1/user/{id}/update"
-    const val USER_CHANGE_STATUS = "api/v1/user/{id}/change-status"
+    const val USER_CHANGE_STATUS = "api/v1/users/{id}/change-status"
     const val USERS_CURRENT_USER = "api/v1/users/current-user"
 
     // Meeting Rooms
@@ -63,6 +63,7 @@ object APIEndpoint {
     // Announcements
     const val ANNOUNCEMENT_LIST            = "api/v1/announcement/list"
     const val ANNOUNCEMENT_GET             = "api/v1/announcement/get"
+    const val ANNOUNCEMENT_GET_SCHEDULED   = "api/v1/announcement/get-scheduled"
     const val ANNOUNCEMENT_BY_ID           = "api/v1/announcement/{id}"
     const val ANNOUNCEMENT_MARK_READ       = "api/v1/announcement/{id}/mark-as-read"
     const val ANNOUNCEMENT_BATCH_DELETE    = "api/v1/announcements/batch"
