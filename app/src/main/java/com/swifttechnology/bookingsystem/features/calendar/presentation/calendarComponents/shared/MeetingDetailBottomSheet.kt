@@ -90,6 +90,7 @@ import com.swifttechnology.bookingsystem.features.calendar.presentation.MeetingE
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import com.swifttechnology.bookingsystem.core.utils.ColorUtils
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -105,26 +106,10 @@ fun MeetingDetailBottomSheet(
 
     val meetingTypeUpper = event.meetingType.uppercase()
 
-    val typeColor = when (meetingTypeUpper) {
-        "CLIENT"    -> Color(0xFFF97316)
-        "INTERNAL"  -> Color(0xFF3B82F6)
-        "EXECUTIVE" -> MaterialTheme.colorScheme.primary
-        else        -> MaterialTheme.colorScheme.primary
-    }
+    val typeColor = event.backendColor ?: event.color
+    val typeBg = ColorUtils.getLightBackgroundColor(typeColor, isDark)
 
-    val typeBg = when (meetingTypeUpper) {
-        "CLIENT"    -> if (isDark) Color(0xFF3D2918) else Color(0xFFFFF7ED)
-        "INTERNAL"  -> if (isDark) Color(0xFF1A2A3D) else Color(0xFFEFF6FF)
-        "EXECUTIVE" -> MaterialTheme.customColors.primaryLight
-        else        -> MaterialTheme.customColors.primaryLight
-    }
-
-    val typeLabel = when (meetingTypeUpper) {
-        "CLIENT"    -> "Client"
-        "INTERNAL"  -> "Internal"
-        "EXECUTIVE" -> "Executive"
-        else        -> event.meetingType.ifBlank { "Meeting" }
-    }
+    val typeLabel = event.meetingType.lowercase().replaceFirstChar { it.uppercase() }.ifBlank { "Meeting" }
 
     val now = LocalDateTime.now()
     val meetingStart = LocalDateTime.of(event.date, event.startTime)
@@ -157,93 +142,112 @@ fun MeetingDetailBottomSheet(
             modifier = Modifier
                 .fillMaxHeight()
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = horizontalPad)
                 .navigationBarsPadding()
-                .padding(bottom = Spacing.lg)
         ) {
-            SheetHeader(
-                title = "Meeting details",
-                onClose = onDismiss
-            )
+            // Header Section - Fixed at top with proper padding
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = horizontalPad)
+                    .padding(top = Spacing.xl, bottom = Spacing.md)
+            ) {
+                SheetHeader(
+                    title = "Meeting details",
+                    onClose = onDismiss
+                )
+            }
 
-            Spacer(modifier = Modifier.height(Spacing.ms))
-
-            HeroCard(
-                title = event.title,
-                typeLabel = typeLabel,
-                typeColor = typeColor,
-                typeBg = typeBg,
-                statusText = statusText,
-                statusColor = statusColor,
-                dateText = event.date.format(DateTimeFormatter.ofPattern("EEEE, MMM d, yyyy")),
-                timeText = "${event.startTime.format(DateTimeFormatter.ofPattern("hh:mm a"))} – ${event.endTime.format(DateTimeFormatter.ofPattern("hh:mm a"))}"
-            )
-
-            Spacer(modifier = Modifier.height(Spacing.md))
-
-            SectionTitle(title = "Information")
-            Spacer(modifier = Modifier.height(Spacing.sm + Spacing.xxs))
-
-            DetailSectionCard {
-                DetailItem(
-                    icon = Icons.Outlined.Place,
-                    title = "Room",
-                    subtitle = if (event.meetingRoom.isNotBlank()) event.meetingRoom else "Unassigned"
+            // Scrollable Content Section
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = horizontalPad)
+            ) {
+                HeroCard(
+                    title = event.title,
+                    typeLabel = typeLabel,
+                    typeColor = typeColor,
+                    typeBg = typeBg,
+                    statusText = statusText,
+                    statusColor = statusColor,
+                    dateText = event.date.format(DateTimeFormatter.ofPattern("EEEE, MMM d, yyyy")),
+                    timeText = "${event.startTime.format(DateTimeFormatter.ofPattern("hh:mm a"))} – ${event.endTime.format(DateTimeFormatter.ofPattern("hh:mm a"))}"
                 )
 
-                DividerSpacer()
+                Spacer(modifier = Modifier.height(Spacing.md))
 
-                DetailItem(
-                    icon = Icons.Outlined.AccountCircle,
-                    title = "Organizer",
-                    subtitle = if (event.createdBy.isNotBlank()) event.createdBy else "Unknown"
-                )
+                SectionTitle(title = "Information")
+                Spacer(modifier = Modifier.height(Spacing.sm + Spacing.xxs))
 
-                if (event.description.isNotBlank()) {
-                    DividerSpacer()
+                DetailSectionCard {
                     DetailItem(
-                        icon = Icons.Outlined.Info,
-                        title = "Description",
-                        subtitle = event.description
+                        icon = Icons.Outlined.Place,
+                        title = "Room",
+                        subtitle = if (event.meetingRoom.isNotBlank()) event.meetingRoom else "Unassigned"
                     )
-                }
 
-                if (!event.recurrenceType.isNullOrBlank() && event.recurrenceType != "NONE") {
                     DividerSpacer()
+
                     DetailItem(
-                        icon = Icons.Outlined.Schedule,
-                        title = "Recurrence",
-                        subtitle = buildString {
-                            append(formatRecurrenceType(event.recurrenceType))
-                            val start = event.recurrenceStartDate
-                            val end = event.recurrenceEndDate
-                            if (start != null && end != null) {
-                                append(" • ")
-                                append(start.format(DateTimeFormatter.ofPattern("MMM d, yyyy")))
-                                append(" - ")
-                                append(end.format(DateTimeFormatter.ofPattern("MMM d, yyyy")))
+                        icon = Icons.Outlined.AccountCircle,
+                        title = "Organizer",
+                        subtitle = if (event.createdBy.isNotBlank()) event.createdBy else "Unknown"
+                    )
+
+                    if (event.description.isNotBlank()) {
+                        DividerSpacer()
+                        DetailItem(
+                            icon = Icons.Outlined.Info,
+                            title = "Description",
+                            subtitle = event.description
+                        )
+                    }
+
+                    if (!event.recurrenceType.isNullOrBlank() && event.recurrenceType != "NONE") {
+                        DividerSpacer()
+                        DetailItem(
+                            icon = Icons.Outlined.Schedule,
+                            title = "Recurrence",
+                            subtitle = buildString {
+                                append(formatRecurrenceType(event.recurrenceType))
+                                val start = event.recurrenceStartDate
+                                val end = event.recurrenceEndDate
+                                if (start != null && end != null) {
+                                    append(" • ")
+                                    append(start.format(DateTimeFormatter.ofPattern("MMM d, yyyy")))
+                                    append(" - ")
+                                    append(end.format(DateTimeFormatter.ofPattern("MMM d, yyyy")))
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
+
+                Spacer(modifier = Modifier.height(Spacing.md))
+
+                SectionTitle(title = "Attendees")
+                Spacer(modifier = Modifier.height(Spacing.sm + Spacing.xxs))
+
+                DetailSectionCard {
+                    ExpandableAttendeesItem(event = event)
+                }
+
+                Spacer(modifier = Modifier.height(Spacing.lg))
             }
 
-            Spacer(modifier = Modifier.height(Spacing.md))
-
-            SectionTitle(title = "Attendees")
-            Spacer(modifier = Modifier.height(Spacing.sm + Spacing.xxs))
-
-            DetailSectionCard {
-                ExpandableAttendeesItem(event = event)
+            // Fixed Bottom Action Bar - Sticky at bottom
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = horizontalPad)
+                    .padding(top = Spacing.md, bottom = Spacing.lg)
+            ) {
+                ActionBar(
+                    event = event,
+                    onEdit = onEdit
+                )
             }
-
-            Spacer(modifier = Modifier.height(Spacing.ml - Spacing.xxs))
-
-            ActionBar(
-                event = event,
-                onEdit = onEdit
-            )
         }
     }
 }
@@ -267,8 +271,7 @@ private fun SheetHeader(
 ) {
     Row(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 4.dp),
+            .fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {

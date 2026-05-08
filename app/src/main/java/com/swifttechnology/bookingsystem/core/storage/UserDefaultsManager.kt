@@ -81,4 +81,32 @@ class UserDefaultsManager(private val context: Context) {
     suspend fun clear() {
         context.userPrefsStore.edit { it.clear() }
     }
+
+    // ── Remember Me ────────────────────────────────────────────────────────
+    private val REMEMBER_ME_EMAIL_KEY = stringPreferencesKey("remember_me_email")
+    private val REMEMBER_ME_ENABLED_KEY = booleanPreferencesKey("remember_me_enabled")
+
+    val rememberMeEmail: Flow<String?> =
+        context.userPrefsStore.data.map { it[REMEMBER_ME_EMAIL_KEY] }
+
+    val isRememberMeEnabled: Flow<Boolean> =
+        context.userPrefsStore.data.map { it[REMEMBER_ME_ENABLED_KEY] ?: false }
+
+    suspend fun saveRememberMe(email: String, enabled: Boolean) {
+        context.userPrefsStore.edit { prefs ->
+            prefs[REMEMBER_ME_ENABLED_KEY] = enabled
+            if (enabled) {
+                prefs[REMEMBER_ME_EMAIL_KEY] = email
+            } else {
+                prefs.remove(REMEMBER_ME_EMAIL_KEY)
+            }
+        }
+    }
+
+    suspend fun clearRememberMe() {
+        context.userPrefsStore.edit { prefs ->
+            prefs.remove(REMEMBER_ME_EMAIL_KEY)
+            prefs[REMEMBER_ME_ENABLED_KEY] = false
+        }
+    }
 }

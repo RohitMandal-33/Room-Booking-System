@@ -310,7 +310,9 @@ fun RoomCalendarScreen(
                                             recurrenceId           = initialDetails?.recurrenceId,
                                             isRecurring            = initialDetails?.isRecurring ?: false,
                                             recurrenceType         = initialDetails?.recurrenceType,
-                                            updateScope            = initialDetails?.updateScope ?: "ASK"
+                                            recurrenceEndDate      = initialDetails?.recurrenceEndDate,
+                                            updateScope            = initialDetails?.updateScope ?: "ASK",
+                                            roomId                 = initialDetails?.roomId
                                         )
                                     )
                                     pickerViewModel.onCancelBooking()

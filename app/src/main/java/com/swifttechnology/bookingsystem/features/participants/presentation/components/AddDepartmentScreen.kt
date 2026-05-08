@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.swifttechnology.bookingsystem.core.designsystem.Spacing
+import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.features.booking.presentation.components.BookingTextField
 import com.swifttechnology.bookingsystem.features.participants.presentation.AddDepartmentViewModel
 
@@ -26,17 +27,18 @@ import com.swifttechnology.bookingsystem.features.participants.presentation.AddD
 @Composable
 fun AddDepartmentScreen(
     onClose: () -> Unit,
-    onContinue: () -> Unit,
+    onContinue: (String) -> Unit,
     viewModel: AddDepartmentViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
-            onContinue()
+            onContinue("Department added successfully")
             viewModel.resetState()
         }
     }
@@ -55,7 +57,7 @@ fun AddDepartmentScreen(
                     .padding(horizontal = Spacing.lg)
                     .verticalScroll(rememberScrollState())
             ) {
-                Spacer(modifier = Modifier.height(Spacing.lg))
+                Spacer(modifier = Modifier.height(statusBarPadding + Spacing.lg))
 
                 // Top right close button
                 Row(
@@ -84,13 +86,13 @@ fun AddDepartmentScreen(
                     text = "Add New Department",
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = MaterialTheme.customColors.deepBlack
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "Please Fill all the details",
                     fontSize = 14.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.customColors.neutral700
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -123,40 +125,45 @@ fun AddDepartmentScreen(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .padding(horizontal = Spacing.lg, vertical = Spacing.lg)
                     .background(MaterialTheme.colorScheme.surface)
+                    .padding(horizontal = Spacing.lg, vertical = Spacing.lg)
             ) {
-                if (uiState.error != null) {
-                    Text(
-                        text = uiState.error ?: "",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.align(Alignment.TopCenter).padding(bottom = 8.dp)
-                    )
-                }
-
-                Button(
-                    onClick = {
-                        viewModel.addDepartment(name, description)
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4A3496) // The purple color from screenshot
-                    ),
-                    enabled = !uiState.isLoading && name.isNotBlank()
-                ) {
-                    if (uiState.isLoading) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
-                    } else {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    if (uiState.error != null) {
                         Text(
-                            text = "Continue",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onPrimary
+                            text = uiState.error ?: "",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(bottom = 8.dp)
                         )
+                    }
+
+                    Button(
+                        onClick = {
+                            viewModel.addDepartment(name, description)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        ),
+                        enabled = !uiState.isLoading && name.isNotBlank()
+                    ) {
+                        if (uiState.isLoading) {
+                            CircularProgressIndicator(
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        } else {
+                            Text(
+                                text = "Continue",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
                     }
                 }
             }

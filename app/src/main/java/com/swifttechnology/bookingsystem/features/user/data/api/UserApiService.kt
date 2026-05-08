@@ -14,7 +14,7 @@ interface UserApiService {
     suspend fun getAllUsers(@Body request: UserDataRequestDTO): GlobalResponse<UserPageDTO>
 
     @POST(APIEndpoint.USERS_GET_ALL_ACTIVE)
-    suspend fun getAllActiveUsers(@Body request: com.swifttechnology.bookingsystem.features.meetingrooms.data.dtos.PaginatedDataRequestDTO): GlobalResponse<UserPageDTO>
+    suspend fun getAllActiveUsers(@Body request: UserDataRequestDTO): GlobalResponse<UserPageDTO>
 
     @PUT(APIEndpoint.USER_UPDATE)
     suspend fun updateUser(
@@ -57,4 +57,7 @@ interface UserApiService {
 
     @GET(APIEndpoint.USERS_CURRENT_USER)
     suspend fun getCurrentUser(): GlobalResponse<UserDetailsDTO>
+
+    @PATCH(APIEndpoint.USERS_LOGGED_IN_UPDATE)
+    suspend fun updateLoggedInUser(@Body request: LoggedInUserInfoUpdateRequestDTO): GlobalResponse<Unit>
 }

@@ -75,27 +75,59 @@ class AddParticipantViewModel @Inject constructor(
         }
     }
 
+    private fun validateInputs(
+        firstName: String,
+        lastName: String,
+        email: String,
+        phoneNumber: String,
+        isCreate: Boolean,
+        password: String = ""
+    ): String? {
+        if (firstName.isBlank()) return "First name is required"
+        if (lastName.isBlank()) return "Last name is required"
+        if (email.isBlank()) return "Email is required"
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) return "Invalid email format"
+        if (isCreate && password.isBlank()) return "Password is required"
+        
+        val phone = phoneNumber.trim()
+        if (phone.isBlank()) return "Phone number is required"
+        
+        // Backend pattern: ^(\+977)?9[6-9]\d{8}$
+        val phoneRegex = Regex("^(\\+977)?9[6-9]\\d{8}$")
+        if (!phoneRegex.matches(phone)) {
+            return "Phone number must be a valid Nepal mobile number (e.g., 98XXXXXXXX)"
+        }
+        
+        return null
+    }
+
     fun createParticipant(
-        firstname: String,
-        lastname: String,
+        firstName: String,
+        lastName: String,
         email: String,
         position: String,
-        phoneNo: String,
+        phoneNumber: String,
         password: String,
         role: String,
         departmentId: Long
     ) {
+        val validationError = validateInputs(firstName, lastName, email, phoneNumber, true, password)
+        if (validationError != null) {
+            _uiState.update { it.copy(error = validationError) }
+            return
+        }
+
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null, isSuccess = false) }
 
             val roleId = resolveRoleId(role)
 
             val result = userRepository.createUser(
-                firstname = normalizePersonName(firstname),
-                lastname = normalizePersonName(lastname),
+                firstName = normalizePersonName(firstName),
+                lastName = normalizePersonName(lastName),
                 email = normalizeEmail(email),
                 position = normalizePersonName(position),
-                phoneNo = normalizePhone(phoneNo),
+                phoneNumber = normalizePhone(phoneNumber),
                 password = password.trim(),
                 roleId = roleId,
                 departmentId = departmentId
@@ -111,14 +143,20 @@ class AddParticipantViewModel @Inject constructor(
 
     fun updateParticipant(
         id: Long,
-        firstname: String,
-        lastname: String,
+        firstName: String,
+        lastName: String,
         email: String,
         position: String,
-        phoneNo: String,
+        phoneNumber: String,
         role: String,
         departmentId: Long
     ) {
+        val validationError = validateInputs(firstName, lastName, email, phoneNumber, false)
+        if (validationError != null) {
+            _uiState.update { it.copy(error = validationError) }
+            return
+        }
+
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null, isSuccess = false) }
 
@@ -126,11 +164,11 @@ class AddParticipantViewModel @Inject constructor(
 
             val result = userRepository.updateUser(
                 id = id,
-                firstname = normalizePersonName(firstname),
-                lastname = normalizePersonName(lastname),
+                firstName = normalizePersonName(firstName),
+                lastName = normalizePersonName(lastName),
                 email = normalizeEmail(email),
                 position = normalizePersonName(position),
-                phoneNo = normalizePhone(phoneNo),
+                phoneNumber = normalizePhone(phoneNumber),
                 roleId = roleId,
                 departmentId = departmentId
             )

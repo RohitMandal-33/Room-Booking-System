@@ -43,6 +43,7 @@ data class MeetingEvent(
     val externalParticipants: List<ExternalParticipantDTO> = emptyList(),
     val description: String = "",
     val meetingRoom: String = "",
+    val roomId: Long? = null,
     val meetingType: String = "",
     val createdBy: String = "",
     val timeZone: String = "Time Zone",

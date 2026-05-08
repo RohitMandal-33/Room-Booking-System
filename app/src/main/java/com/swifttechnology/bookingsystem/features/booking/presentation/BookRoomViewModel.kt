@@ -1,5 +1,6 @@
 package com.swifttechnology.bookingsystem.features.booking.presentation
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.swifttechnology.bookingsystem.core.model.Room
@@ -12,6 +13,7 @@ import com.swifttechnology.bookingsystem.features.booking.domain.repository.Book
 import com.swifttechnology.bookingsystem.features.meetingrooms.domain.repository.RoomRepository
 import com.swifttechnology.bookingsystem.features.participants.domain.repository.ParticipantRepository
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.MeetingTypeDTO
+import com.swifttechnology.bookingsystem.features.booking.data.dtos.LocalTimeDTO
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.asStateFlow
@@ -57,7 +59,8 @@ data class RoomBookingFormState(
     val recurrenceId: String? = null,
     val isRecurring: Boolean = false,
     val recurrenceType: String? = null,
-    val updateScope: String = "ASK"
+    val updateScope: String = "ASK",
+    val isEditMode: Boolean = false
 )
 
 data class BookRoomScreenUiState(
@@ -76,7 +79,7 @@ data class BookRoomScreenUiState(
 )
 
 sealed class BookRoomEvent {
-    object NavigateBack : BookRoomEvent()
+    data class NavigateBack(val date: String) : BookRoomEvent()
 }
 
 @HiltViewModel
@@ -86,6 +89,16 @@ class BookRoomViewModel @Inject constructor(
     private val roomRepository: RoomRepository,
     private val participantRepository: ParticipantRepository
 ) : ViewModel() {
+    private enum class UpdateTarget {
+        SINGLE,
+        SERIES
+    }
+
+    private fun isTrueRecurringSeries(recurrenceId: String?, recurrenceType: String?): Boolean {
+        return !recurrenceId.isNullOrBlank() && 
+            recurrenceType != null && 
+            recurrenceType.uppercase() != "NONE"
+    }
 
     private val _uiState = MutableStateFlow<BookRoomScreenUiState>(BookRoomScreenUiState())
     val uiState: StateFlow<BookRoomScreenUiState> = _uiState.asStateFlow()
@@ -117,7 +130,7 @@ class BookRoomViewModel @Inject constructor(
                 delay(300) // Debounce search
             }
             _uiState.update { it.copy(isSearchingParticipants = true) }
-            participantRepository.searchParticipants(query).collect { participants ->
+            participantRepository.searchActiveParticipants(query).collect { participants ->
                 val internalMembers = participants.map { 
                     InternalMember(
                         id = it.id,
@@ -218,10 +231,13 @@ class BookRoomViewModel @Inject constructor(
         recurrenceId: String? = null,
         isRecurring: Boolean = false,
         recurrenceType: String? = null,
-        updateScope: String = "ASK"
+        recurrenceEndDate: String? = null,
+        updateScope: String = "ASK",
+        roomId: Long? = null
     ) {
+        Log.d("BookRoomVM", "prefillBookingDetails: id=$bookingId, title=$meetingTitle, internalIds=$internalParticipantIds")
         _uiState.update { current ->
-            val room = current.availableRooms.find { it.name == roomName }
+            val room = current.availableRooms.find { it.id == roomId || it.name == roomName }
 
             // Find matching meeting type from available types
             val matchedType = current.availableMeetingTypes.find { 
@@ -234,6 +250,16 @@ class BookRoomViewModel @Inject constructor(
 
             // Match internal participants by id from current available participants
             val prefillInternal = current.availableParticipants.filter { it.id in internalParticipantIds }
+            Log.d("BookRoomVM", "Prefill matches found: ${prefillInternal.size}/${internalParticipantIds.size}")
+
+            // If some participants are missing from the available list, fetch them explicitly
+            val missingIds = internalParticipantIds.filter { id -> 
+                current.availableParticipants.none { it.id == id } 
+            }
+            if (missingIds.isNotEmpty()) {
+                Log.d("BookRoomVM", "Missing participant IDs: $missingIds, fetching...")
+                fetchMissingParticipants(missingIds)
+            }
 
             // When editing ALL occurrences, translate the raw API recurrenceType
             // (e.g. "DAILY") to the display name used by the UI dropdown (e.g. "Daily").
@@ -249,7 +275,7 @@ class BookRoomViewModel @Inject constructor(
                 formState = current.formState.copy(
                     meetingTitle    = meetingTitle,
                     selectedRoom    = roomName,
-                    selectedRoomId  = room?.id,
+                    selectedRoomId  = roomId ?: room?.id,
                     date            = date,
                     startTime       = startTime,
                     endTime         = endTime,
@@ -262,8 +288,10 @@ class BookRoomViewModel @Inject constructor(
                     recurrenceId    = recurrenceId,
                     isRecurring     = isRecurring,
                     recurrenceType  = recurrenceType,
+                    recurrenceEndDate = recurrenceEndDate ?: date,
                     updateScope     = updateScope,
-                    recurringType   = displayRecurringType
+                    recurringType   = displayRecurringType,
+                    isEditMode      = bookingId != null || recurrenceId != null
                 )
             )
         }
@@ -281,9 +309,36 @@ class BookRoomViewModel @Inject constructor(
         }
     }
 
+    private fun fetchMissingParticipants(ids: List<Long>) {
+        Log.d("BookRoomVM", "fetchMissingParticipants: ids=$ids")
+        viewModelScope.launch {
+            participantRepository.getParticipantsByIds(ids).onSuccess { participants ->
+                Log.d("BookRoomVM", "Successfully fetched ${participants.size} missing participants")
+                val internalMembers = participants.map { 
+                    InternalMember(
+                        id = it.id,
+                        name = it.name,
+                        email = it.email,
+                        department = it.department
+                    )
+                }
+                _uiState.update { current ->
+                    val updatedParticipants = (current.formState.participants + internalMembers).distinctBy { it.id }
+                    Log.d("BookRoomVM", "Updating form state with ${updatedParticipants.size} participants")
+                    current.copy(
+                        formState = current.formState.copy(participants = updatedParticipants)
+                    )
+                }
+            }.onFailure { error ->
+                Log.e("BookRoomVM", "Failed to fetch missing participants", error)
+            }
+        }
+    }
+
     fun onSubmitClicked() {
         val state = _uiState.value.formState
-        if (state.bookingId != null && state.recurrenceId != null && state.updateScope == "ASK") {
+        val canEditSeries = isTrueRecurringSeries(state.recurrenceId, state.recurrenceType)
+        if (state.bookingId != null && canEditSeries && state.updateScope == "ASK") {
             _uiState.update { it.copy(showRecurrenceScopeDialog = true) }
         } else {
             submitBooking()
@@ -304,6 +359,27 @@ class BookRoomViewModel @Inject constructor(
 
     fun submitBooking() {
         val state = _uiState.value.formState
+        val hasBookingId = state.bookingId != null
+        val hasRecurrenceId = !state.recurrenceId.isNullOrBlank()
+        val updateTarget = when {
+            state.isEditMode && state.updateScope == "ALL" && hasRecurrenceId -> UpdateTarget.SERIES
+            state.isEditMode && hasBookingId -> UpdateTarget.SINGLE
+            state.isEditMode && hasRecurrenceId -> UpdateTarget.SERIES
+            else -> null
+        }
+        val isRecurringSeriesUpdate = updateTarget == UpdateTarget.SERIES
+        val mappedRecurrenceType = mapRecurringType(state.recurringType)
+
+        if (state.isEditMode) {
+            if (updateTarget == null) {
+                _uiState.update {
+                    it.copy(
+                        errorMessage = "Unable to update this booking right now. Please reopen the meeting details and try again."
+                    )
+                }
+                return
+            }
+        }
 
         // Validate required fields before submitting
         val validationError = validateForm(state)
@@ -318,11 +394,6 @@ class BookRoomViewModel @Inject constructor(
             val request = RoomBookingRequestDTO(
                 meetingTitle = state.meetingTitle.ifBlank { null },
                 startDate = convertDisplayDateToApiDate(state.date),
-                endDate = if (state.recurringType != "Does not repeat") {
-                    convertDisplayDateToApiDate(state.recurrenceEndDate)
-                } else {
-                    convertDisplayDateToApiDate(state.date)
-                },
                 startTime = parseTimeString(state.startTime),
                 endTime = parseTimeString(state.endTime),
                 meetingTypeId = state.meetingTypeId ?: _uiState.value.availableMeetingTypes.find { it.name.equals(state.meetingType, ignoreCase = true) }?.id,
@@ -335,18 +406,22 @@ class BookRoomViewModel @Inject constructor(
                 externalParticipants = state.externalMembers
                     .takeIf { it.isNotEmpty() }
                     ?.map { ExternalParticipantDTO(name = it.name, email = it.email) },
-                recurrenceType = mapRecurringType(state.recurringType),
-                recurrenceEndDate = if (state.recurringType != "Does not repeat") convertDisplayDateToApiDate(state.recurrenceEndDate) else null,
-                weekDays = if (state.recurringType == "Custom") {
-                    state.selectedWeekDays.map { mapWeekDay(it) }.toList()
+                recurrenceType = if (isRecurringSeriesUpdate) null else mappedRecurrenceType,
+                recurrenceEndDate = if (isRecurringSeriesUpdate) {
+                    null
+                } else if (mappedRecurrenceType != "NONE") {
+                    convertDisplayDateToApiDate(state.recurrenceEndDate)
+                } else null,
+                weekDays = if (!isRecurringSeriesUpdate && mappedRecurrenceType == "CUSTOM") {
+                    state.selectedWeekDays.map { mapWeekDay(it) }.takeIf { it.isNotEmpty() }
                 } else null
             )
 
             val result = when {
-                state.recurrenceId != null && state.updateScope == "ALL" -> {
-                    bookingRepository.updateRecurrenceBooking(state.recurrenceId, request)
+                updateTarget == UpdateTarget.SERIES -> {
+                    bookingRepository.updateRecurrenceBooking(state.recurrenceId!!, request)
                 }
-                state.bookingId != null -> {
+                updateTarget == UpdateTarget.SINGLE -> {
                     bookingRepository.updateBooking(state.bookingId, request)
                 }
                 else -> {
@@ -362,7 +437,7 @@ class BookRoomViewModel @Inject constructor(
                         formState = RoomBookingFormState() // Reset form
                     )
                 }
-                _events.emit(BookRoomEvent.NavigateBack)
+                _events.emit(BookRoomEvent.NavigateBack(state.date))
             }
             .onFailure { error ->
                 _uiState.update {
@@ -402,6 +477,9 @@ class BookRoomViewModel @Inject constructor(
         }
     }
 
+
+
+
     /**
      * Parses time string to API format "HH:mm:ss".
      * Supports formats like "HH:mm" (24h) and "hh:mm a" (12h with AM/PM).
@@ -431,6 +509,9 @@ class BookRoomViewModel @Inject constructor(
      * Validates that all required booking fields are filled.
      */
     private fun validateForm(state: RoomBookingFormState): String? {
+        val isRecurringSeriesUpdate = isTrueRecurringSeries(state.recurrenceId, state.recurrenceType) &&
+            state.updateScope == "ALL"
+
         return when {
             state.meetingTitle.isBlank() -> "Meeting title is required"
             state.selectedRoomId == null -> "Please select a room"
@@ -438,8 +519,13 @@ class BookRoomViewModel @Inject constructor(
             state.startTime.isBlank() -> "Please select a start time"
             state.endTime.isBlank() -> "Please select an end time"
             state.meetingType.isBlank() || (state.meetingTypeId == null && _uiState.value.availableMeetingTypes.none { it.name.equals(state.meetingType, ignoreCase = true) }) -> "Please select a meeting type"
-            state.recurringType != "Does not repeat" && state.recurrenceEndDate.isBlank() -> "Please select an end date for recurrence"
-            state.recurringType == "Custom" && state.selectedWeekDays.isEmpty() -> "Please select at least one day for custom recurrence"
+            state.participants.isEmpty() && state.externalMembers.isEmpty() -> "At least one participant (internal or external) is required"
+            !isRecurringSeriesUpdate &&
+                state.recurringType != "Does not repeat" &&
+                state.recurrenceEndDate.isBlank() -> "Please select an end date for recurrence"
+            !isRecurringSeriesUpdate &&
+                state.recurringType == "Custom" &&
+                state.selectedWeekDays.isEmpty() -> "Please select at least one day for custom recurrence"
             else -> null
         }
     }
@@ -485,4 +571,3 @@ class BookRoomViewModel @Inject constructor(
         else -> "MONDAY" // Fallback
     }
 }
-

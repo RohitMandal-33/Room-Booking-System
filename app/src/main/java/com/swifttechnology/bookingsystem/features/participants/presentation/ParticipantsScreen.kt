@@ -134,6 +134,10 @@ fun ParticipantsScreen(
         viewModel.onSearchQueryChanged(searchQuery)
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.refresh()
+    }
+
     val filteredCustomGroups = remember(uiState.customGroups, uiState.searchQuery) {
         val q = uiState.searchQuery.trim()
         if (q.isEmpty()) uiState.customGroups
@@ -732,7 +736,7 @@ fun ParticipantsTabRow(
                 .fillMaxWidth()
                 .height(1.dp)
                 .shadow(elevation = 3.dp)
-                .background(Color(0xFFE5E5EA))
+                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
         )
     }
 }
@@ -745,8 +749,8 @@ fun ParticipantsTabItem(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    val activeColor   = Color(0xFF007AFF)
-    val inactiveColor = Color(0xFF3C3C43).copy(alpha = 0.6f)
+    val activeColor   = MaterialTheme.colorScheme.primary
+    val inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
     val tint          = if (isSelected) activeColor else inactiveColor
 
     Column(
@@ -820,7 +824,7 @@ fun DirectoryContent(
             text       = "Members Directory",
             fontWeight = FontWeight.SemiBold,
             fontSize   = 17.sp,
-            color      = Color(0xFF1C1C1E),
+            color      = MaterialTheme.colorScheme.onSurface,
             modifier   = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
         )
 
@@ -958,7 +962,7 @@ fun DirectoryContent(
                         participantToEnable = null
                     }
                 ) {
-                    Text("Enable", color = Color(0xFF007AFF))
+                    Text("Enable", color = MaterialTheme.colorScheme.primary)
                 }
             },
             dismissButton = {
@@ -983,7 +987,7 @@ fun DirectorySearchBar(
             Text(
                 "Search by name, email, or department...",
                 color    = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
-                fontSize = 14.sp
+                fontSize = 12.sp
             )
         },
         leadingIcon = {
@@ -1005,7 +1009,7 @@ fun DirectorySearchBar(
             unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
         singleLine = true,
-        textStyle  = LocalTextStyle.current.copy(fontSize = 14.sp)
+        textStyle  = LocalTextStyle.current.copy(fontSize = 12.sp)
     )
 }
 
@@ -1062,7 +1066,7 @@ fun ParticipantCard(
                 checked = isSelected,
                 onCheckedChange = { onSelectionChange(it) },
                 colors = CheckboxDefaults.colors(
-                    checkedColor = Color(0xFF007AFF)
+                    checkedColor = MaterialTheme.colorScheme.primary
                 ),
                 modifier = Modifier.padding(end = 12.dp)
             )
@@ -1299,7 +1303,7 @@ fun ContactRow(icon: ImageVector, text: String) {
 @Composable
 fun LoadingContent() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(color = Color(0xFF007AFF))
+        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
     }
 }
 
@@ -1308,7 +1312,7 @@ fun ErrorContent(message: String) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(
             text     = "Error: $message",
-            color    = Color(0xFFFF3B30),
+            color    = MaterialTheme.colorScheme.error,
             fontSize = 14.sp
         )
     }

@@ -38,6 +38,28 @@ class ParticipantRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun searchActiveParticipants(query: String): Flow<List<Participant>> = flow {
+        val response = userRepository.getAllActiveUsers(
+            pageNo = 0,
+            pageSize = 100,
+            email = query.takeIf { it.isNotBlank() }
+        )
+        val content = response.getOrThrow().content ?: emptyList()
+
+        val participants = content.map { it.toParticipant() }
+
+        if (query.isBlank()) {
+            emit(participants)
+        } else {
+            val filtered = participants.filter {
+                it.name.contains(query, ignoreCase = true) ||
+                it.email.contains(query, ignoreCase = true) ||
+                it.department.contains(query, ignoreCase = true)
+            }
+            emit(filtered)
+        }
+    }
+
     override suspend fun getParticipantsByIds(ids: List<Long>): Result<List<Participant>> = runCatching {
         if (ids.isEmpty()) return@runCatching emptyList()
         

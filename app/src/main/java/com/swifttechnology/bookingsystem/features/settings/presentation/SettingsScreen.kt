@@ -2,6 +2,7 @@ package com.swifttechnology.bookingsystem.features.settings.presentation
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Edit
@@ -34,14 +36,8 @@ import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.MeetingTypeDTO
 import com.swifttechnology.bookingsystem.features.user.data.dtos.UserDetailsDTO
 
-
-//  Color utilities
-
-
-/** Fallback brand color – used only when a theme primary is unavailable. */
 private val BrandPurple = Color(0xFF6109C0)
 
-/** Parses "#RRGGBB", "rgb(R,G,B)" and bare "(R,G,B)" strings into a Compose Color. */
 fun parseColor(colorString: String?): Color {
     if (colorString == null) return BrandPurple
     return try {
@@ -60,7 +56,6 @@ fun parseColor(colorString: String?): Color {
     } catch (e: Exception) { BrandPurple }
 }
 
-/** Serialises a Compose Color into the "rgb(R,G,B)" string the backend expects. */
 fun colorToRgbString(color: Color): String {
     val r = (color.red   * 255).toInt()
     val g = (color.green * 255).toInt()
@@ -68,7 +63,6 @@ fun colorToRgbString(color: Color): String {
     return "rgb($r,$g,$b)"
 }
 
-/** Curated palette shown in the colour picker. */
 private val ColorPalette = listOf(
     Color(0xFF406020) to "Forest Green",
     Color(0xFF15A14D) to "Green",
@@ -100,10 +94,6 @@ fun getColorName(color: Color): String {
     return ColorPalette.find { colorToRgbString(it.first) == rgb }?.second ?: rgb
 }
 
-
-//  Shared primitives
-
-
 @Composable
 private fun SectionHeader(title: String) {
     Text(
@@ -115,10 +105,6 @@ private fun SectionHeader(title: String) {
     )
 }
 
-/**
- * Elevated surface card that adapts to both light and dark themes via
- * [MaterialTheme.colorScheme.surfaceContainer].
- */
 @Composable
 private fun SettingsSurface(
     modifier: Modifier = Modifier,
@@ -138,10 +124,6 @@ private fun SettingsSurface(
     }
 }
 
-/**
- * Single row inside a [SettingsSurface]. Handles its own horizontal padding
- * so the divider can bleed edge-to-edge while content is inset.
- */
 @Composable
 private fun SettingsRow(
     modifier: Modifier = Modifier,
@@ -170,7 +152,6 @@ private fun RowDivider() {
     )
 }
 
-/** Theme-aware text field — no hard-coded colours. */
 @Composable
 private fun SettingsTextField(
     value: String,
@@ -202,9 +183,23 @@ private fun SettingsTextField(
     )
 }
 
-
-//  1. THEME CONTROL
-
+@Composable
+private fun LabeledField(
+    label: String,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(
+            text = label,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            letterSpacing = 0.4.sp
+        )
+        content()
+    }
+}
 
 @Composable
 private fun ThemeControlCard(
@@ -263,23 +258,18 @@ private fun ThemeOptionRow(
     }
 }
 
-
-//  2. MEETING VISUALS
-
-
 @Composable
 fun MeetingVisualsCard(
     meetingTypes: List<MeetingTypeDTO>,
     onAddMeetingType: (String, String) -> Unit,
     onUpdateMeetingType: (Long, String, String) -> Unit,
-    onChangeStatus: (Long, String) -> Unit
+    onDeleteMeetingType: (Long) -> Unit
 ) {
-    var showDialog    by remember { mutableStateOf(false) }
+    var showDialog     by remember { mutableStateOf(false) }
     var editingMeeting by remember { mutableStateOf<MeetingTypeDTO?>(null) }
-    var newName       by remember { mutableStateOf("") }
-    var newColor      by remember { mutableStateOf(colorToRgbString(BrandPurple)) }
+    var newName        by remember { mutableStateOf("") }
+    var newColor       by remember { mutableStateOf(colorToRgbString(BrandPurple)) }
 
-    // ── Dialog ────────────────────────────────────────────────────────────────
     if (showDialog) {
         val selectedColor = parseColor(newColor)
 
@@ -296,8 +286,6 @@ fun MeetingVisualsCard(
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-
-                    // Name input
                     OutlinedTextField(
                         value = newName,
                         onValueChange = { newName = it },
@@ -316,7 +304,6 @@ fun MeetingVisualsCard(
                         )
                     )
 
-                    // Colour preview chip
                     val animatedColor by animateColorAsState(
                         targetValue = selectedColor,
                         animationSpec = tween(200),
@@ -338,7 +325,6 @@ fun MeetingVisualsCard(
                         )
                     }
 
-                    // Palette label
                     Text(
                         text = "Choose a colour",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -346,13 +332,11 @@ fun MeetingVisualsCard(
                         fontWeight = FontWeight.Medium
                     )
 
-                    // Taken-color set (excludes the meeting currently being edited)
                     val takenRgbs = meetingTypes
                         .filter { it.id != editingMeeting?.id }
                         .map { colorToRgbString(parseColor(it.colorCode)) }
                         .toSet()
 
-                    // Swatch grid
                     ColorPalette.chunked(6).forEach { row ->
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             row.forEach { (swatch, _) ->
@@ -393,7 +377,7 @@ fun MeetingVisualsCard(
             dismissButton = {
                 TextButton(
                     onClick = { showDialog = false },
-                    colors = TextButtonDefaults.textButtonColors(
+                    colors = ButtonDefaults.textButtonColors(
                         contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 ) {
@@ -403,7 +387,6 @@ fun MeetingVisualsCard(
         )
     }
 
-    // ── Card body ─────────────────────────────────────────────────────────────
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -449,16 +432,14 @@ fun MeetingVisualsCard(
             } else {
                 meetingTypes.forEachIndexed { index, meeting ->
                     MeetingTypeRow(
-                        meeting = meeting,
-                        onEdit = {
+                        meeting  = meeting,
+                        onEdit   = {
                             editingMeeting = meeting
                             newName  = meeting.name ?: ""
                             newColor = colorToRgbString(parseColor(meeting.colorCode))
                             showDialog = true
                         },
-                        onToggleStatus = {
-                            onChangeStatus(meeting.id!!, meeting.status ?: "INACTIVE")
-                        }
+                        onDelete = { onDeleteMeetingType(meeting.id!!) }
                     )
                     if (index < meetingTypes.lastIndex) RowDivider()
                 }
@@ -512,12 +493,52 @@ private fun ColorSwatch(
 private fun MeetingTypeRow(
     meeting: MeetingTypeDTO,
     onEdit: () -> Unit,
-    onToggleStatus: () -> Unit
+    onDelete: () -> Unit
 ) {
-    val isActive = meeting.status == "ACTIVE"
+    var showConfirm by remember { mutableStateOf(false) }
+
+    if (showConfirm) {
+        AlertDialog(
+            onDismissRequest = { showConfirm = false },
+            containerColor   = MaterialTheme.colorScheme.surface,
+            title = {
+                Text(
+                    text = "Delete Meeting Type?",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            },
+            text = {
+                Text(
+                    text = "\"${meeting.name}\" will be permanently removed.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 14.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showConfirm = false
+                        onDelete()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    ),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("Delete", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirm = false }) {
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        )
+    }
 
     SettingsRow {
-        // Colour dot
         Box(
             modifier = Modifier
                 .size(12.dp)
@@ -526,41 +547,20 @@ private fun MeetingTypeRow(
         )
         Spacer(Modifier.width(14.dp))
 
-        // Name
-        Text(
-            text = meeting.name ?: "Unknown",
-            modifier = Modifier.weight(1f),
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Medium
-        )
-
-        // Active / Inactive label
-        Text(
-            text = if (isActive) "Active" else "Inactive",
-            color = if (isActive)
-                MaterialTheme.colorScheme.primary
-            else
-                MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.padding(end = 4.dp)
-        )
-
-        // Toggle
-        Switch(
-            checked = isActive,
-            onCheckedChange = { onToggleStatus() },
-            modifier = Modifier.padding(end = 4.dp),
-            colors = SwitchDefaults.colors(
-                checkedThumbColor   = MaterialTheme.colorScheme.onPrimary,
-                checkedTrackColor   = MaterialTheme.colorScheme.primary,
-                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = meeting.name ?: "Unknown",
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium
             )
-        )
+            Text(
+                text = getColorName(parseColor(meeting.colorCode)),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 11.sp
+            )
+        }
 
-        // Edit
         IconButton(
             onClick = onEdit,
             modifier = Modifier.size(36.dp)
@@ -572,12 +572,20 @@ private fun MeetingTypeRow(
                 modifier = Modifier.size(18.dp)
             )
         }
+
+        IconButton(
+            onClick = { showConfirm = true },
+            modifier = Modifier.size(36.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = "Delete ${meeting.name}",
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(18.dp)
+            )
+        }
     }
 }
-
-
-//  3. SECURITY
-
 
 @Composable
 fun SecurityCard(onChangePassword: (String, String, String) -> Unit) {
@@ -599,13 +607,13 @@ fun SecurityCard(onChangePassword: (String, String, String) -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 PasswordField(
-                    label       = "Current Password",
-                    value       = currentPassword,
+                    label         = "Current Password",
+                    value         = currentPassword,
                     onValueChange = { currentPassword = it }
                 )
                 PasswordField(
-                    label       = "New Password",
-                    value       = newPassword,
+                    label         = "New Password",
+                    value         = newPassword,
                     onValueChange = { newPassword = it }
                 )
                 PasswordField(
@@ -693,10 +701,6 @@ private fun PasswordField(
     }
 }
 
-
-//  ROOT SCREEN
-
-
 @Composable
 fun SettingsScreen(
     searchQuery: String,
@@ -730,12 +734,18 @@ fun SettingsScreen(
                 .padding(paddingValues)
         ) {
             LazyColumn(
-                modifier        = Modifier.fillMaxSize(),
-                contentPadding  = PaddingValues(horizontal = 20.dp, vertical = 24.dp),
+                modifier            = Modifier.fillMaxSize(),
+                contentPadding      = PaddingValues(horizontal = 20.dp, vertical = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(28.dp)
             ) {
                 item {
-                    ProfileCard(user = currentUser)
+                    ProfileCard(
+                        user        = currentUser,
+                        departments = uiState.departments,
+                        onUpdateProfile = { fn, ln, pos, ph, depId ->
+                            viewModel.updateProfile(fn, ln, pos, ph, depId)
+                        }
+                    )
                 }
                 item {
                     ThemeControlCard(
@@ -748,7 +758,7 @@ fun SettingsScreen(
                         meetingTypes        = uiState.meetingTypes,
                         onAddMeetingType    = { name, color -> viewModel.addMeetingType(name, color) },
                         onUpdateMeetingType = { id, name, color -> viewModel.updateMeetingType(id, name, color) },
-                        onChangeStatus      = { id, status -> viewModel.changeMeetingTypeStatus(id, status) }
+                        onDeleteMeetingType = { id -> viewModel.deleteMeetingType(id) }
                     )
                 }
                 item {
@@ -770,27 +780,58 @@ fun SettingsScreen(
     }
 }
 
-// Suppress warning for unused ButtonDefaults extension used in dismissButton
-private val TextButtonDefaults = object {
-    @Composable
-    fun textButtonColors(contentColor: Color) = ButtonDefaults.textButtonColors(contentColor = contentColor)
-}
-
-//  4. PROFILE CARD
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ProfileCard(user: UserDetailsDTO?) {
+private fun ProfileCard(
+    user: UserDetailsDTO?,
+    departments: List<com.swifttechnology.bookingsystem.features.department.domain.model.Department>,
+    onUpdateProfile: (String, String, String, String, Long) -> Unit
+) {
+    var showEditSheet by remember { mutableStateOf(false) }
+
+    if (showEditSheet && user != null) {
+        EditProfileSheet(
+            user        = user,
+            departments = departments,
+            onDismiss   = { showEditSheet = false },
+            onSave      = { fn, ln, pos, ph, depId ->
+                onUpdateProfile(fn, ln, pos, ph, depId)
+                showEditSheet = false
+            }
+        )
+    }
+
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        SectionHeader("Profile Details")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            SectionHeader("Profile Details")
+            IconButton(
+                onClick  = { showEditSheet = true },
+                modifier = Modifier.size(32.dp),
+                enabled  = user != null
+            ) {
+                Icon(
+                    imageVector        = Icons.Outlined.Edit,
+                    contentDescription = "Edit Profile",
+                    tint               = MaterialTheme.colorScheme.primary,
+                    modifier           = Modifier.size(20.dp)
+                )
+            }
+        }
         SettingsSurface {
             if (user == null) {
                 Box(
-                    modifier = Modifier.fillMaxWidth().padding(24.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.primary,
+                        modifier    = Modifier.size(24.dp),
+                        color       = MaterialTheme.colorScheme.primary,
                         strokeWidth = 2.dp
                     )
                 }
@@ -799,17 +840,47 @@ private fun ProfileCard(user: UserDetailsDTO?) {
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    ProfileDetailRow(label = "Name", value = "${user.firstname.orEmpty()} ${user.lastname.orEmpty()}".trim().ifBlank { "N/A" })
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), thickness = 0.5.dp)
+                    ProfileDetailRow(
+                        label = "Name",
+                        value = "${user.firstname.orEmpty()} ${user.lastname.orEmpty()}".trim().ifBlank { "N/A" }
+                    )
+                    HorizontalDivider(
+                        color     = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                        thickness = 0.5.dp
+                    )
                     ProfileDetailRow(label = "Email", value = user.email)
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), thickness = 0.5.dp)
-                    ProfileDetailRow(label = "Phone Number", value = user.phoneNo.takeIf { !it.isNullOrBlank() } ?: "N/A")
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), thickness = 0.5.dp)
-                    ProfileDetailRow(label = "Department", value = user.department.takeIf { !it.isNullOrBlank() } ?: "N/A")
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), thickness = 0.5.dp)
-                    ProfileDetailRow(label = "Role", value = user.role.takeIf { !it.isNullOrBlank() } ?: "N/A")
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), thickness = 0.5.dp)
-                    ProfileDetailRow(label = "Position", value = user.position.takeIf { !it.isNullOrBlank() } ?: "N/A")
+                    HorizontalDivider(
+                        color     = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                        thickness = 0.5.dp
+                    )
+                    ProfileDetailRow(
+                        label = "Phone Number",
+                        value = user.phoneNo.takeIf { !it.isNullOrBlank() } ?: "N/A"
+                    )
+                    HorizontalDivider(
+                        color     = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                        thickness = 0.5.dp
+                    )
+                    ProfileDetailRow(
+                        label = "Department",
+                        value = user.department.takeIf { !it.isNullOrBlank() } ?: "N/A"
+                    )
+                    HorizontalDivider(
+                        color     = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                        thickness = 0.5.dp
+                    )
+                    ProfileDetailRow(
+                        label = "Role",
+                        value = user.role.takeIf { !it.isNullOrBlank() } ?: "N/A"
+                    )
+                    HorizontalDivider(
+                        color     = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                        thickness = 0.5.dp
+                    )
+                    ProfileDetailRow(
+                        label = "Position",
+                        value = user.position.takeIf { !it.isNullOrBlank() } ?: "N/A"
+                    )
                 }
             }
         }
@@ -824,16 +895,182 @@ private fun ProfileDetailRow(label: String, value: String) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = label,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 13.sp,
+            text       = label,
+            color      = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize   = 13.sp,
             fontWeight = FontWeight.Medium
         )
         Text(
-            text = value,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 14.sp,
+            text       = value,
+            color      = MaterialTheme.colorScheme.onSurface,
+            fontSize   = 14.sp,
             fontWeight = FontWeight.SemiBold
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun EditProfileSheet(
+    user: UserDetailsDTO,
+    departments: List<com.swifttechnology.bookingsystem.features.department.domain.model.Department>,
+    onDismiss: () -> Unit,
+    onSave: (String, String, String, String, Long) -> Unit
+) {
+    var firstname        by remember { mutableStateOf(user.firstname.orEmpty()) }
+    var lastname         by remember { mutableStateOf(user.lastname.orEmpty()) }
+    var position         by remember { mutableStateOf(user.position.orEmpty()) }
+    var phoneNo          by remember { mutableStateOf(user.phoneNo.orEmpty()) }
+    var selectedDeptId   by remember { mutableStateOf(user.departmentId ?: 0L) }
+    var showDeptDropdown by remember { mutableStateOf(false) }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState       = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor   = MaterialTheme.colorScheme.surfaceContainer
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 8.dp)
+                .navigationBarsPadding(),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text       = "Edit Profile",
+                    style      = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color      = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text  = "Update your personal information below.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            HorizontalDivider(
+                color     = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                thickness = 0.5.dp
+            )
+
+            Row(
+                modifier                = Modifier.fillMaxWidth(),
+                horizontalArrangement   = Arrangement.spacedBy(12.dp)
+            ) {
+                LabeledField(label = "First Name", modifier = Modifier.weight(1f)) {
+                    SettingsTextField(
+                        value         = firstname,
+                        onValueChange = { firstname = it },
+                        placeholder   = "e.g. Jane"
+                    )
+                }
+                LabeledField(label = "Last Name", modifier = Modifier.weight(1f)) {
+                    SettingsTextField(
+                        value         = lastname,
+                        onValueChange = { lastname = it },
+                        placeholder   = "e.g. Smith"
+                    )
+                }
+            }
+
+            LabeledField(label = "Position") {
+                SettingsTextField(
+                    value         = position,
+                    onValueChange = { position = it },
+                    placeholder   = "e.g. Senior Engineer"
+                )
+            }
+
+            LabeledField(label = "Phone Number") {
+                SettingsTextField(
+                    value         = phoneNo,
+                    onValueChange = { phoneNo = it },
+                    placeholder   = "e.g. +977 98XXXXXXXX",
+                    keyboardType  = KeyboardType.Phone
+                )
+            }
+
+            LabeledField(label = "Department") {
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedCard(
+                        onClick  = { showDeptDropdown = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape    = RoundedCornerShape(10.dp),
+                        colors   = CardDefaults.outlinedCardColors(containerColor = Color.Transparent),
+                        border   = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp, vertical = 14.dp)
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment     = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text  = departments.find { it.id == selectedDeptId }?.departmentName
+                                    ?: "Select Department",
+                                color = if (selectedDeptId == 0L)
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                else
+                                    MaterialTheme.colorScheme.onSurface,
+                                fontSize = 14.sp
+                            )
+                            Icon(
+                                imageVector        = Icons.Default.KeyboardArrowDown,
+                                contentDescription = null,
+                                tint               = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier           = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+
+                    DropdownMenu(
+                        expanded          = showDeptDropdown,
+                        onDismissRequest  = { showDeptDropdown = false },
+                        modifier          = Modifier.fillMaxWidth(0.9f)
+                    ) {
+                        departments.forEach { dept ->
+                            DropdownMenuItem(
+                                text = { Text(dept.departmentName) },
+                                onClick = {
+                                    selectedDeptId   = dept.id
+                                    showDeptDropdown = false
+                                },
+                                leadingIcon = if (dept.id == selectedDeptId) ({
+                                    Icon(
+                                        imageVector        = Icons.Default.Check,
+                                        contentDescription = null,
+                                        tint               = MaterialTheme.colorScheme.primary,
+                                        modifier           = Modifier.size(16.dp)
+                                    )
+                                }) else null
+                            )
+                        }
+                    }
+                }
+            }
+
+            Button(
+                onClick  = { onSave(firstname, lastname, position, phoneNo, selectedDeptId) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape    = RoundedCornerShape(12.dp),
+                enabled  = firstname.isNotBlank() || lastname.isNotBlank(),
+                colors   = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Text(
+                    text       = "Save Changes",
+                    fontWeight = FontWeight.Bold,
+                    fontSize   = 15.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
     }
 }

@@ -6,6 +6,10 @@ object ScreenRoutes {
     const val LOGIN = "login"
     const val MAIN_APP = "main_app"
 
+    const val FORGOT_PASSWORD = "forgot_password"
+    const val VERIFY_OTP = "verify_otp"
+    const val RESET_PASSWORD = "reset_password"
+
     const val DASHBOARD = "dashboard"
     const val CALENDAR = "calendar"
     const val ROOM_CALENDAR = "room_calendar"

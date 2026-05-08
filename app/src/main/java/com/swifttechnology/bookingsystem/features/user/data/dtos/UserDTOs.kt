@@ -28,6 +28,17 @@ data class UpdateUserRequestDTO(
 )
 
 /**
+ * Request body for PATCH /api/v1/users/logged-in-user/update.
+ */
+data class LoggedInUserInfoUpdateRequestDTO(
+    val firstname: String,
+    val lastname: String,
+    val position: String,
+    val phoneNo: String,
+    val departmentId: Long
+)
+
+/**
  * Request body for POST /api/v1/users/get-all (paginated + filtered).
  */
 data class UserDataRequestDTO(
@@ -36,7 +47,7 @@ data class UserDataRequestDTO(
     val sortBy: String? = "id",
     val sortDir: String? = "asc",
     val email: String? = null,
-    val deptName: String? = null
+    val departmentId: String? = null
 )
 
 /**

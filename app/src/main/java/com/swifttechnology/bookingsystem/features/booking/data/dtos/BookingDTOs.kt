@@ -8,7 +8,6 @@ import com.swifttechnology.bookingsystem.features.meetingrooms.data.dtos.RoomRes
 data class RoomBookingRequestDTO(
     val meetingTitle: String? = null,
     val startDate: String? = null,         // yyyy-MM-dd
-    val endDate: String? = null,           // yyyy-MM-dd
     val startTime: String? = null,         // HH:mm:ss
     val endTime: String? = null,           // HH:mm:ss
     val meetingTypeId: Long? = null,
@@ -18,9 +17,7 @@ data class RoomBookingRequestDTO(
     val externalParticipants: List<ExternalParticipantDTO>? = null,
     val recurrenceEndDate: String? = null,
     val recurrenceType: String? = null,
-    val weekDays: List<String>? = null,
-    val dates: List<String>? = null,
-    val bookingIds: List<Long>? = null
+    val weekDays: List<String>? = null
 )
 
 /**

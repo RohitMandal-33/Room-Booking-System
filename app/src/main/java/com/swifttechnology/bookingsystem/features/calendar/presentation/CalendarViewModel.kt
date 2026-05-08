@@ -12,6 +12,7 @@ import com.swifttechnology.bookingsystem.features.calendar.presentation.calendar
 import com.swifttechnology.bookingsystem.features.meetingrooms.domain.repository.RoomRepository
 import com.swifttechnology.bookingsystem.shared.components.SidebarItem
 import com.swifttechnology.bookingsystem.core.utils.DateTimeUtils
+import com.swifttechnology.bookingsystem.core.utils.ColorUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import java.time.LocalTime
@@ -99,20 +100,8 @@ class CalendarViewModel @Inject constructor(
                         val startTime = DateTimeUtils.parseLocalTime(startTimeStr) ?: return@mapIndexedNotNull null
                         val endTime = DateTimeUtils.parseLocalTime(endTimeStr) ?: return@mapIndexedNotNull null
 
-                        val color = when (dto.meetingType) {
-                            "Internal" -> Color(0xFF4CD8A8)
-                            "Client" -> Color(0xFFFF8C5A)
-                            "Executive" -> Color(0xFF4A90E2)
-                            else -> Color(0xFF4CD8A8)
-                        }
-
-                        val backendColor = dto.meetingTypeColorCode?.let {
-                            val match = Regex("""\((\d+),\s*(\d+),\s*(\d+)\)""").find(it)
-                            if (match != null) {
-                                val (r, g, b) = match.destructured
-                                Color(r.toInt(), g.toInt(), b.toInt())
-                            } else null
-                        }
+                        val typeColor = ColorUtils.parseColor(dto.meetingTypeColorCode)
+                        val backendColor = typeColor
 
                         MeetingEvent(
                             id = (dto.meetingId ?: dto.id ?: index.toLong()).toInt(),
@@ -121,10 +110,11 @@ class CalendarViewModel @Inject constructor(
                             date = date,
                             startTime = startTime,
                             endTime = endTime,
-                            color = color,
+                            color = typeColor,
                             backendColor = backendColor,
                             description = dto.description ?: "",
                             meetingRoom = dto.roomName ?: dto.room?.roomName ?: "",
+                            roomId = dto.roomId ?: dto.room?.id,
                             meetingType = dto.meetingType ?: "",
                             internalParticipants = dto.internalParticipant ?: emptyList(),
                             externalParticipants = dto.externalParticipant ?: emptyList(),

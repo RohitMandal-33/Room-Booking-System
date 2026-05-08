@@ -64,6 +64,7 @@ import kotlinx.coroutines.flow.collect
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit = {},
+    onForgotPasswordClick: () -> Unit = {},
     paddingValues: PaddingValues = PaddingValues(0.dp),
     viewModel: LoginViewModel = hiltViewModel()
 ) {
@@ -84,6 +85,9 @@ fun LoginScreen(
             }
             is LoginEvent.ShowSnackbar -> {
                 snackbarHostState.showSnackbar(e.message)
+            }
+            is LoginEvent.NavigateToForgotPassword -> {
+                onForgotPasswordClick()
             }
             }
         }

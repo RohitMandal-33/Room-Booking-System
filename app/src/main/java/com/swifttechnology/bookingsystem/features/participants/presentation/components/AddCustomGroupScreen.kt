@@ -60,7 +60,7 @@ import com.swifttechnology.bookingsystem.shared.layout.BottomSheetView
 import com.swifttechnology.bookingsystem.features.participants.domain.model.CustomGroup
 import com.swifttechnology.bookingsystem.features.participants.presentation.AddCustomGroupViewModel
 
-private val AddFlowPurple = Color(0xFF4A3496)
+// Using MaterialTheme.colorScheme.primary instead of hardcoded purple
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -125,12 +125,12 @@ fun AddCustomGroupScreen(
                         },
                         modifier = Modifier
                             .size(36.dp)
-                            .background(Color(0xFFF2F2F7), CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Close",
-                            tint = Color.Black,
+                            tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -142,13 +142,13 @@ fun AddCustomGroupScreen(
                     text = if (isEditMode) "Edit Custom Group" else "Add Custom Group",
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = MaterialTheme.customColors.deepBlack
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "Please Fill all the details",
                     fontSize = 14.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.customColors.neutral700
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -256,7 +256,7 @@ fun AddCustomGroupScreen(
                         .height(56.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = AddFlowPurple
+                        containerColor = MaterialTheme.colorScheme.primary
                     ),
                     enabled = !uiState.isLoading &&
                             formState.meetingTitle.isNotBlank() &&

@@ -32,6 +32,7 @@ import com.swifttechnology.bookingsystem.shared.components.PrimaryButton
 import com.swifttechnology.bookingsystem.features.participants.domain.model.Participant
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.features.participants.presentation.AddParticipantViewModel
 import java.util.Locale
 
@@ -71,7 +72,7 @@ private fun initialPhone(p: Participant?): String {
 fun AddParticipantScreen(
     initialParticipant: Participant? = null,
     onClose: () -> Unit,
-    onContinue: () -> Unit,
+    onContinue: (String) -> Unit,
     viewModel: AddParticipantViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -98,7 +99,8 @@ fun AddParticipantScreen(
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
-            onContinue()
+            val message = if (initialParticipant == null) "Member added successfully" else "Member updated successfully"
+            onContinue(message)
             viewModel.resetState()
         }
     }
@@ -140,12 +142,12 @@ fun AddParticipantScreen(
                         onClick = onClose,
                         modifier = Modifier
                             .size(36.dp)
-                            .background(Color(0xFFF2F2F7), CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Close",
-                            tint = Color.Black,
+                            tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -158,13 +160,13 @@ fun AddParticipantScreen(
                     text = if (initialParticipant != null) "Edit member" else "Add New Participant",
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = MaterialTheme.customColors.deepBlack
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "Please Fill all the details",
                     fontSize = 14.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.customColors.neutral700
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -224,7 +226,7 @@ fun AddParticipantScreen(
                                 Icon(
                                     imageVector = if (passwordVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
                                     contentDescription = if (passwordVisible) "Hide password" else "Show password",
-                                    tint = Color.Gray,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -310,11 +312,11 @@ fun AddParticipantScreen(
                     onClick = {
                         if (initialParticipant == null) {
                             viewModel.createParticipant(
-                                firstname = firstName,
-                                lastname = lastName,
+                                firstName = firstName,
+                                lastName = lastName,
                                 email = email,
                                 position = position,
-                                phoneNo = phoneNumber,
+                                phoneNumber = phoneNumber,
                                 password = password,
                                 role = role,
                                 departmentId = departmentId
@@ -322,11 +324,11 @@ fun AddParticipantScreen(
                         } else {
                             viewModel.updateParticipant(
                                 id = initialParticipant.id,
-                                firstname = firstName,
-                                lastname = lastName,
+                                firstName = firstName,
+                                lastName = lastName,
                                 email = email,
                                 position = position,
-                                phoneNo = phoneNumber,
+                                phoneNumber = phoneNumber,
                                 role = role,
                                 departmentId = departmentId
                             )
@@ -337,15 +339,16 @@ fun AddParticipantScreen(
                         .height(56.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4A3496) // The purple color from screenshot
+                        containerColor = MaterialTheme.colorScheme.primary
                     ),
                     enabled = !uiState.isLoading && departmentId != -1L
                 ) {
                     if (uiState.isLoading) {
                         CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
                     } else {
+                        val btnText = if (initialParticipant == null) "Add New Member" else "Update Member"
                         Text(
-                            text = "Continue",
+                            text = btnText,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onPrimary

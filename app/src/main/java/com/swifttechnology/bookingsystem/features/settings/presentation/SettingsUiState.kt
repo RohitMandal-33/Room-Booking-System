@@ -18,6 +18,7 @@ data class SettingsUiState(
     val successMessage: String? = null,
 
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val departments: List<Department> = emptyList(),
     
     // Global Rules Mock State
     val durationMin: String = "30",

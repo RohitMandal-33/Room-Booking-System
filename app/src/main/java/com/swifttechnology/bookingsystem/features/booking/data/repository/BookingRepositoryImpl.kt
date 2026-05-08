@@ -5,36 +5,31 @@ import com.swifttechnology.bookingsystem.features.booking.data.dtos.BookingRespo
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.MeetingTypeDTO
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.RoomBookingRequestDTO
 import com.swifttechnology.bookingsystem.features.booking.domain.repository.BookingRepository
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import javax.inject.Inject
 
 class BookingRepositoryImpl @Inject constructor(
     private val api: BookingApiService
 ) : BookingRepository {
 
-    override suspend fun bookRoom(request: RoomBookingRequestDTO): Result<BookingResponseDTO> = runCatching {
+    override suspend fun bookRoom(request: RoomBookingRequestDTO): Result<Unit> = runCatching {
         val response = api.bookRoom(request)
-        if (!response.success || response.data == null) throw Exception(response.message)
-        response.data
+        if (!response.success) throw Exception(response.message)
     }
 
     override suspend fun updateBooking(
-        bookingId: Long,
+        bookingId: Long?,
         request: RoomBookingRequestDTO
-    ): Result<BookingResponseDTO> = runCatching {
+    ): Result<Unit> = runCatching {
         val response = api.updateBooking(bookingId, request)
-        if (!response.success || response.data == null) throw Exception(response.message)
-        response.data
+        if (!response.success) throw Exception(response.message)
     }
 
     override suspend fun updateRecurrenceBooking(
         recurrenceId: String,
         request: RoomBookingRequestDTO
-    ): Result<BookingResponseDTO> = runCatching {
+    ): Result<Unit> = runCatching {
         val response = api.updateRecurrenceBooking(recurrenceId, request)
-        if (!response.success || response.data == null) throw Exception(response.message)
-        response.data
+        if (!response.success) throw Exception(response.message)
     }
 
     override suspend fun getMyBookings(): Result<List<BookingResponseDTO>> = runCatching {

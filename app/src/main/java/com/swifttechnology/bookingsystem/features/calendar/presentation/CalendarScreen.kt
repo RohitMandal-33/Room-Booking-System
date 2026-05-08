@@ -72,6 +72,8 @@ fun CalendarScreen(
     onProceedWithDetails: (String, String, String, String) -> Unit = { _, _, _, _ -> },
     onEditMeeting: (MeetingEvent, String) -> Unit = { _, _ -> },
     todayTrigger: Int = 0,
+    initialDate: LocalDate? = null,
+    onDateConsumed: () -> Unit = {},
     viewModel: CalendarViewModel = hiltViewModel(),
     pickerViewModel: DayTimePickerViewModel = hiltViewModel()
 ) {
@@ -86,6 +88,14 @@ fun CalendarScreen(
     LaunchedEffect(todayTrigger) {
         if (todayTrigger > 0) {
             viewModel.onDateSelected(LocalDate.now())
+        }
+    }
+
+    LaunchedEffect(initialDate) {
+        initialDate?.let {
+            viewModel.onDateSelected(it)
+            viewModel.onViewChange(CalendarView.DAY)
+            onDateConsumed()
         }
     }
 
@@ -431,7 +441,7 @@ private fun TopBar(
                 ) {
                     Text(
                         text = selectedRoom?.name ?: "All Rooms",
-                        fontSize = 12.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.customColors.textPrimary
                     )
@@ -451,7 +461,7 @@ private fun TopBar(
                         .heightIn(max = menuMaxH)
                 ) {
                     DropdownMenuItem(
-                        text = { Text("All Rooms") },
+                        text = { Text("All Rooms", fontSize = 11.sp) },
                         onClick = {
                             onRoomSelected(null)
                             expanded = false
@@ -459,7 +469,7 @@ private fun TopBar(
                     )
                     rooms.forEach { room ->
                         DropdownMenuItem(
-                            text = { Text(room.name) },
+                            text = { Text(room.name, fontSize = 11.sp) },
                             onClick = {
                                 onRoomSelected(room)
                                 expanded = false

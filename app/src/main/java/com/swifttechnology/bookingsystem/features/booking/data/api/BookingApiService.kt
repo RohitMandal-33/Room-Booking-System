@@ -16,7 +16,7 @@ interface BookingApiService {
 
     @PUT(APIEndpoint.UPDATE_BOOKING)
     suspend fun updateBooking(
-        @Path("bookingId") bookingId: Long,
+        @Path("bookingId") bookingId: Long?,
         @Body request: RoomBookingRequestDTO
     ): GlobalResponse<BookingResponseDTO>
 

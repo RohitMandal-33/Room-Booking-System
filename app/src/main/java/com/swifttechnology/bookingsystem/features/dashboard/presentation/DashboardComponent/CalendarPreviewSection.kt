@@ -60,6 +60,7 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import com.swifttechnology.bookingsystem.core.designsystem.CalendarTodayPurple
+import com.swifttechnology.bookingsystem.core.utils.ColorUtils
 
 
   
@@ -675,17 +676,12 @@ private fun com.swifttechnology.bookingsystem.features.booking.data.dtos.Booking
                 "${st.hour}:${st.minute.toString().padStart(2, '0')}"
             else -> ""
         }
-        val color = when (this.meetingType?.uppercase()) {
-            "EXECUTIVE" -> PurpleAccent
-            "CLIENT"    -> OrangeAccent
-            "INTERNAL" -> BlueAccent
-            else        -> BlueAccent
-        }
+        val color = ColorUtils.parseColor(this.meetingTypeColorCode)
         CalendarEvent(
             title       = this.meetingTitle ?: "Unnamed Meeting",
             time        = timeLabel,
             room        = this.roomName ?: this.room?.roomName ?: "No Room",
-            tag         = this.meetingType ?: "INTERNAL",
+            tag         = this.meetingType?.lowercase()?.replaceFirstChar { it.uppercase() } ?: "Meeting",
             tagColor    = color,
             accentColor = color,
             date        = ld

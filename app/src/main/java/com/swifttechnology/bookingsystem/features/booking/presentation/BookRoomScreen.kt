@@ -126,7 +126,7 @@ fun BookRoomScreen(
     onNavigateToCalendar: (PendingBookingDetails) -> Unit = {},
     pendingTimeUpdate: Triple<String, String, String>? = null,
     onTimeUpdate: ((String, String, String) -> Unit)? = null,
-    onSuccess: () -> Unit = {},
+    onSuccess: (String) -> Unit = {},
     viewModel: BookRoomViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -138,7 +138,7 @@ fun BookRoomScreen(
         viewModel.events.collect { event ->
             if (event is BookRoomEvent.NavigateBack) {
                 kotlinx.coroutines.delay(100)
-                onSuccess()
+                onSuccess(event.date)
             }
         }
     }
@@ -179,7 +179,9 @@ fun BookRoomScreen(
                     recurrenceId           = initialDetails.recurrenceId,
                     isRecurring            = initialDetails.isRecurring,
                     recurrenceType         = initialDetails.recurrenceType,
-                    updateScope            = initialDetails.updateScope
+                    recurrenceEndDate      = initialDetails.recurrenceEndDate,
+                    updateScope            = initialDetails.updateScope,
+                    roomId                 = initialDetails.roomId
                 )
             } else if (initialRoomName != null) {
                 wasPrefilledRef.value = true
@@ -558,89 +560,81 @@ fun BookRoomScreen(
                     onValueChange = { viewModel.onFormStateChanged(formState.copy(description = it)) }
                 )
 
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text  = "Add Member",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.customColors.bookRoomLabel
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    com.swifttechnology.bookingsystem.features.booking.presentation.components.FieldLabel(
+                        text = "Add Member",
+                        isRequired = true
                     )
-                    Text(
-                        text  = " *",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
 
-                val hasAnySelected = formState.participants.isNotEmpty() || formState.externalMembers.isNotEmpty()
-                if (hasAnySelected) {
-                    FlowRow(
-                        modifier              = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
-                        verticalArrangement   = Arrangement.spacedBy(Spacing.xs)
+                    val hasAnySelected = formState.participants.isNotEmpty() || formState.externalMembers.isNotEmpty()
+                    if (hasAnySelected) {
+                        FlowRow(
+                            modifier              = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+                            verticalArrangement   = Arrangement.spacedBy(Spacing.xs)
+                        ) {
+                            formState.participants.forEach { member ->
+                                SelectedParticipantChip(
+                                    name     = member.name,
+                                    onRemove = {
+                                        viewModel.onFormStateChanged(
+                                            formState.copy(participants = formState.participants - member)
+                                        )
+                                    }
+                                )
+                            }
+                            formState.externalMembers.forEach { member ->
+                                SelectedParticipantChip(
+                                    name     = member.name,
+                                    onRemove = {
+                                        viewModel.onFormStateChanged(
+                                            formState.copy(externalMembers = formState.externalMembers - member)
+                                        )
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.ms)
                     ) {
-                        formState.participants.forEach { member ->
-                            SelectedParticipantChip(
-                                name     = member.name,
-                                onRemove = {
-                                    viewModel.onFormStateChanged(
-                                        formState.copy(participants = formState.participants - member)
+                        Box(modifier = Modifier.weight(1f)) {
+                            BookingClickableField(
+                                label       = "",
+                                value       = "",
+                                placeholder = "Add Internal",
+                                isRequired  = false,
+                                leadingIcon = {
+                                    Icon(
+                                        painter = painterResource(R.drawable.outline_groups_24),
+                                        contentDescription = null,
+                                        tint     = MaterialTheme.customColors.neutral700,
+                                        modifier = Modifier.size(Spacing.ml)
                                     )
-                                }
+                                },
+                                onClick = { showInternalSheet = true }
                             )
                         }
-                        formState.externalMembers.forEach { member ->
-                            SelectedParticipantChip(
-                                name     = member.name,
-                                onRemove = {
-                                    viewModel.onFormStateChanged(
-                                        formState.copy(externalMembers = formState.externalMembers - member)
+
+                        Box(modifier = Modifier.weight(1f)) {
+                            BookingClickableField(
+                                label       = "",
+                                value       = "",
+                                placeholder = "Add External",
+                                isRequired  = false,
+                                leadingIcon = {
+                                    Icon(
+                                        painter = painterResource(R.drawable.outline_groups_24),
+                                        contentDescription = null,
+                                        tint     = MaterialTheme.customColors.neutral700,
+                                        modifier = Modifier.size(Spacing.ml)
                                     )
-                                }
+                                },
+                                onClick = { showExternalSheet = true }
                             )
                         }
-                    }
-                }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = Spacing.md),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.ms)
-                ) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        BookingClickableField(
-                            label       = "",
-                            value       = "",
-                            placeholder = "Add Internal",
-                            isRequired  = false,
-                            leadingIcon = {
-                                Icon(
-                                    painter = painterResource(R.drawable.outline_groups_24),
-                                    contentDescription = null,
-                                    tint     = MaterialTheme.customColors.neutral700,
-                                    modifier = Modifier.size(Spacing.ml)
-                                )
-                            },
-                            onClick = { showInternalSheet = true }
-                        )
-                    }
-
-                    Box(modifier = Modifier.weight(1f)) {
-                        BookingClickableField(
-                            label       = "",
-                            value       = "",
-                            placeholder = "Add External",
-                            isRequired  = false,
-                            leadingIcon = {
-                                Icon(
-                                    painter = painterResource(R.drawable.outline_groups_24),
-                                    contentDescription = null,
-                                    tint     = MaterialTheme.customColors.neutral700,
-                                    modifier = Modifier.size(Spacing.ml)
-                                )
-                            },
-                            onClick = { showExternalSheet = true }
-                        )
                     }
                 }
 

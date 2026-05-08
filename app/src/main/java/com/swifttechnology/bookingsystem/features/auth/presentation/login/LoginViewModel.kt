@@ -4,6 +4,7 @@ import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.swifttechnology.bookingsystem.features.auth.domain.usecases.LoginUseCase
+import com.swifttechnology.bookingsystem.core.storage.UserDefaultsManager
 import com.swifttechnology.bookingsystem.features.auth.domain.util.AuthResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -11,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
@@ -28,12 +30,14 @@ data class LoginUiState(
 
 sealed class LoginEvent {
     data object NavigateToHome : LoginEvent()
+    data object NavigateToForgotPassword : LoginEvent()
     data class ShowSnackbar(val message: String) : LoginEvent()
 }
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val loginUseCase: LoginUseCase
+    private val loginUseCase: LoginUseCase,
+    private val userDefaultsManager: UserDefaultsManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -41,6 +45,16 @@ class LoginViewModel @Inject constructor(
 
     private val _events = MutableSharedFlow<LoginEvent>(extraBufferCapacity = 1)
     val events: SharedFlow<LoginEvent> = _events.asSharedFlow()
+
+    init {
+        viewModelScope.launch {
+            val savedEmail = userDefaultsManager.rememberMeEmail.first()
+            val isEnabled = userDefaultsManager.isRememberMeEnabled.first()
+            if (isEnabled && savedEmail != null) {
+                _uiState.update { it.copy(email = savedEmail, rememberMe = true) }
+            }
+        }
+    }
 
     fun onEmailChanged(value: String) {
         _uiState.update { it.copy(email = value, emailError = null) }
@@ -59,7 +73,7 @@ class LoginViewModel @Inject constructor(
     }
 
     fun onForgotPasswordClicked() {
-        _events.tryEmit(LoginEvent.ShowSnackbar("Password reset email sent"))
+        _events.tryEmit(LoginEvent.NavigateToForgotPassword)
     }
 
     fun onLoginClicked() {
@@ -77,6 +91,12 @@ class LoginViewModel @Inject constructor(
             when (val result = loginUseCase(state.email, state.password)) {
                 is AuthResult.Success -> {
                     _uiState.update { it.copy(isLoading = false) }
+                    // Handle Remember Me
+                    if (state.rememberMe) {
+                        userDefaultsManager.saveRememberMe(state.email, true)
+                    } else {
+                        userDefaultsManager.clearRememberMe()
+                    }
                     _events.emit(LoginEvent.NavigateToHome)
                 }
                 is AuthResult.Error -> {

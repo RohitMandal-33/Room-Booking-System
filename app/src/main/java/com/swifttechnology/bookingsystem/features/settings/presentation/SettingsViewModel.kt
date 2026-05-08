@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.update
 import com.swifttechnology.bookingsystem.features.auth.domain.util.AuthResult
 import androidx.lifecycle.viewModelScope
 import com.swifttechnology.bookingsystem.features.department.domain.repository.DepartmentRepository
+import com.swifttechnology.bookingsystem.features.user.domain.repository.UserRepository
 import com.swifttechnology.bookingsystem.features.booking.domain.repository.BookingRepository
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.MeetingTypeRequestDTO
 import com.swifttechnology.bookingsystem.core.designsystem.ThemeMode
@@ -22,6 +23,8 @@ import kotlinx.coroutines.launch
 class SettingsViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val bookingRepository: BookingRepository,
+    private val userRepository: UserRepository,
+    private val departmentRepository: DepartmentRepository,
     private val userDefaultsManager: UserDefaultsManager
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -42,7 +45,17 @@ class SettingsViewModel @Inject constructor(
 
     init {
         fetchMeetingTypes()
+        fetchDepartments()
         observeThemeMode()
+    }
+
+    private fun fetchDepartments() {
+        viewModelScope.launch {
+            departmentRepository.getDepartments()
+                .onSuccess { depts ->
+                    _uiState.update { it.copy(departments = depts) }
+                }
+        }
     }
 
     private fun observeThemeMode() {
@@ -115,6 +128,20 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun deleteMeetingType(id: Long) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            bookingRepository.changeMeetingTypeStatus(id, "INACTIVE")
+                .onSuccess {
+                    _uiState.update { it.copy(successMessage = "Meeting type deleted successfully", isLoading = false) }
+                    fetchMeetingTypes()
+                }
+                .onFailure { err ->
+                    _uiState.update { it.copy(error = err.message, isLoading = false) }
+                }
+        }
+    }
+
     fun updateGlobalRules(duration: String, buffer: String, smartConflict: Boolean) {
         _uiState.update {
             it.copy(
@@ -149,6 +176,56 @@ class SettingsViewModel @Inject constructor(
 
     suspend fun logout() {
         authRepository.logout()
+    }
+
+    private fun validateInputs(
+        firstName: String,
+        lastName: String,
+        phoneNumber: String
+    ): String? {
+        if (firstName.isBlank()) return "First name is required"
+        if (lastName.isBlank()) return "Last name is required"
+        
+        val phone = phoneNumber.trim()
+        if (phone.isBlank()) return "Phone number is required"
+        
+        // Backend pattern: ^(\+977)?9[6-9]\d{8}$
+        val phoneRegex = Regex("^(\\+977)?9[6-9]\\d{8}$")
+        if (!phoneRegex.matches(phone)) {
+            return "Phone number must be a valid Nepal mobile number (e.g., 98XXXXXXXX)"
+        }
+        
+        return null
+    }
+
+    fun updateProfile(
+        firstName: String,
+        lastName: String,
+        position: String,
+        phoneNumber: String,
+        departmentId: Long
+    ) {
+        val validationError = validateInputs(firstName, lastName, phoneNumber)
+        if (validationError != null) {
+            _uiState.update { it.copy(error = validationError) }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            val result = userRepository.updateLoggedInUser(
+                firstName = firstName,
+                lastName = lastName,
+                position = position,
+                phoneNumber = phoneNumber,
+                departmentId = departmentId
+            )
+            result.onSuccess {
+                _uiState.update { it.copy(isLoading = false, successMessage = "Profile updated successfully") }
+            }.onFailure { err ->
+                _uiState.update { it.copy(isLoading = false, error = err.message) }
+            }
+        }
     }
 }
 

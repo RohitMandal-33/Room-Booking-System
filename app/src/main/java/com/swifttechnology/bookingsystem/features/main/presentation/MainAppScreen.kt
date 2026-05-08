@@ -66,6 +66,20 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+private fun parseBookedDateToLocalDate(bookedDate: String): LocalDate? {
+    if (bookedDate.isBlank()) return null
+
+    val formatters = listOf(
+        DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.getDefault()),
+        DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.getDefault()),
+        DateTimeFormatter.ISO_LOCAL_DATE
+    )
+
+    return formatters.firstNotNullOfOrNull { formatter ->
+        runCatching { LocalDate.parse(bookedDate, formatter) }.getOrNull()
+    }
+}
+
 data class PendingBookingDetails(
     val bookingId: Long? = null,
     val roomName: String,
@@ -81,7 +95,9 @@ data class PendingBookingDetails(
     val recurrenceId: String? = null,
     val isRecurring: Boolean = false,
     val recurrenceType: String? = null,
-    val updateScope: String = "ASK"
+    val recurrenceEndDate: String? = null,
+    val updateScope: String = "ASK",
+    val roomId: Long? = null
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -92,6 +108,12 @@ fun MainAppScreen(
     startRoute: String = ScreenRoutes.DASHBOARD,
     mainViewModel: MainViewModel = hiltViewModel()
 ) {
+    fun isTrueRecurringSeries(recurrenceId: String?, recurrenceType: String?): Boolean {
+        return !recurrenceId.isNullOrBlank() &&
+            !recurrenceType.isNullOrBlank() &&
+            recurrenceType.uppercase() != "NONE"
+    }
+
     val mainUiState by mainViewModel.uiState.collectAsStateWithLifecycle()
     val currentUser = mainUiState.currentUser
     var navigationStack by rememberSaveable { mutableStateOf(listOf(startRoute)) }
@@ -124,6 +146,7 @@ fun MainAppScreen(
     var maintenanceRoomName by remember { mutableStateOf<String?>(null) }
     // Success toast shown on various screens after actions
     var globalSuccessMessage by remember { mutableStateOf<String?>(null) }
+    var pendingCalendarDate by remember { mutableStateOf<LocalDate?>(null) }
 
     LaunchedEffect(globalSuccessMessage) {
         if (globalSuccessMessage != null) {
@@ -228,7 +251,8 @@ fun MainAppScreen(
             (currentRoute == ScreenRoutes.ANNOUNCEMENTS && isAnnouncementsEditMode),
         showTopBar = currentRoute != ScreenRoutes.ROOM_CALENDAR &&
             currentRoute != ScreenRoutes.PARTICIPANT_ADD &&
-            currentRoute != ScreenRoutes.CUSTOM_GROUP_ADD,
+            currentRoute != ScreenRoutes.CUSTOM_GROUP_ADD &&
+            currentRoute != ScreenRoutes.DEPARTMENT_ADD,
         showTodayIcon = currentRoute == ScreenRoutes.CALENDAR,
         onTodayClick = { todayTrigger++ },
         onEditClick = {
@@ -268,7 +292,7 @@ fun MainAppScreen(
 
                         pendingRoomName = meeting.room?.roomName ?: meeting.roomName
                         pendingBookingDetails = PendingBookingDetails(
-                            bookingId              = meeting.id,
+                            bookingId              = meeting.id ?: meeting.meetingId,
                             roomName               = meeting.room?.roomName ?: meeting.roomName ?: "",
                             date                   = displayDate,
                             startTime              = startDisplay,
@@ -280,9 +304,10 @@ fun MainAppScreen(
                             internalParticipantIds = meeting.internalParticipant?.mapNotNull { it.id } ?: emptyList(),
                             externalMembers        = meeting.externalParticipant?.map { ExternalMember(it.name, it.email) } ?: emptyList(),
                             recurrenceId           = meeting.recurrenceId,
-                            isRecurring            = !meeting.recurrenceId.isNullOrBlank(),
+                            isRecurring            = isTrueRecurringSeries(meeting.recurrenceId, meeting.recurrenceType),
                             recurrenceType         = meeting.recurrenceType,
-                            updateScope            = scope
+                            updateScope            = scope,
+                            roomId                 = meeting.roomId ?: meeting.room?.id
                         )
                         navigateTo(ScreenRoutes.BOOK_ROOM)
                     }
@@ -293,6 +318,8 @@ fun MainAppScreen(
                     searchQuery = searchQuery,
                     onNavigate = navigateTo,
                     todayTrigger = todayTrigger,
+                    initialDate = pendingCalendarDate,
+                    onDateConsumed = { pendingCalendarDate = null },
                     onProceedWithDetails = { room, date, start, end ->
                         pendingRoomName = room
                         pendingBookingDetails = PendingBookingDetails(
@@ -310,7 +337,9 @@ fun MainAppScreen(
                         val startFmt = event.startTime.format(DateTimeFormatter.ofPattern("hh:mm a", Locale.getDefault()))
                         val endFmt   = event.endTime.format(DateTimeFormatter.ofPattern("hh:mm a", Locale.getDefault()))
                         pendingBookingDetails = PendingBookingDetails(
-                            bookingId              = event.meetingId,
+                            // Some calendar payloads provide only `id` for an occurrence.
+                            // Fallback to it so single-occurrence updates always carry bookingId.
+                            bookingId              = event.meetingId ?: event.id.toLong(),
                             roomName               = event.meetingRoom,
                             date                   = dateFmt,
                             startTime              = startFmt,
@@ -322,9 +351,10 @@ fun MainAppScreen(
                             internalParticipantIds = event.internalParticipants.mapNotNull { it.id?.toLong() },
                             externalMembers        = event.externalParticipants.map { ExternalMember(it.name ?: "", it.email ?: "") },
                             recurrenceId           = event.recurrenceId,
-                            isRecurring            = event.recurrenceId != null,
+                            isRecurring            = isTrueRecurringSeries(event.recurrenceId, event.recurrenceType),
                             recurrenceType         = event.recurrenceType,
-                            updateScope            = scope
+                            updateScope            = scope,
+                            roomId                 = event.roomId
                         )
                         navigateTo(ScreenRoutes.BOOK_ROOM)
                     }
@@ -347,6 +377,11 @@ fun MainAppScreen(
                         if (isDisabled) {
                             maintenanceRoomName = room.name
                         } else {
+                            // Start a clean booking flow from room cards.
+                            // Without this reset, stale edit payload (bookingId, recurrence info)
+                            // can leak from previous edit sessions and force update APIs.
+                            pendingBookingDetails = null
+                            pendingTimeOnlyUpdate = null
                             pendingRoomName = room.name
                             showRoomCalendarBottomSheet = true
                         }
@@ -378,9 +413,22 @@ fun MainAppScreen(
                         showRoomCalendarBottomSheet = true
                     },
                     onNavigate = navigateTo,
-                    onSuccess = {
-                        globalSuccessMessage = "Room booked successfully!"
-                        navigateBack()
+                    onSuccess = { bookedDate ->
+                        val isUpdate = pendingBookingDetails?.bookingId != null
+                        globalSuccessMessage = if (isUpdate) {
+                            "Room updated successfully!"
+                        } else {
+                            "Room booked successfully!"
+                        }
+
+                        // Always land in Calendar Day view after save; if parsing fails, default to today.
+                        pendingCalendarDate = parseBookedDateToLocalDate(bookedDate) ?: LocalDate.now()
+                        pendingBookingDetails = null
+                        pendingRoomName = null
+                        pendingTimeOnlyUpdate = null
+                        showRoomCalendarBottomSheet = false
+                        // Replace BOOK_ROOM with CALENDAR in the stack to avoid back-navigating to an empty form
+                        navigationStack = navigationStack.dropLast(1) + ScreenRoutes.CALENDAR
                     },
                     onNavigateToEdit = {
                         navigationStack = listOf(ScreenRoutes.MEETING_ROOMS)
@@ -463,9 +511,10 @@ fun MainAppScreen(
                         isParticipantsEditable = false
                         navigateBack()
                     },
-                    onContinue = {
+                    onContinue = { message ->
                         pendingParticipantToEdit = null
                         isParticipantsEditable = false
+                        globalSuccessMessage = message
                         navigateBack()
                     }
                 )
@@ -492,8 +541,9 @@ fun MainAppScreen(
                         isParticipantsEditable = false
                         navigateBack()
                     },
-                    onContinue = {
+                    onContinue = { message ->
                         isParticipantsEditable = false
+                        globalSuccessMessage = message
                         navigateBack()
                     }
                 )

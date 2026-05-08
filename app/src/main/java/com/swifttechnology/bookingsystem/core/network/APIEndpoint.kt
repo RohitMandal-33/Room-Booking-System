@@ -21,9 +21,10 @@ object APIEndpoint {
     const val USER_BY_ID = "api/v1/users/{id}"
     const val USER_GET_ALL_SIMPLE = "api/v1/user/get-all"
     const val USER_SEARCH = "api/v1/user/search"
-    const val USER_UPDATE = "api/v1/user/{id}/update"
+    const val USER_UPDATE = "api/v1/users/{id}/update"
     const val USER_CHANGE_STATUS = "api/v1/users/{id}/change-status"
     const val USERS_CURRENT_USER = "api/v1/users/current-user"
+    const val USERS_LOGGED_IN_UPDATE = "api/v1/users/logged-in-user/update"
 
     // Meeting Rooms
     const val ROOM_ADD = "api/v1/room/add"

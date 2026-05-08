@@ -19,11 +19,11 @@ class UserRepositoryImpl @Inject constructor(
     }
 
     override suspend fun createUser(
-        firstname: String,
-        lastname: String,
+        firstName: String,
+        lastName: String,
         email: String,
         position: String,
-        phoneNo: String,
+        phoneNumber: String,
         password: String,
         roleId: Long,
         departmentId: Long
@@ -31,11 +31,11 @@ class UserRepositoryImpl @Inject constructor(
         try {
             val response = api.createUser(
                 CreateUserRequestDTO(
-                    firstname = firstname,
-                    lastname = lastname,
+                    firstname = firstName,
+                    lastname = lastName,
                     email = email,
                     position = position,
-                    phoneNo = phoneNo,
+                    phoneNo = phoneNumber,
                     password = password,
                     roleId = roleId,
                     departmentId = departmentId
@@ -51,11 +51,11 @@ class UserRepositoryImpl @Inject constructor(
 
     override suspend fun updateUser(
         id: Long,
-        firstname: String,
-        lastname: String,
+        firstName: String,
+        lastName: String,
         email: String,
         position: String,
-        phoneNo: String,
+        phoneNumber: String,
         roleId: Long,
         departmentId: Long
     ): Result<Unit> =
@@ -63,11 +63,11 @@ class UserRepositoryImpl @Inject constructor(
             val response = api.updateUser(
                 id = id,
                 request = UpdateUserRequestDTO(
-                    firstname = firstname,
-                    lastname = lastname,
+                    firstname = firstName,
+                    lastname = lastName,
                     email = email,
                     position = position,
-                    phoneNo = phoneNo,
+                    phoneNo = phoneNumber,
                     roleId = roleId,
                     departmentId = departmentId
                 )
@@ -87,7 +87,20 @@ class UserRepositoryImpl @Inject constructor(
         deptName: String?
     ): Result<UserPageDTO> = runCatching {
         val response = api.getAllUsers(
-            UserDataRequestDTO(pageNo = pageNo, pageSize = pageSize, email = email, deptName = deptName)
+            UserDataRequestDTO(pageNo = pageNo, pageSize = pageSize, email = email, departmentId = deptName)
+        )
+        if (!response.success || response.data == null) throw Exception(response.message)
+        response.data
+    }
+
+    override suspend fun getAllActiveUsers(
+        pageNo: Int,
+        pageSize: Int,
+        email: String?,
+        deptName: String?
+    ): Result<UserPageDTO> = runCatching {
+        val response = api.getAllActiveUsers(
+            UserDataRequestDTO(pageNo = pageNo, pageSize = pageSize, email = email, departmentId = deptName)
         )
         if (!response.success || response.data == null) throw Exception(response.message)
         response.data
@@ -129,4 +142,28 @@ class UserRepositoryImpl @Inject constructor(
                 Exception(messageFromErrorBody(e) ?: "Request failed (${e.code()})")
             )
         }
+
+    override suspend fun updateLoggedInUser(
+        firstName: String,
+        lastName: String,
+        position: String,
+        phoneNumber: String,
+        departmentId: Long
+    ): Result<Unit> = try {
+        val response = api.updateLoggedInUser(
+            LoggedInUserInfoUpdateRequestDTO(
+                firstname = firstName,
+                lastname = lastName,
+                position = position,
+                phoneNo = phoneNumber,
+                departmentId = departmentId
+            )
+        )
+        if (!response.success) Result.failure(Exception(response.message))
+        else Result.success(Unit)
+    } catch (e: HttpException) {
+        Result.failure(
+            Exception(messageFromErrorBody(e) ?: "Request failed (${e.code()})")
+        )
+    }
 }

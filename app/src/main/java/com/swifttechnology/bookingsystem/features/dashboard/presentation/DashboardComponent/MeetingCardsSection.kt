@@ -63,9 +63,13 @@ import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.core.utils.DateTimeUtils
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.BookingResponseDTO
 import com.swifttechnology.bookingsystem.R
+import com.swifttechnology.bookingsystem.features.calendar.presentation.MeetingEvent
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.shared.MeetingDetailBottomSheet
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import com.swifttechnology.bookingsystem.core.utils.ColorUtils
 
 private val OrangeAccent = Color(0xFFF97316)
 private val BlueAccent   = Color(0xFF3B82F6)
@@ -172,8 +176,10 @@ fun MeetingCardsSection(
                         modifier              = Modifier.fillMaxWidth()
                     ) {
                         items(meetings) { meeting ->
-                            val typeColor = meetingTypeColor(meeting.meetingType)
-                            val typeBg    = meetingTypeBg(meeting.meetingType)
+                            val colorCode = meeting.meetingTypeColorCode
+                            val typeColor = ColorUtils.parseColor(colorCode)
+                            val typeBg    = ColorUtils.getLightBackgroundColor(typeColor, androidx.compose.foundation.isSystemInDarkTheme())
+                            
                             val card = MeetingCard(
                                 title        = meeting.meetingTitle ?: "Untitled",
                                 type         = formatMeetingType(meeting.meetingType),
@@ -206,8 +212,8 @@ fun MeetingCardsSection(
     }
 
     selectedMeeting?.let { meeting ->
-        MeetingDetailDialog(
-            meeting   = meeting,
+        MeetingDetailBottomSheet(
+            event = meeting.toMeetingEvent(),
             onDismiss = { selectedMeeting = null },
             onEdit = { scope ->
                 onEditMeeting(meeting, scope)
@@ -217,25 +223,42 @@ fun MeetingCardsSection(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
+private fun BookingResponseDTO.toMeetingEvent(): MeetingEvent {
+    val dateObj = runCatching { LocalDate.parse(date ?: startDate) }.getOrNull() ?: LocalDate.now()
+    val startTimeObj = DateTimeUtils.parseLocalTime(startTimeString) ?: DateTimeUtils.parseLocalTime(startTime) ?: LocalTime.MIN
+    val endTimeObj = DateTimeUtils.parseLocalTime(endTimeString) ?: DateTimeUtils.parseLocalTime(endTime) ?: LocalTime.MAX
+
+    val typeColor = ColorUtils.parseColor(meetingTypeColorCode)
+    
+    return MeetingEvent(
+        id = (id ?: meetingId ?: 0L).toInt(),
+        meetingId = meetingId ?: id,
+        title = meetingTitle ?: "Untitled",
+        date = dateObj,
+        startTime = startTimeObj,
+        endTime = endTimeObj,
+        color = typeColor,
+        backendColor = typeColor,
+        description = description ?: "",
+        meetingRoom = room?.roomName ?: roomName ?: "Unknown Room",
+        meetingType = meetingType ?: "",
+        internalParticipants = internalParticipant ?: emptyList(),
+        externalParticipants = externalParticipant ?: emptyList(),
+        createdBy = roomBooker?.email ?: roomBooker?.firstName ?: "System",
+        recurrenceId = recurrenceId,
+        recurrenceType = recurrenceType,
+        repeats = !recurrenceId.isNullOrBlank() && recurrenceType != "NONE",
+        meetingTypeId = meetingTypeId
+    )
+}
+
 //      Helpers                                                                                                                                       
 
-private fun meetingTypeColor(type: String?): Color = when (type) {
-    "CLIENT"    -> OrangeAccent
-    "INTERNAL"  -> BlueAccent
-    else        -> Color(0xFF7C3AED)  // EXECUTIVE / unknown
-}
+// Helper functions for static types removed in favor of ColorUtils.parseColor(meetingTypeColorCode)
 
-private fun meetingTypeBg(type: String?): Color = when (type) {
-    "CLIENT"    -> Color(0xFFFFF7ED)
-    "INTERNAL"  -> Color(0xFFEFF6FF)
-    else        -> Color(0xFFF3EEFF)
-}
-
-private fun formatMeetingType(type: String?): String = when (type) {
-    "CLIENT"    -> "Client"
-    "INTERNAL"  -> "Internal"
-    "EXECUTIVE" -> "Executive"
-    else        -> type ?: "Unknown"
+private fun formatMeetingType(type: String?): String {
+    return type?.lowercase()?.replaceFirstChar { it.uppercase() } ?: "Meeting"
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -446,242 +469,15 @@ private fun MeetingCardItem(card: MeetingCard, onViewDetails: () -> Unit) {
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-private fun MeetingDetailDialog(
-    meeting: BookingResponseDTO,
-    onDismiss: () -> Unit,
-    onEdit: (String) -> Unit
-) {
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape    = RoundedCornerShape(16.dp),
-            color    = MaterialTheme.colorScheme.surface,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(20.dp)) {
-                // Header
-                Row(
-                    modifier              = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment     = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text       = "Meeting Details",
-                        style      = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Close")
-                    }
-                }
+// MeetingDetailDialog removed as it's replaced by MeetingDetailBottomSheet from calendar components
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Title + type badge
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    val color = meetingTypeColor(meeting.meetingType)
-                    Box(
-                        modifier = Modifier
-                            .size(12.dp)
-                            .clip(CircleShape)
-                            .background(color)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text       = meeting.meetingTitle ?: "Untitled",
-                            style      = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text  = "Reserved · ${formatMeetingType(meeting.meetingType)}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF4CAF50)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                val participantsCount =
-                    (meeting.internalParticipant?.size ?: 0) +
-                    (meeting.externalParticipant?.size ?: 0)
-
-                DetailItem(
-                    icon     = Icons.Outlined.Schedule,
-                    title    = formatDateLabel(meeting.date),
-                    subtitle = run {
-                        val start = DateTimeUtils.formatTimeDisplay(meeting.startTime)
-                        val end   = DateTimeUtils.formatTimeDisplay(meeting.endTime)
-                        if (start.isNotEmpty() && end.isNotEmpty()) "$start – $end" else "Time not set"
-                    }
-                )
-
-                DetailItem(
-                    icon     = Icons.Outlined.Place,
-                    title    = meeting.room?.roomName?.takeIf { it.isNotEmpty() } ?: "Unassigned",
-                    subtitle = "Meeting Room"
-                )
-
-                DetailItem(
-                    icon     = Icons.Outlined.AccountCircle,
-                    title    = "Organized by",
-                    subtitle = meeting.roomBooker?.email?.takeIf { it.isNotEmpty() } ?: "Unknown"
-                )
-
-                if (meeting.isRecurring()) {
-                    DetailItem(
-                        icon     = Icons.Outlined.Schedule,
-                        title    = "Recurrence",
-                        subtitle = buildString {
-                            append(formatRecurrenceType(meeting.recurrenceType))
-                            val start = meeting.startDate
-                            val end   = meeting.endDate
-                            if (!start.isNullOrBlank() && !end.isNullOrBlank()) {
-                                append(" • ")
-                                append(formatDateLabel(start))
-                                append(" - ")
-                                append(formatDateLabel(end))
-                            }
-                        }
-                    )
-                }
-
-                ExpandableAttendeesItem(meeting = meeting)
-
-                if (!meeting.description.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text  = meeting.description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.customColors.textBody
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedButton(
-                    onClick  = onDismiss,
-                    modifier = Modifier.fillMaxWidth(),
-                    border   = BorderStroke(1.dp, MaterialTheme.customColors.divider),
-                    shape    = RoundedCornerShape(8.dp)
-                ) {
-                    Text("Done")
-                }
-            }
-        }
-    }
-}
 
 private fun BookingResponseDTO.isRecurring(): Boolean {
     return !recurrenceId.isNullOrBlank() && !recurrenceType.isNullOrBlank() && recurrenceType != "NONE"
 }
 
-@Composable
-private fun DetailItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    subtitle: String
-) {
-    Row(
-        modifier          = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.Top
-    ) {
-        Icon(
-            imageVector        = icon,
-            contentDescription = null,
-            tint               = MaterialTheme.customColors.textBody,
-            modifier           = Modifier.size(20.dp)
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Column {
-            Text(text = title,    style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-            Text(text = subtitle, style = MaterialTheme.typography.bodySmall,  color = MaterialTheme.customColors.textBody)
-        }
-    }
-}
 
-@Composable
-private fun ExpandableAttendeesItem(meeting: BookingResponseDTO) {
-    var expanded by remember { mutableStateOf(false) }
 
-    val internal = meeting.internalParticipant ?: emptyList()
-    val external = meeting.externalParticipant ?: emptyList()
-    val total = internal.size + external.size
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null
-                ) { if (total > 0) expanded = !expanded },
-            verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row {
-                Icon(
-                    imageVector = Icons.Outlined.People,
-                    contentDescription = null,
-                    tint = MaterialTheme.customColors.textBody,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
-                    Text(text = "Attendees", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                    Text(
-                        text = "$total ${if (total == 1) "person" else "people"}",
-                        style = MaterialTheme.typography.bodySmall,  
-                        color = MaterialTheme.customColors.textBody
-                    )
-                }
-            }
-            if (total > 0) {
-                Icon(
-                    imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                    contentDescription = null,
-                    tint = MaterialTheme.customColors.textBody,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
 
-        AnimatedVisibility(visible = expanded) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 32.dp, top = 8.dp)
-            ) {
-                internal.forEach { p ->
-                    val name = listOfNotNull(p.firstName, p.lastName).joinToString(" ").takeIf { it.isNotBlank() } ?: p.email ?: "Unknown"
-                    Text(
-                        text = "• $name (Internal)",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.customColors.textBody,
-                        modifier = Modifier.padding(vertical = 2.dp)
-                    )
-                }
-                external.forEach { p ->
-                    Text(
-                        text = "• ${p.name} (External)",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.customColors.textBody,
-                        modifier = Modifier.padding(vertical = 2.dp)
-                    )
-                }
-            }
-        }
-    }
-}
+

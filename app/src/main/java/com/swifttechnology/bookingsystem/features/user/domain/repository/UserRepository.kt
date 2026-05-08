@@ -8,11 +8,11 @@ import com.swifttechnology.bookingsystem.features.user.data.dtos.UserPageDTO
 
 interface UserRepository {
     suspend fun createUser(
-        firstname: String,
-        lastname: String,
+        firstName: String,
+        lastName: String,
         email: String,
         position: String,
-        phoneNo: String,
+        phoneNumber: String,
         password: String,
         roleId: Long,
         departmentId: Long
@@ -20,18 +20,26 @@ interface UserRepository {
 
     suspend fun updateUser(
         id: Long,
-        firstname: String,
-        lastname: String,
+        firstName: String,
+        lastName: String,
         email: String,
         position: String,
-        phoneNo: String,
+        phoneNumber: String,
         roleId: Long,
         departmentId: Long
     ): Result<Unit>
 
     suspend fun getAllUsers(pageNo: Int = 0, pageSize: Int = 10, email: String? = null, deptName: String? = null): Result<UserPageDTO>
+    suspend fun getAllActiveUsers(pageNo: Int = 0, pageSize: Int = 10, email: String? = null, deptName: String? = null): Result<UserPageDTO>
     suspend fun getUserById(id: Long): Result<UserDetailsDTO>
     suspend fun searchUsers(email: String? = null, departmentId: Long? = null, page: Int = 0, size: Int = 10): Result<UserPageDTO>
     suspend fun getCurrentUser(): Result<UserDetailsDTO>
+    suspend fun updateLoggedInUser(
+        firstName: String,
+        lastName: String,
+        position: String,
+        phoneNumber: String,
+        departmentId: Long
+    ): Result<Unit>
     suspend fun changeUserStatus(id: Long, status: String): Result<Unit>
 }
