@@ -3,6 +3,7 @@ package com.swifttechnology.bookingsystem.features.booking.presentation
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.swifttechnology.bookingsystem.core.utils.ErrorMapper
 import com.swifttechnology.bookingsystem.core.model.Room
 import com.swifttechnology.bookingsystem.core.model.RoomAmenity
 import com.swifttechnology.bookingsystem.core.model.RoomStatus
@@ -183,7 +184,7 @@ class BookRoomViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isLoadingRooms = false,
-                            errorMessage = error.message
+                            errorMessage = ErrorMapper.map(error)
                         )
                     }
                 }
@@ -443,7 +444,7 @@ class BookRoomViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isSubmitting = false,
-                        errorMessage = error.message ?: "Action failed. Please try again."
+                        errorMessage = ErrorMapper.map(error)
                     )
                 }
             }

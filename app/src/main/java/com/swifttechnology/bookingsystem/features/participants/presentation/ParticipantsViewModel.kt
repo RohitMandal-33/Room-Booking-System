@@ -11,6 +11,7 @@ import com.swifttechnology.bookingsystem.features.user.domain.repository.UserRep
 import com.swifttechnology.bookingsystem.shared.components.SidebarItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import com.swifttechnology.bookingsystem.core.utils.ErrorMapper
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -47,7 +48,7 @@ class ParticipantsViewModel @Inject constructor(
                 _uiState.update { it.copy(isLoading = true, error = null) }
                 participantRepository.searchParticipants(query)
                     .catch { e ->
-                        _uiState.update { it.copy(isLoading = false, error = e.message ?: "Unknown error") }
+                        _uiState.update { it.copy(isLoading = false, error = ErrorMapper.map(e)) }
                     }
             }
             .onEach { participants ->
@@ -161,7 +162,7 @@ class ParticipantsViewModel @Inject constructor(
                     refresh() // Refresh list to reflect the new status
                 }
                 .onFailure {
-                    _uiState.update { state -> state.copy(error = it.message ?: "Failed to update status") }
+                    _uiState.update { state -> state.copy(error = ErrorMapper.map(it)) }
                 }
         }
     }
@@ -172,7 +173,7 @@ class ParticipantsViewModel @Inject constructor(
             val query = _uiState.value.searchQuery
             participantRepository.searchParticipants(query)
                 .catch { e ->
-                    _uiState.update { it.copy(isLoading = false, error = e.message ?: "Unknown error") }
+                    _uiState.update { it.copy(isLoading = false, error = ErrorMapper.map(e)) }
                 }
                 .firstOrNull()
                 ?.let { participants ->

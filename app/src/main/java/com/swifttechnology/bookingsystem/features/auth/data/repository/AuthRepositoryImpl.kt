@@ -1,12 +1,12 @@
 package com.swifttechnology.bookingsystem.features.auth.data.repository
 
 import com.swifttechnology.bookingsystem.core.storage.TokenStorage
+import com.swifttechnology.bookingsystem.core.utils.ErrorMapper
 import com.swifttechnology.bookingsystem.features.auth.data.api.AuthApiService
 import com.swifttechnology.bookingsystem.features.auth.data.dtos.*
 import com.swifttechnology.bookingsystem.features.auth.domain.repository.AuthRepository
 import com.swifttechnology.bookingsystem.features.auth.domain.util.AuthResult
 import javax.inject.Inject
-import retrofit2.HttpException
 
 class AuthRepositoryImpl @Inject constructor(
     private val api: AuthApiService,
@@ -25,9 +25,9 @@ class AuthRepositoryImpl @Inject constructor(
             val response = api.login(LoginRequestDTO(email = email, password = password))
 
             if (!response.success) {
-                AuthResult.Error(response.message)
+                AuthResult.Error(ErrorMapper.sanitizeServerMessage(response.message))
             } else {
-                val tokens = response.data ?: return AuthResult.Error("Invalid server response")
+                val tokens = response.data ?: return AuthResult.Error("Unable to complete login. Please try again.")
 
                 if (tokens.accessToken.isNotBlank()) {
                     tokenStorage.saveAccessToken(tokens.accessToken)
@@ -37,7 +37,7 @@ class AuthRepositoryImpl @Inject constructor(
                 AuthResult.Success(Unit)
             }
         } catch (e: Exception) {
-            AuthResult.Error(mapException(e))
+            AuthResult.Error(ErrorMapper.map(e))
         }
     }
 
@@ -60,9 +60,9 @@ class AuthRepositoryImpl @Inject constructor(
         return try {
             val response = api.forgotPassword(ForgotPasswordOtpRequestDTO(email = email))
             if (response.success) AuthResult.Success(Unit)
-            else AuthResult.Error(response.message)
+            else AuthResult.Error(ErrorMapper.sanitizeServerMessage(response.message))
         } catch (e: Exception) {
-            AuthResult.Error(mapException(e))
+            AuthResult.Error(ErrorMapper.map(e))
         }
     }
 
@@ -72,10 +72,10 @@ class AuthRepositoryImpl @Inject constructor(
             if (response.success && response.data != null) {
                 AuthResult.Success(response.data.referenceId)
             } else {
-                AuthResult.Error(response.message)
+                AuthResult.Error(ErrorMapper.sanitizeServerMessage(response.message))
             }
         } catch (e: Exception) {
-            AuthResult.Error(mapException(e))
+            AuthResult.Error(ErrorMapper.map(e))
         }
     }
 
@@ -93,9 +93,9 @@ class AuthRepositoryImpl @Inject constructor(
                 )
             )
             if (response.success) AuthResult.Success(Unit)
-            else AuthResult.Error(response.message)
+            else AuthResult.Error(ErrorMapper.sanitizeServerMessage(response.message))
         } catch (e: Exception) {
-            AuthResult.Error(mapException(e))
+            AuthResult.Error(ErrorMapper.map(e))
         }
     }
 
@@ -113,9 +113,9 @@ class AuthRepositoryImpl @Inject constructor(
                 )
             )
             if (response.success) AuthResult.Success(Unit)
-            else AuthResult.Error(response.message)
+            else AuthResult.Error(ErrorMapper.sanitizeServerMessage(response.message))
         } catch (e: Exception) {
-            AuthResult.Error(mapException(e))
+            AuthResult.Error(ErrorMapper.map(e))
         }
     }
 
@@ -125,20 +125,9 @@ class AuthRepositoryImpl @Inject constructor(
                 ResendOtpRequestDTO(email = email, otpPurpose = "FORGOT_PASSWORD")
             )
             if (response.success) AuthResult.Success(Unit)
-            else AuthResult.Error(response.message)
+            else AuthResult.Error(ErrorMapper.sanitizeServerMessage(response.message))
         } catch (e: Exception) {
-            AuthResult.Error(mapException(e))
+            AuthResult.Error(ErrorMapper.map(e))
         }
-    }
-
-    /** Maps common exceptions to user-friendly error messages. */
-    private fun mapException(e: Exception): String = when (e) {
-        is HttpException -> when (e.code()) {
-            400 -> "Invalid request. Please check your input."
-            401 -> "Invalid credentials."
-            403 -> "Access denied."
-            else -> "Request failed with status code ${e.code()}."
-        }
-        else -> e.message ?: "An unexpected error occurred."
     }
 }

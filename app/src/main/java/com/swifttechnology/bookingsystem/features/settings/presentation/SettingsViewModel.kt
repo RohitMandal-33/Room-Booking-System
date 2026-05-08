@@ -17,6 +17,7 @@ import com.swifttechnology.bookingsystem.features.booking.domain.repository.Book
 import com.swifttechnology.bookingsystem.features.booking.data.dtos.MeetingTypeRequestDTO
 import com.swifttechnology.bookingsystem.core.designsystem.ThemeMode
 import com.swifttechnology.bookingsystem.core.storage.UserDefaultsManager
+import com.swifttechnology.bookingsystem.core.utils.ErrorMapper
 import kotlinx.coroutines.launch
 
 @HiltViewModel
@@ -78,7 +79,7 @@ class SettingsViewModel @Inject constructor(
                     _uiState.update { it.copy(meetingTypes = types, isLoading = false) }
                 }
                 .onFailure { err ->
-                    _uiState.update { it.copy(error = err.message, isLoading = false) }
+                    _uiState.update { it.copy(error = ErrorMapper.map(err), isLoading = false) }
                 }
         }
     }
@@ -93,7 +94,7 @@ class SettingsViewModel @Inject constructor(
                     fetchMeetingTypes()
                 }
                 .onFailure { err ->
-                    _uiState.update { it.copy(error = err.message, isLoading = false) }
+                    _uiState.update { it.copy(error = ErrorMapper.map(err), isLoading = false) }
                 }
         }
     }
@@ -108,7 +109,7 @@ class SettingsViewModel @Inject constructor(
                     fetchMeetingTypes()
                 }
                 .onFailure { err ->
-                    _uiState.update { it.copy(error = err.message, isLoading = false) }
+                    _uiState.update { it.copy(error = ErrorMapper.map(err), isLoading = false) }
                 }
         }
     }
@@ -123,7 +124,7 @@ class SettingsViewModel @Inject constructor(
                     fetchMeetingTypes()
                 }
                 .onFailure { err ->
-                    _uiState.update { it.copy(error = err.message, isLoading = false) }
+                    _uiState.update { it.copy(error = ErrorMapper.map(err), isLoading = false) }
                 }
         }
     }
@@ -137,7 +138,7 @@ class SettingsViewModel @Inject constructor(
                     fetchMeetingTypes()
                 }
                 .onFailure { err ->
-                    _uiState.update { it.copy(error = err.message, isLoading = false) }
+                    _uiState.update { it.copy(error = ErrorMapper.map(err), isLoading = false) }
                 }
         }
     }
@@ -161,7 +162,7 @@ class SettingsViewModel @Inject constructor(
                     _uiState.update { it.copy(successMessage = "Password changed successfully", isLoading = false) }
                 }
                 is AuthResult.Error -> {
-                    _uiState.update { it.copy(error = result.message, isLoading = false) }
+                    _uiState.update { it.copy(error = ErrorMapper.sanitizeServerMessage(result.message), isLoading = false) }
                 }
                 is AuthResult.Loading -> {
                     // Do nothing
@@ -223,7 +224,7 @@ class SettingsViewModel @Inject constructor(
             result.onSuccess {
                 _uiState.update { it.copy(isLoading = false, successMessage = "Profile updated successfully") }
             }.onFailure { err ->
-                _uiState.update { it.copy(isLoading = false, error = err.message) }
+                _uiState.update { it.copy(isLoading = false, error = ErrorMapper.map(err)) }
             }
         }
     }

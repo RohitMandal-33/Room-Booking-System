@@ -2,6 +2,7 @@ package com.swifttechnology.bookingsystem.features.participants.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.swifttechnology.bookingsystem.core.utils.ErrorMapper
 import com.swifttechnology.bookingsystem.features.department.domain.model.Department
 import com.swifttechnology.bookingsystem.features.department.domain.repository.DepartmentRepository
 import com.swifttechnology.bookingsystem.features.user.domain.repository.UserRepository
@@ -136,7 +137,7 @@ class AddParticipantViewModel @Inject constructor(
             result.onSuccess {
                 _uiState.update { it.copy(isLoading = false, isSuccess = true) }
             }.onFailure { error ->
-                _uiState.update { it.copy(isLoading = false, error = error.message ?: "Failed to add member") }
+                _uiState.update { it.copy(isLoading = false, error = ErrorMapper.map(error)) }
             }
         }
     }
@@ -176,7 +177,7 @@ class AddParticipantViewModel @Inject constructor(
             result.onSuccess {
                 _uiState.update { it.copy(isLoading = false, isSuccess = true) }
             }.onFailure { error ->
-                _uiState.update { it.copy(isLoading = false, error = error.message ?: "Failed to update member") }
+                _uiState.update { it.copy(isLoading = false, error = ErrorMapper.map(error)) }
             }
         }
     }

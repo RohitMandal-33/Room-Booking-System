@@ -14,6 +14,7 @@ import com.swifttechnology.bookingsystem.features.booking.domain.repository.Book
 import com.swifttechnology.bookingsystem.features.announcements.domain.repository.AnnouncementRepository
 import com.swifttechnology.bookingsystem.features.announcements.domain.model.Announcement
 import com.swifttechnology.bookingsystem.features.dashboard.domain.repository.DashboardRepository
+import com.swifttechnology.bookingsystem.core.utils.ErrorMapper
 import kotlinx.coroutines.launch
 
 @HiltViewModel
@@ -75,7 +76,7 @@ class DashboardViewModel @Inject constructor(
                     _uiState.update { it.copy(isLoadingMeetings = false, upcomingMeetings = meetings) }
                 }
                 .onFailure { exception ->
-                    _uiState.update { it.copy(isLoadingMeetings = false, error = exception.message) }
+                    _uiState.update { it.copy(isLoadingMeetings = false, error = ErrorMapper.map(exception)) }
                 }
         }
     }

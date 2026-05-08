@@ -1,9 +1,14 @@
 package com.swifttechnology.bookingsystem.features.meetingrooms.data.repository
 
+import com.swifttechnology.bookingsystem.core.utils.ErrorMapper
 import com.swifttechnology.bookingsystem.features.meetingrooms.data.api.RoomApiService
 import com.swifttechnology.bookingsystem.features.meetingrooms.data.dtos.*
 import com.swifttechnology.bookingsystem.features.meetingrooms.domain.repository.RoomRepository
 import javax.inject.Inject
+
+/** Maps any exception inside a [Result] to a user-friendly message via [ErrorMapper]. */
+private fun <T> Result<T>.mapErrors(): Result<T> =
+    mapCatching { it }.recoverCatching { throw Exception(ErrorMapper.map(it)) }
 
 class RoomRepositoryImpl @Inject constructor(
     private val api: RoomApiService
@@ -17,14 +22,14 @@ class RoomRepositoryImpl @Inject constructor(
         val response = api.addRoom(
             RoomRequestDTO(roomName = roomName, capacity = capacity, resourcesIds = resourceIds)
         )
-        if (!response.success) throw Exception(response.message)
-    }
+        if (!response.success) throw Exception(ErrorMapper.sanitizeServerMessage(response.message))
+    }.mapErrors()
 
     override suspend fun listAllRooms(pageNo: Int, pageSize: Int): Result<RoomPageDTO> = runCatching {
         val response = api.listAllRooms(PaginatedDataRequestDTO(pageNo = pageNo, pageSize = pageSize))
-        if (!response.success || response.data == null) throw Exception(response.message)
+        if (!response.success || response.data == null) throw Exception(ErrorMapper.sanitizeServerMessage(response.message))
         response.data
-    }
+    }.mapErrors()
 
     override suspend fun listActiveRooms(
         pageNo: Int,
@@ -38,9 +43,9 @@ class RoomRepositoryImpl @Inject constructor(
                 roomName = roomName
             )
         )
-        if (!response.success || response.data == null) throw Exception(response.message)
+        if (!response.success || response.data == null) throw Exception(ErrorMapper.sanitizeServerMessage(response.message))
         response.data
-    }
+    }.mapErrors()
 
     override suspend fun updateRoom(
         id: Long,
@@ -52,22 +57,22 @@ class RoomRepositoryImpl @Inject constructor(
             id = id,
             request = RoomRequestDTO(roomName = roomName, capacity = capacity, resourcesIds = resourceIds)
         )
-        if (!response.success) throw Exception(response.message)
-    }
+        if (!response.success) throw Exception(ErrorMapper.sanitizeServerMessage(response.message))
+    }.mapErrors()
 
     override suspend fun changeRoomStatus(id: Long, status: String): Result<Unit> = runCatching {
         val response = api.changeRoomStatus(id = id, request = StatusChangeRequestDTO(status = status))
-        if (!response.success) throw Exception(response.message)
-    }
+        if (!response.success) throw Exception(ErrorMapper.sanitizeServerMessage(response.message))
+    }.mapErrors()
 
     override suspend fun getAllResources(): Result<List<RoomResourceDTO>> = runCatching {
         val response = api.getAllResources()
-        if (!response.success || response.data == null) throw Exception(response.message)
+        if (!response.success || response.data == null) throw Exception(ErrorMapper.sanitizeServerMessage(response.message))
         response.data
-    }
+    }.mapErrors()
 
     override suspend fun addResource(name: String): Result<Unit> = runCatching {
         val response = api.addResource(RoomResourceRequestDTO(name = name))
-        if (!response.success) throw Exception(response.message)
-    }
+        if (!response.success) throw Exception(ErrorMapper.sanitizeServerMessage(response.message))
+    }.mapErrors()
 }

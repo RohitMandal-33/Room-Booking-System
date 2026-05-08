@@ -2,6 +2,7 @@ package com.swifttechnology.bookingsystem.features.meetingrooms.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.swifttechnology.bookingsystem.core.utils.ErrorMapper
 import com.swifttechnology.bookingsystem.core.model.Room
 import com.swifttechnology.bookingsystem.core.model.RoomStatus
 import com.swifttechnology.bookingsystem.core.model.RoomAmenity
@@ -82,7 +83,7 @@ class MeetingRoomsViewModel @Inject constructor(
                     }
                 }
                 .onFailure { error ->
-                    _uiState.update { it.copy(isLoading = false, errorMessage = error.message) }
+                    _uiState.update { it.copy(isLoading = false, errorMessage = ErrorMapper.map(error)) }
                 }
         }
     }
@@ -114,11 +115,11 @@ class MeetingRoomsViewModel @Inject constructor(
                     _uiState.update { current ->
                         current.copy(
                             isLoading = false,
-                            errorMessage = error.message,
+                            errorMessage = ErrorMapper.map(error),
                             rooms = current.rooms - tempRoom
                         )
                     }
-                    _uiEvent.emit(MeetingRoomsEvent.ShowSnackbar(error.message ?: "Failed to add room"))
+                    _uiEvent.emit(MeetingRoomsEvent.ShowSnackbar(ErrorMapper.map(error)))
                 }
         }
     }
@@ -146,7 +147,7 @@ class MeetingRoomsViewModel @Inject constructor(
                     _uiState.update { current ->
                         current.copy(
                             rooms = current.rooms.map { if (it == updated) original else it },
-                            errorMessage = it.message
+                            errorMessage = ErrorMapper.map(it)
                         )
                     }
                 }
@@ -183,7 +184,7 @@ class MeetingRoomsViewModel @Inject constructor(
                                 rooms = current.rooms.map { if (it.status == newStatus && it.id == room.id) room else it }
                             )
                         }
-                        _uiEvent.emit(MeetingRoomsEvent.ShowSnackbar(it.message ?: "Failed to update room status"))
+                        _uiEvent.emit(MeetingRoomsEvent.ShowSnackbar(ErrorMapper.map(it)))
                     }
             }
         }
@@ -213,7 +214,7 @@ class MeetingRoomsViewModel @Inject constructor(
                     loadResources()
                 }
                 .onFailure { error ->
-                    _uiEvent.emit(MeetingRoomsEvent.ShowSnackbar(error.message ?: "Failed to add resource"))
+                    _uiEvent.emit(MeetingRoomsEvent.ShowSnackbar(ErrorMapper.map(error)))
                 }
         }
     }

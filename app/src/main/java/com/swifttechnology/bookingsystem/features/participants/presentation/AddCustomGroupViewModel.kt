@@ -2,6 +2,7 @@ package com.swifttechnology.bookingsystem.features.participants.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.swifttechnology.bookingsystem.core.utils.ErrorMapper
 import com.swifttechnology.bookingsystem.features.booking.presentation.InternalMember
 import com.swifttechnology.bookingsystem.features.booking.presentation.RoomBookingFormState
 import com.swifttechnology.bookingsystem.features.participants.domain.model.CustomGroup
@@ -162,7 +163,7 @@ class AddCustomGroupViewModel @Inject constructor(
                 _uiState.update { it.copy(isLoading = false, isSuccess = true) }
             }.onFailure { e ->
                 _uiState.update {
-                    it.copy(isLoading = false, error = e.message ?: "Failed to create group")
+                    it.copy(isLoading = false, error = ErrorMapper.map(e))
                 }
             }
         }
@@ -190,7 +191,7 @@ class AddCustomGroupViewModel @Inject constructor(
                 _uiState.update { it.copy(isLoading = false, isSuccess = true) }
             }.onFailure { e ->
                 _uiState.update {
-                    it.copy(isLoading = false, error = e.message ?: "Failed to update group")
+                    it.copy(isLoading = false, error = ErrorMapper.map(e))
                 }
             }
         }
