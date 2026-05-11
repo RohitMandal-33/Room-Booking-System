@@ -10,7 +10,7 @@ import androidx.compose.ui.tooling.preview.Preview
 
 /**
  * App-level Scaffold wrapper.
- * Centralizes topBar/bottomBar/FAB composition — mirrors iOS AppScaffold.
+ * Centralizes topBar/bottomBar/FAB composition  mirrors iOS AppScaffold.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

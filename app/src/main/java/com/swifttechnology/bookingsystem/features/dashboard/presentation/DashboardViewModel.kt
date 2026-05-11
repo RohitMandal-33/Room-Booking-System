@@ -17,6 +17,7 @@ import com.swifttechnology.bookingsystem.features.dashboard.domain.repository.Da
 import com.swifttechnology.bookingsystem.core.utils.ErrorMapper
 import kotlinx.coroutines.launch
 
+// handles the landing page state stats, meetings, and announcements
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val authRepository: AuthRepository,
@@ -110,7 +111,7 @@ class DashboardViewModel @Inject constructor(
 
     fun onDateRangeSelected(start: Long, end: Long) {
         _uiState.update { it.copy(customStartDate = start, customEndDate = end) }
-        // If we want to filter the meetings based on this range
+        // filters the upcoming meetings list based on the user's selected date range
         filterMeetings()
     }
 
@@ -136,6 +137,7 @@ class DashboardViewModel @Inject constructor(
                 }
             } ?: true
         }
+        // actual filtering logic  parses date strings and compares with selected range
         _uiState.update { it.copy(upcomingMeetings = filtered) }
     }
 

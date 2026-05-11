@@ -26,6 +26,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
 import kotlin.math.min
 
+// manages the calendar state  switching between day/week/month views and fetching meetings
 @RequiresApi(Build.VERSION_CODES.O)
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
@@ -67,16 +68,16 @@ class CalendarViewModel @Inject constructor(
                         )
                     } ?: emptyList()
                     _rooms.value = roomList
-                    // Note: We don't auto-select the first room here anymore to allow "All Rooms" view by default
-                    // if roomList.isNotEmpty() {
-                    //     _uiState.update { it.copy(selectedRoom = roomList.first()) }
-                    //     refreshBookings()
-                    // }
+                    if (roomList.isNotEmpty()) {
+                        _uiState.update { it.copy(selectedRoom = roomList.first()) }
+                        refreshBookings()
+                    }
                 }
                 .onFailure { /* Keep empty rooms on failure */ }
         }
     }
 
+    // loads bookings from the api based on current view (day, week, or month)
     @RequiresApi(Build.VERSION_CODES.O)
     fun refreshBookings() {
         val selectedRoom = _uiState.value.selectedRoom
@@ -129,6 +130,7 @@ class CalendarViewModel @Inject constructor(
                         null
                     }
                 }.filter { event ->
+                    // only show meetings for the currently selected room (if any)
                     selectedRoom == null || event.meetingRoom.equals(selectedRoom.name, ignoreCase = true)
                 }
                 _uiState.update { it.copy(events = events) }
@@ -210,6 +212,7 @@ class CalendarViewModel @Inject constructor(
             viewModelScope.launch {
                 bookingRepository.getBookingDetails(event.meetingId)
                     .onSuccess { dto ->
+                        // fetch extra details like participants when a specific meeting is clicked
                         val seriesStart = runCatching { dto.startDate?.let(LocalDate::parse) }.getOrNull()
                         val seriesEnd = runCatching { dto.endDate?.let(LocalDate::parse) }.getOrNull()
                         val updatedEvent = event.copy(

@@ -460,13 +460,6 @@ private fun TopBar(
                         .widthIn(max = menuMaxW)
                         .heightIn(max = menuMaxH)
                 ) {
-                    DropdownMenuItem(
-                        text = { Text("All Rooms", fontSize = 11.sp) },
-                        onClick = {
-                            onRoomSelected(null)
-                            expanded = false
-                        }
-                    )
                     rooms.forEach { room ->
                         DropdownMenuItem(
                             text = { Text(room.name, fontSize = 11.sp) },

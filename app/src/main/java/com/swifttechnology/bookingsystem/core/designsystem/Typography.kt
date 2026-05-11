@@ -7,12 +7,12 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// ── Font family ────────────────────────────────────────────────────────────
+// fonts
 // If you add Inter font files to res/font/, replace this line with:
 // val InterFontFamily = FontFamily(Font(R.font.inter_regular), ...)
 val AppFontFamily = FontFamily.Default
 
-// ── Typography scale ───────────────────────────────────────────────────────
+// type styles
 val AppTypography = Typography(
     displayLarge = TextStyle(
         fontFamily = AppFontFamily,

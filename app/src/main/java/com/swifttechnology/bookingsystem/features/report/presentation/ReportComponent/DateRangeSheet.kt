@@ -108,7 +108,7 @@ fun DateRangeSheet(
         if (key != "custom") picking = "start"
     }
 
-    // Init logic
+
     LaunchedEffect(initialStartMillis, initialEndMillis) {
         val c = Calendar.getInstance()
         if (initialStartMillis != null) {
@@ -139,12 +139,12 @@ fun DateRangeSheet(
     ) {
         Column(modifier = Modifier.fillMaxWidth().navigationBarsPadding()) {
 
-            // ── Handle
+            // bottom sheet drag handle
             Box(Modifier.fillMaxWidth().padding(top = 10.dp), contentAlignment = Alignment.Center) {
                 Box(Modifier.size(width = 36.dp, height = 4.dp).background(BorderLight, RoundedCornerShape(2.dp)))
             }
 
-            // ── Header
+            // header section
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -154,7 +154,7 @@ fun DateRangeSheet(
                 Text("Cancel", style = TextStyle(fontSize = 14.sp, color = TextSecondary), modifier = Modifier.clickable { onDismiss() })
             }
 
-            // ── Start / End boxes
+            // start and end date boxes
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                 // Start box
                 Column(
@@ -199,7 +199,7 @@ fun DateRangeSheet(
 
             Spacer(Modifier.height(12.dp))
 
-            // ── Quick preset pills
+            // preset range pills
             val presets = listOf("today" to "Today", "week" to "This week", "month" to "This month", "30days" to "Last 30 days", "custom" to "Custom")
             Row(
                 Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
@@ -225,7 +225,7 @@ fun DateRangeSheet(
             HorizontalDivider(color = Color(0xFFF0F0F0))
             Spacer(Modifier.height(8.dp))
 
-            // ── Month navigation
+            // month switcher
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -245,7 +245,7 @@ fun DateRangeSheet(
                 }
             }
 
-            // ── Weekday headers
+            // weekday abbreviations
             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
                 weekDays.forEach { wd ->
                     Text(wd, modifier = Modifier.weight(1f),
@@ -256,7 +256,7 @@ fun DateRangeSheet(
 
             Spacer(Modifier.height(4.dp))
 
-            // ── Calendar grid
+            // calendar grid generation
             val firstDow = firstDayOfWeek(viewYear, viewMonth)
             val totalDays = daysInMonth(viewYear, viewMonth)
             val cells = firstDow + totalDays
@@ -336,7 +336,7 @@ fun DateRangeSheet(
 
             Spacer(Modifier.height(8.dp))
 
-            // ── Footer buttons
+            // cancel / apply buttons
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)

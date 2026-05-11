@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
 
-// ─── Profile header ──────────────────────────────────────────────────────────
+// user profile header
 
 @Composable
 fun SidebarProfileHeader(
@@ -138,7 +138,7 @@ fun SidebarProfileHeader(
     }
 }
 
-// ─── Sidebar panel ───────────────────────────────────────────────────────────
+// main sidebar navigation
 
 @Composable
 fun SidebarPanel(

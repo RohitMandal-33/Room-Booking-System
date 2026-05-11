@@ -61,7 +61,7 @@ fun BottomSheetView(
                 .padding(bottom = Spacing.xl)
         ) {
 
-            // ── Header row (title + optional close button) ──────────────────
+            // header (title and close btn)
             val hasTitle = !title.isNullOrBlank()
             if (hasTitle || showCloseButton || headerContent != null) {
                 Row(
@@ -96,13 +96,13 @@ fun BottomSheetView(
                 }
             }
 
-            // ── Body ─────────────────────────────────────────────────────────
+            // sheet content
             content()
         }
     }
 }
 
-// ── Previews ─────────────────────────────────────────────────────────────────
+// previews
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true, name = "Title only")

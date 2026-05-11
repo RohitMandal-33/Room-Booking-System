@@ -15,7 +15,7 @@ private val Context.userPrefsStore by preferencesDataStore(name = "user_defaults
 
 class UserDefaultsManager(private val context: Context) {
 
-    // ── Theme ──────────────────────────────────────────────────────────────
+    // theme settings
     private val DARK_MODE_KEY: Preferences.Key<Boolean> = booleanPreferencesKey("dark_mode")
     private val THEME_MODE_KEY: Preferences.Key<String> = stringPreferencesKey("theme_mode")
 
@@ -56,7 +56,7 @@ class UserDefaultsManager(private val context: Context) {
         }
     }
 
-    // ── Locale ─────────────────────────────────────────────────────────────
+    // locale / language
     private val LOCALE_KEY: Preferences.Key<String> = stringPreferencesKey("locale")
 
     val locale: Flow<String> =
@@ -66,7 +66,7 @@ class UserDefaultsManager(private val context: Context) {
         context.userPrefsStore.edit { it[LOCALE_KEY] = locale }
     }
 
-    // ── Onboarding ─────────────────────────────────────────────────────────
+    // onboarding status
     private val ONBOARDING_DONE_KEY: Preferences.Key<Boolean> =
         booleanPreferencesKey("onboarding_done")
 
@@ -82,7 +82,7 @@ class UserDefaultsManager(private val context: Context) {
         context.userPrefsStore.edit { it.clear() }
     }
 
-    // ── Remember Me ────────────────────────────────────────────────────────
+    // login persistence (remember me)
     private val REMEMBER_ME_EMAIL_KEY = stringPreferencesKey("remember_me_email")
     private val REMEMBER_ME_ENABLED_KEY = booleanPreferencesKey("remember_me_enabled")
 
