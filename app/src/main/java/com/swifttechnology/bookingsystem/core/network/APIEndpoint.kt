@@ -5,7 +5,7 @@ import com.swifttechnology.bookingsystem.BuildConfig
 object APIEndpoint {
     const val BASE_URL = BuildConfig.BASE_URL
 
-    // Auth (public — no Bearer token required)
+    // Auth (public no Bearer token required)
     const val LOGIN = "api/v1/login"
     const val LOGOUT = "api/v1/logout"
     const val REFRESH_TOKEN = "api/v1/access/token"
@@ -44,7 +44,7 @@ object APIEndpoint {
     const val BOOKED_ROOM_BY_ID = "api/v1/get-booked-room/{roomBookingId}"
 
     // Department
-    const val DEPARTMENT_ADD = "api/v1/department/"
+    const val DEPARTMENT_ADD = "api/v1/department"
     const val DEPARTMENT_UPDATE = "api/v1/department/{id}"
     const val DEPARTMENT_CHANGE_STATUS = "api/v1/department/{id}"
     const val DEPARTMENT_LIST = "api/v1/department/list"

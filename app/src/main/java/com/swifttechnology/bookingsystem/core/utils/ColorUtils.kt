@@ -6,8 +6,8 @@ object ColorUtils {
     /**
      * Parses a color string from the API.
      * Supports:
-     * - RGB format: "(255, 0, 0)" or "255, 0, 0" or "rgb(255, 0, 0)"
-     * - Hex format: "#RRGGBB"
+     *  RGB format: "(255, 0, 0)" or "255, 0, 0" or "rgb(255, 0, 0)"
+     *  Hex format: "#RRGGBB"
      * 
      * Returns the parsed [Color] or the provided [default] if parsing fails.
      */

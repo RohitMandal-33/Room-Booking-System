@@ -560,13 +560,13 @@ fun BookRoomScreen(
                     onValueChange = { viewModel.onFormStateChanged(formState.copy(description = it)) }
                 )
 
-                Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                val hasAnySelected = formState.participants.isNotEmpty() || formState.externalMembers.isNotEmpty()
+                Column(verticalArrangement = Arrangement.spacedBy(if (hasAnySelected) Spacing.sm else Spacing.xs)) {
                     com.swifttechnology.bookingsystem.features.booking.presentation.components.FieldLabel(
                         text = "Add Member",
                         isRequired = true
                     )
 
-                    val hasAnySelected = formState.participants.isNotEmpty() || formState.externalMembers.isNotEmpty()
                     if (hasAnySelected) {
                         FlowRow(
                             modifier              = Modifier.fillMaxWidth(),

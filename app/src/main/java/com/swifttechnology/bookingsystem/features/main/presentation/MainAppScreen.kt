@@ -1,7 +1,9 @@
 package com.swifttechnology.bookingsystem.features.main.presentation
 
 import android.app.Activity
+import android.os.Build
 import androidx.activity.compose.BackHandler
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -100,6 +102,7 @@ data class PendingBookingDetails(
     val roomId: Long? = null
 )
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainAppScreen(
@@ -141,6 +144,7 @@ fun MainAppScreen(
     var pendingBookingDetails by remember { mutableStateOf<PendingBookingDetails?>(null) }
     var pendingParticipantToEdit by remember { mutableStateOf<Participant?>(null) }
     var pendingCustomGroupToEdit by remember { mutableStateOf<CustomGroup?>(null) }
+    var pendingDepartmentToEdit by remember { mutableStateOf<com.swifttechnology.bookingsystem.features.department.domain.model.Department?>(null) }
     var pendingTimeOnlyUpdate by remember { mutableStateOf<Triple<String, String, String>?>(null) }
     // Maintenance dialog: holds the room name when a disabled room is tapped
     var maintenanceRoomName by remember { mutableStateOf<String?>(null) }
@@ -465,6 +469,10 @@ fun MainAppScreen(
                             pendingCustomGroupToEdit = group
                             navigateTo(ScreenRoutes.CUSTOM_GROUP_ADD)
                         },
+                        onEditDepartmentSelected = { dept ->
+                            pendingDepartmentToEdit = dept
+                            navigateTo(ScreenRoutes.DEPARTMENT_ADD)
+                        },
                         onEnterEditMode = {
                             isParticipantsEditable = true
                         },
@@ -537,11 +545,14 @@ fun MainAppScreen(
             }
             ScreenRoutes.DEPARTMENT_ADD -> {
                 com.swifttechnology.bookingsystem.features.participants.presentation.components.AddDepartmentScreen(
+                    initialDepartment = pendingDepartmentToEdit,
                     onClose = {
+                        pendingDepartmentToEdit = null
                         isParticipantsEditable = false
                         navigateBack()
                     },
                     onContinue = { message ->
+                        pendingDepartmentToEdit = null
                         isParticipantsEditable = false
                         globalSuccessMessage = message
                         navigateBack()

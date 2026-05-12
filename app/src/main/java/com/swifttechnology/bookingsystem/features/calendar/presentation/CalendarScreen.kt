@@ -314,8 +314,6 @@ private fun CalendarContent(
                         modifier = Modifier.weight(1f)
                     )
                     
-                    CalendarLegendRow()
-
                     if (pickerUiState.draggableEvent != null) {
                         CalendarBottomBar(
                             pickerState = pickerUiState,
@@ -406,7 +404,7 @@ private fun TopBar(
                 val isSelected = currentView == view
                 Box(
                     modifier = Modifier
-                        .width(72.dp)
+                        .width(60.dp)
                         .clip(CircleShape)
                         .background(if (isSelected) PurplePrimary else Color.Transparent)
                         .clickable { onViewChange(view) }
@@ -554,7 +552,6 @@ fun DayOfWeekHeader(withTimeColumn: Boolean = false, isCurrentMonth: Boolean = t
         if (withTimeColumn) {
             Spacer(modifier = Modifier.width(50.dp))
         }
-        // Title Case 3-letter abbreviations; today column highlight removed —
         // the today circle on the date number already communicates the current day.
         val days = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
         days.forEach { day ->

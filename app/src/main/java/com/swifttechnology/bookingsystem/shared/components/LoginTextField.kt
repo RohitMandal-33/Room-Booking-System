@@ -106,10 +106,13 @@ fun LoginTextField(
 }
 
 @Composable
-fun SwiftTechnologyLogo(modifier: Modifier = Modifier) {
+fun SwiftTechnologyLogo(
+    modifier: Modifier = Modifier,
+    alignment: Alignment = Alignment.Center
+) {
     Box(
         modifier = modifier,
-        contentAlignment = Alignment.Center
+        contentAlignment = alignment
     ) {
         Image(
             painter = painterResource(id = R.drawable.logo),

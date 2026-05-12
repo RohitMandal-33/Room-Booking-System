@@ -47,7 +47,7 @@ object ErrorMapper {
      */
     private fun mapHttpCode(code: Int): String = when (code) {
         400 -> "Invalid request. Please check your input and try again."
-        401 -> "Session expired. Please log in again."
+        401 -> "Invalid credentials or session expired. Please try again."
         403 -> "You don't have permission to perform this action."
         404 -> "The requested resource was not found."
         408 -> "The request timed out. Please try again."

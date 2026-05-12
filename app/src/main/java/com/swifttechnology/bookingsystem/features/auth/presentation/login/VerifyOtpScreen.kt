@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.shared.components.LoginTextField
+import com.swifttechnology.bookingsystem.shared.components.OtpTextField
 import com.swifttechnology.bookingsystem.shared.components.SwiftTechnologyLogo
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -73,14 +74,15 @@ fun VerifyOtpScreen(
                 .padding(innerPadding)
                 .padding(horizontal = 26.dp)
                 .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.Start
         ) {
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             
             SwiftTechnologyLogo(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(72.dp)
+                    .height(56.dp),
+                alignment = Alignment.CenterStart
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -97,23 +99,18 @@ fun VerifyOtpScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Enter the 4-digit code sent to ${uiState.email}",
+                text = "Enter the 6-digit code sent to ${uiState.email}",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                textAlign = androidx.compose.ui.text.style.TextAlign.Start
             )
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            LoginTextField(
-                value = uiState.otp,
-                onValueChange = viewModel::onOtpChanged,
-                placeholder = "OTP Code",
-                errorMessage = uiState.otpError,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Number,
-                    imeAction = ImeAction.Done
-                ),
+            OtpTextField(
+                otpText = uiState.otp,
+                onOtpTextChange = viewModel::onOtpChanged,
+                isError = uiState.otpError != null,
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -121,7 +118,7 @@ fun VerifyOtpScreen(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
+                horizontalArrangement = Arrangement.Start
             ) {
                 Text(
                     text = "Didn't receive the code? ",

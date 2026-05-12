@@ -62,6 +62,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 // Reusable label for form fields. Uses Book Room label color when in theme.
 @Composable
 fun FieldLabel(text: String, isRequired: Boolean) {
+    if (text.isEmpty() && !isRequired) return
     val labelColor = MaterialTheme.customColors.bookRoomLabel
     Row {
         Text(

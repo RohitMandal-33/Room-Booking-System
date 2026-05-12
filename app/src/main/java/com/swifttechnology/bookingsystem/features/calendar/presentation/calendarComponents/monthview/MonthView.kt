@@ -46,7 +46,7 @@ fun MonthView(
     val firstDayOfWeek  = firstDayOfMonth.dayOfWeek.value % 7   // Sunday = 0
     val daysInMonth     = yearMonth.lengthOfMonth()
 
-    // Tile surface — uses the --bg-surface token via colorScheme.surface
+    // Tile surface uses the --bg-surface token via colorScheme.surface
     val tileBg     = MaterialTheme.colorScheme.surface
     val tileStroke = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
 
@@ -85,7 +85,7 @@ fun MonthView(
                             onEventClick = onEventClick
                         )
                     } else {
-                        // Adjacent-month overflow — same surface tile, muted text
+                        // Adjacent month overflow same surface tile, muted text
                         val date = if (dayIndex < 1) {
                             val prevMonth = yearMonth.minusMonths(1)
                             prevMonth.atDay(prevMonth.lengthOfMonth() + dayIndex)
@@ -151,7 +151,7 @@ private fun MonthDayTile(
             .padding(4.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            // Day number — always solid purple circle for today; selected-only circle otherwise
+            // Day number  always solid purple circle for today; selected only circle otherwise
             Box(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.TopCenter

@@ -26,6 +26,7 @@ import com.swifttechnology.bookingsystem.features.participants.presentation.AddD
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddDepartmentScreen(
+    initialDepartment: com.swifttechnology.bookingsystem.features.department.domain.model.Department? = null,
     onClose: () -> Unit,
     onContinue: (String) -> Unit,
     viewModel: AddDepartmentViewModel = hiltViewModel()
@@ -33,12 +34,12 @@ fun AddDepartmentScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
-    var name by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf(initialDepartment?.departmentName ?: "") }
+    var description by remember { mutableStateOf(initialDepartment?.description ?: "") }
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
-            onContinue("Department added successfully")
+            onContinue(if (initialDepartment != null) "Department updated successfully" else "Department added successfully")
             viewModel.resetState()
         }
     }
@@ -83,7 +84,7 @@ fun AddDepartmentScreen(
 
                 // Header
                 Text(
-                    text = "Add New Department",
+                    text = if (initialDepartment != null) "Edit Department" else "Add New Department",
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.customColors.deepBlack
@@ -140,7 +141,11 @@ fun AddDepartmentScreen(
 
                     Button(
                         onClick = {
-                            viewModel.addDepartment(name, description)
+                            if (initialDepartment != null) {
+                                viewModel.updateDepartment(initialDepartment.id, name, description)
+                            } else {
+                                viewModel.addDepartment(name, description)
+                            }
                         },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -158,7 +163,7 @@ fun AddDepartmentScreen(
                             )
                         } else {
                             Text(
-                                text = "Continue",
+                                text = if (initialDepartment != null) "Update" else "Continue",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onPrimary

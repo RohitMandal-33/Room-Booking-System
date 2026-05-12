@@ -8,12 +8,11 @@ import com.swifttechnology.bookingsystem.features.auth.domain.usecases.ResetPass
 import com.swifttechnology.bookingsystem.features.auth.domain.usecases.VerifyOtpUseCase
 import com.swifttechnology.bookingsystem.features.auth.domain.util.AuthResult
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -50,8 +49,8 @@ class ForgotPasswordViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ForgotPasswordUiState())
     val uiState: StateFlow<ForgotPasswordUiState> = _uiState.asStateFlow()
 
-    private val _events = MutableSharedFlow<ForgotPasswordEvent>(extraBufferCapacity = 1)
-    val events: SharedFlow<ForgotPasswordEvent> = _events.asSharedFlow()
+    private val _events = Channel<ForgotPasswordEvent>(Channel.BUFFERED)
+    val events = _events.receiveAsFlow()
 
     fun onEmailChanged(value: String) {
         _uiState.update { it.copy(email = value, emailError = null) }
@@ -84,11 +83,11 @@ class ForgotPasswordViewModel @Inject constructor(
             when (val result = forgotPasswordUseCase(email)) {
                 is AuthResult.Success -> {
                     _uiState.update { it.copy(isLoading = false) }
-                    _events.emit(ForgotPasswordEvent.NavigateToOtp)
+                    _events.send(ForgotPasswordEvent.NavigateToOtp)
                 }
                 is AuthResult.Error -> {
                     _uiState.update { it.copy(isLoading = false) }
-                    _events.emit(ForgotPasswordEvent.ShowSnackbar(result.message))
+                    _events.send(ForgotPasswordEvent.ShowSnackbar(result.message))
                 }
                 AuthResult.Loading -> {}
             }
@@ -97,8 +96,8 @@ class ForgotPasswordViewModel @Inject constructor(
 
     fun verifyOtp() {
         val state = _uiState.value
-        if (state.otp.length < 4) {
-            _uiState.update { it.copy(otpError = "Enter valid OTP") }
+        if (state.otp.length < 6) {
+            _uiState.update { it.copy(otpError = "Enter valid 6-digit OTP") }
             return
         }
         viewModelScope.launch {
@@ -106,11 +105,11 @@ class ForgotPasswordViewModel @Inject constructor(
             when (val result = verifyOtpUseCase(state.email, state.otp)) {
                 is AuthResult.Success -> {
                     _uiState.update { it.copy(isLoading = false, referenceId = result.data) }
-                    _events.emit(ForgotPasswordEvent.NavigateToResetPassword)
+                    _events.send(ForgotPasswordEvent.NavigateToResetPassword)
                 }
                 is AuthResult.Error -> {
                     _uiState.update { it.copy(isLoading = false) }
-                    _events.emit(ForgotPasswordEvent.ShowSnackbar(result.message))
+                    _events.send(ForgotPasswordEvent.ShowSnackbar(result.message))
                 }
                 AuthResult.Loading -> {}
             }
@@ -133,12 +132,12 @@ class ForgotPasswordViewModel @Inject constructor(
             when (val result = resetPasswordUseCase(state.referenceId, state.newPassword, state.confirmPassword)) {
                 is AuthResult.Success -> {
                     _uiState.update { it.copy(isLoading = false) }
-                    _events.emit(ForgotPasswordEvent.ShowSnackbar("Password reset successful"))
-                    _events.emit(ForgotPasswordEvent.NavigateToLogin)
+                    _events.send(ForgotPasswordEvent.ShowSnackbar("Password reset successful"))
+                    _events.send(ForgotPasswordEvent.NavigateToLogin)
                 }
                 is AuthResult.Error -> {
                     _uiState.update { it.copy(isLoading = false) }
-                    _events.emit(ForgotPasswordEvent.ShowSnackbar(result.message))
+                    _events.send(ForgotPasswordEvent.ShowSnackbar(result.message))
                 }
                 AuthResult.Loading -> {}
             }
@@ -149,10 +148,10 @@ class ForgotPasswordViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = resendOtpUseCase(_uiState.value.email)) {
                 is AuthResult.Success -> {
-                    _events.emit(ForgotPasswordEvent.ShowSnackbar("OTP resent successfully"))
+                    _events.send(ForgotPasswordEvent.ShowSnackbar("OTP resent successfully"))
                 }
                 is AuthResult.Error -> {
-                    _events.emit(ForgotPasswordEvent.ShowSnackbar(result.message))
+                    _events.send(ForgotPasswordEvent.ShowSnackbar(result.message))
                 }
                 AuthResult.Loading -> {}
             }

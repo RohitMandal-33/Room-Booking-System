@@ -50,7 +50,7 @@ class UserDefaultsManager(private val context: Context) {
                 ThemeMode.DARK -> prefs[DARK_MODE_KEY] = true
                 ThemeMode.LIGHT -> prefs[DARK_MODE_KEY] = false
                 ThemeMode.SYSTEM -> {
-                    // don't force a value; leave legacy key as-is
+                    // don't force a value; leave legacy key as is
                 }
             }
         }

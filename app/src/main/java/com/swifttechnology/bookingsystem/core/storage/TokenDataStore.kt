@@ -74,7 +74,7 @@ class TokenDataStore(
     override suspend fun refreshToken(): String? {
         val storedRefreshToken = getRefreshToken()
         if (storedRefreshToken.isNullOrBlank()) {
-            Log.w(TAG, "No refresh token available — cannot refresh.")
+            Log.w(TAG, "No refresh token available  cannot refresh.")
             return null
         }
 

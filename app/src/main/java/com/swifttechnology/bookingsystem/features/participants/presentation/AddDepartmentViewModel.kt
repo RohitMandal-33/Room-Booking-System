@@ -44,6 +44,26 @@ class AddDepartmentViewModel @Inject constructor(
         }
     }
 
+    fun updateDepartment(id: Long, name: String, description: String) {
+        if (name.isBlank()) {
+            _uiState.update { it.copy(error = "Department name is required") }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null, isSuccess = false) }
+            departmentRepository.updateDepartment(
+                id = id,
+                departmentName = name,
+                description = description.takeIf { it.isNotBlank() }
+            ).onSuccess {
+                _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+            }.onFailure { err ->
+                _uiState.update { it.copy(isLoading = false, error = err.message) }
+            }
+        }
+    }
+
     fun resetState() {
         _uiState.update { AddDepartmentUiState() }
     }

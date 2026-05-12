@@ -60,7 +60,7 @@ fun colorToRgbString(color: Color): String {
     val r = (color.red   * 255).toInt()
     val g = (color.green * 255).toInt()
     val b = (color.blue  * 255).toInt()
-    return "rgb($r,$g,$b)"
+    return "($r,$g,$b)"
 }
 
 private val ColorPalette = listOf(

@@ -76,14 +76,15 @@ fun ResetPasswordScreen(
                 .padding(innerPadding)
                 .padding(horizontal = 26.dp)
                 .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.Start
         ) {
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             
             SwiftTechnologyLogo(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(72.dp)
+                    .height(56.dp),
+                alignment = Alignment.CenterStart
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -103,7 +104,7 @@ fun ResetPasswordScreen(
                 text = "Enter a new password to reset your account credentials.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                textAlign = androidx.compose.ui.text.style.TextAlign.Start
             )
 
             Spacer(modifier = Modifier.height(32.dp))

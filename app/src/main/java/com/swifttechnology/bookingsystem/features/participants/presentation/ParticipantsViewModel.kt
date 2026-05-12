@@ -149,6 +149,15 @@ class ParticipantsViewModel @Inject constructor(
         }
     }
 
+    fun deleteDepartments(ids: Set<Long>) {
+        viewModelScope.launch {
+            for (id in ids) {
+                departmentRepository.changeDepartmentStatus(id, "INACTIVE")
+            }
+            refresh()
+        }
+    }
+
     fun logout() {
         viewModelScope.launch {
             authRepository.logout()

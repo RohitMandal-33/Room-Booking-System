@@ -129,7 +129,7 @@ fun PickerEventBlock(
                     val blockW = size.width.toFloat()
                     val blockH = size.height.toFloat()
 
-                    // Handle detection: top-left strip, bottom-right strip, or body
+                    // Handle detection: top left strip, bottom right strip, or body
                     val handle = when {
                         touchY < touchTargetPx && touchX < blockW * 0.5f ->
                             DragHandle.TOP

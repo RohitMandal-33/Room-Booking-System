@@ -157,7 +157,7 @@ fun RoomCalendarScreen(
                     .padding(horizontal = Spacing.md, vertical = Spacing.sm),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Calendar grid icon (purple) — fixed size, won't grow
+                // Calendar grid icon (purple) fixed size, won't grow
                 Icon(
                     imageVector = Icons.Default.GridView,
                     contentDescription = null,
@@ -166,7 +166,7 @@ fun RoomCalendarScreen(
                 )
                 Spacer(modifier = Modifier.width(Spacing.sm))
 
-                // Room name — takes remaining space, truncates, never pushes close off screen
+                // Room name  takes remaining space, truncates, never pushes close off screen
                 Text(
                     text = roomName ?: "Select Time",
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
@@ -175,7 +175,7 @@ fun RoomCalendarScreen(
                     modifier = Modifier.weight(1f)
                 )
 
-                // Close button — fixed, always visible
+                // Close button  fixed, always visible
                 IconButton(onClick = onNavigateBack) {
                     Icon(
                         imageVector = Icons.Default.Close,
@@ -224,7 +224,7 @@ fun RoomCalendarScreen(
             //    Legend                                                     
             CalendarLegendRow()
 
-            //    Bottom: Selected Time Slot card — visible only when a picker block exists   
+            //    Bottom: Selected Time Slot card visible only when a picker block exists   
             if (draggable != null) {
                 val range      = draggable.timeRange
                 val startLabel = IntervalUtils.formatMinutes(range.startMinutes)
@@ -251,7 +251,7 @@ fun RoomCalendarScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            // Start time box — tapping opens spinner time picker
+                            // Start time box tapping opens spinner time picker
                             TimeBox(
                                 time = startLabel,
                                 onClick = { showStartTimePicker = true }
@@ -266,7 +266,7 @@ fun RoomCalendarScreen(
                             )
                             Spacer(modifier = Modifier.width(Spacing.sm))
 
-                            // End time box — tapping opens spinner time picker
+                            // End time box tapping opens spinner time picker
                             TimeBox(
                                 time = endLabel,
                                 onClick = { showEndTimePicker = true }

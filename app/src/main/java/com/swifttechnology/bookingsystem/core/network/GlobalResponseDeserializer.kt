@@ -1,5 +1,7 @@
 package com.swifttechnology.bookingsystem.core.network
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import com.google.gson.JsonDeserializationContext
 import com.google.gson.JsonDeserializer
 import com.google.gson.JsonElement
@@ -7,6 +9,7 @@ import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 
 class GlobalResponseDeserializer : JsonDeserializer<GlobalResponse<*>> {
+    @RequiresApi(Build.VERSION_CODES.P)
     override fun deserialize(
         json: JsonElement,
         typeOfT: Type,

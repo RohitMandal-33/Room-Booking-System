@@ -110,6 +110,7 @@ fun ParticipantsScreen(
     onNavigate: (String) -> Unit,
     onEditSelected: (Participant) -> Unit = {},
     onEditGroupSelected: (CustomGroup) -> Unit = {},
+    onEditDepartmentSelected: (com.swifttechnology.bookingsystem.features.department.domain.model.Department) -> Unit = {},
     onEnterEditMode: () -> Unit = {},
     onExitEditMode: () -> Unit = {},
     viewModel: ParticipantsViewModel = hiltViewModel()
@@ -117,12 +118,15 @@ fun ParticipantsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var selectedParticipantIds by remember { mutableStateOf(setOf<Long>()) }
     var selectedGroupIds by remember { mutableStateOf(setOf<Long>()) }
+    var selectedDepartmentIds by remember { mutableStateOf(setOf<Long>()) }
     var showDeleteGroupDialog by remember { mutableStateOf(false) }
+    var showDeleteDepartmentDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(isEditable) {
         if (!isEditable) {
             selectedParticipantIds = emptySet()
             selectedGroupIds = emptySet()
+            selectedDepartmentIds = emptySet()
         }
     }
 
@@ -265,7 +269,19 @@ fun ParticipantsScreen(
                                     modifier = Modifier.fillMaxSize(),
                                     departments = filteredDepartments,
                                     searchQuery = uiState.searchQuery,
-                                    onSearchQueryChanged = viewModel::onSearchQueryChanged
+                                    onSearchQueryChanged = viewModel::onSearchQueryChanged,
+                                    isEditable = isEditable,
+                                    selectedDepartmentIds = selectedDepartmentIds,
+                                    onSelectionChanged = { id, selected ->
+                                        selectedDepartmentIds = if (selected) {
+                                            selectedDepartmentIds + id
+                                        } else {
+                                            selectedDepartmentIds - id
+                                        }
+                                    },
+                                    onLongPress = {
+                                        if (!isEditable) onEnterEditMode()
+                                    }
                                 )
                             }
                         }
@@ -306,8 +322,21 @@ fun ParticipantsScreen(
             exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
         ) {
             val isOnAllTab = uiState.selectedTab == ParticipantsTab.ALL_PARTICIPANTS
-            val editEnabled = if (isOnAllTab) selectedParticipantIds.size == 1 else selectedGroupIds.size == 1
-            val deleteEnabled = if (isOnAllTab) selectedParticipantIds.isNotEmpty() else selectedGroupIds.isNotEmpty()
+            val isOnGroupsTab = uiState.selectedTab == ParticipantsTab.CUSTOM_GROUPS
+            val isOnDeptsTab = uiState.selectedTab == ParticipantsTab.DEPARTMENTS
+
+            val editEnabled = when {
+                isOnAllTab -> selectedParticipantIds.size == 1
+                isOnGroupsTab -> selectedGroupIds.size == 1
+                isOnDeptsTab -> selectedDepartmentIds.size == 1
+                else -> false
+            }
+            val deleteEnabled = when {
+                isOnAllTab -> selectedParticipantIds.isNotEmpty()
+                isOnGroupsTab -> selectedGroupIds.isNotEmpty()
+                isOnDeptsTab -> selectedDepartmentIds.isNotEmpty()
+                else -> false
+            }
 
             Box(
                 modifier = Modifier
@@ -327,11 +356,17 @@ fun ParticipantsScreen(
                                 if (participant != null) {
                                     onEditSelected(participant)
                                 }
-                            } else {
+                            } else if (isOnGroupsTab) {
                                 val selectedId = selectedGroupIds.firstOrNull()
                                 val group = uiState.customGroups.find { it.id == selectedId }
                                 if (group != null) {
                                     onEditGroupSelected(group)
+                                }
+                            } else {
+                                val selectedId = selectedDepartmentIds.firstOrNull()
+                                val dept = uiState.departments.find { it.id == selectedId }
+                                if (dept != null) {
+                                    onEditDepartmentSelected(dept)
                                 }
                             }
                         },
@@ -356,8 +391,10 @@ fun ParticipantsScreen(
                         onClick = {
                             if (isOnAllTab) {
                                 /* Handle participant delete logic here */
-                            } else {
+                            } else if (isOnGroupsTab) {
                                 showDeleteGroupDialog = true
+                            } else {
+                                showDeleteDepartmentDialog = true
                             }
                         },
                         enabled = deleteEnabled,
@@ -392,6 +429,21 @@ fun ParticipantsScreen(
                     showDeleteGroupDialog = false
                 },
                 onDismiss = { showDeleteGroupDialog = false }
+            )
+        }
+
+        if (showDeleteDepartmentDialog) {
+            ReusableAlertDialog(
+                style = DialogStyle.WARNING,
+                title = "Delete Department${if (selectedDepartmentIds.size > 1) "s" else ""}",
+                message = "Are you sure you want to delete ${selectedDepartmentIds.size} department${if (selectedDepartmentIds.size > 1) "s" else ""}? This action cannot be undone.",
+                confirmText = "Delete",
+                onConfirm = {
+                    viewModel.deleteDepartments(selectedDepartmentIds)
+                    selectedDepartmentIds = emptySet()
+                    showDeleteDepartmentDialog = false
+                },
+                onDismiss = { showDeleteDepartmentDialog = false }
             )
         }
 
@@ -625,7 +677,11 @@ fun DepartmentsDirectoryContent(
     modifier: Modifier = Modifier,
     departments: List<Department>,
     searchQuery: String,
-    onSearchQueryChanged: (String) -> Unit
+    onSearchQueryChanged: (String) -> Unit,
+    isEditable: Boolean = false,
+    selectedDepartmentIds: Set<Long> = emptySet(),
+    onSelectionChanged: (Long, Boolean) -> Unit = { _, _ -> },
+    onLongPress: () -> Unit = {}
 ) {
     Column(modifier = modifier) {
         Text(
@@ -648,20 +704,78 @@ fun DepartmentsDirectoryContent(
             contentPadding = PaddingValues(bottom = 80.dp)
         ) {
             items(departments, key = { it.id }) { department ->
-                DepartmentCard(department = department)
+                DepartmentCard(
+                    department = department,
+                    isEditable = isEditable,
+                    isSelected = selectedDepartmentIds.contains(department.id),
+                    onSelectionChange = { selected ->
+                        onSelectionChanged(department.id, selected)
+                    },
+                    onLongPress = {
+                        onLongPress()
+                        onSelectionChanged(department.id, true)
+                    }
+                )
             }
         }
     }
 }
 
 @Composable
-fun DepartmentCard(department: Department) {
+fun DepartmentCard(
+    department: Department,
+    isEditable: Boolean = false,
+    isSelected: Boolean = false,
+    onSelectionChange: (Boolean) -> Unit = {},
+    onLongPress: () -> Unit = {}
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .pointerInput(isEditable) {
+                detectTapGestures(
+                    onTap = {
+                        if (isEditable) {
+                            onSelectionChange(!isSelected)
+                        }
+                    },
+                    onLongPress = {
+                        if (!isEditable) {
+                            onLongPress()
+                        }
+                    }
+                )
+            },
         verticalAlignment = Alignment.CenterVertically
     ) {
+        AnimatedVisibility(
+            visible = isEditable,
+            enter = fadeIn(animationSpec = tween(250)) + expandHorizontally(
+                expandFrom = Alignment.Start,
+                animationSpec = tween(250)
+            ) + slideInHorizontally(
+                initialOffsetX = { -it / 2 },
+                animationSpec = tween(250)
+            ),
+            exit = fadeOut(animationSpec = tween(250)) + shrinkHorizontally(
+                shrinkTowards = Alignment.Start,
+                animationSpec = tween(250)
+            ) + slideOutHorizontally(
+                targetOffsetX = { -it / 2 },
+                animationSpec = tween(250)
+            )
+        ) {
+            Checkbox(
+                checked = isSelected,
+                onCheckedChange = { onSelectionChange(it) },
+                colors = CheckboxDefaults.colors(
+                    checkedColor = Color(0xFF007AFF)
+                ),
+                modifier = Modifier.padding(end = 12.dp)
+            )
+        }
+
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape  = RoundedCornerShape(20.dp),
