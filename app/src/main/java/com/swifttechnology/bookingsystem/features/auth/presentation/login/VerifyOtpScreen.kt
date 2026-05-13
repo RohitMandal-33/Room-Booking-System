@@ -118,19 +118,28 @@ fun VerifyOtpScreen(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = "Didn't receive the code? ",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                 )
-                Text(
-                    text = "Resend",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.clickable { viewModel.resendOtp() }
-                )
+                if (uiState.isResendEnabled) {
+                    Text(
+                        text = "Resend",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.clickable { viewModel.resendOtp() }
+                    )
+                } else {
+                    Text(
+                        text = "Resend in ${uiState.resendCooldownSeconds}s",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.38f)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(32.dp))

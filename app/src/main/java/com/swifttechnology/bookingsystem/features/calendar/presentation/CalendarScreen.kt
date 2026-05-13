@@ -151,8 +151,6 @@ fun CalendarScreen(
             viewModel.onDateSelected(date)
             viewModel.onViewChange(CalendarView.DAY)
         },
-
-
         onEventSelected = viewModel::onEventSelected,
         onRoomSelected = viewModel::onRoomSelected,
         onGridLongPress = pickerViewModel::onTimeSlotLongPressed,
@@ -179,6 +177,9 @@ fun CalendarScreen(
         onEditMeeting = { event, scope ->
             onEditMeeting(event, scope)
             viewModel.onEventSelected(null)
+        },
+        onDeleteMeeting = { bookingId ->
+            viewModel.deleteBooking(bookingId) { _, _ -> }
         }
     )
 }
@@ -207,10 +208,12 @@ private fun CalendarContent(
     onPickerCancelBooking: () -> Unit,
     onProceed: () -> Unit,
     onTimePickerConfirm: (Int, Int) -> Unit,
-    onEditMeeting: (MeetingEvent, String) -> Unit = { _, _ -> }
+    onEditMeeting: (MeetingEvent, String) -> Unit = { _, _ -> },
+    onDeleteMeeting: ((Long) -> Unit)? = null
 ) {
     var showStartPicker by remember { mutableStateOf(false) }
     var showEndPicker   by remember { mutableStateOf(false) }
+    var showYearMonthPicker by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -231,7 +234,8 @@ private fun CalendarContent(
             currentMonth = uiState.currentMonth,
             selectedDate = uiState.selectedDate,
             onPrev = onPrev,
-            onNext = onNext
+            onNext = onNext,
+            onTitleClick = { showYearMonthPicker = true }
         )
 
         if (uiState.currentView == CalendarView.DAY) {
@@ -371,7 +375,20 @@ private fun CalendarContent(
         MeetingDetailBottomSheet(
             event = event,
             onDismiss = { onEventSelected(null) },
-            onEdit = { scope -> onEditMeeting(event, scope) }
+            onEdit = { scope -> onEditMeeting(event, scope) },
+            onDelete = onDeleteMeeting
+        )
+    }
+
+    if (showYearMonthPicker) {
+        YearMonthPickerBottomSheet(
+            currentYearMonth = uiState.currentMonth,
+            onDismiss = { showYearMonthPicker = false },
+            onConfirm = { yearMonth ->
+                val newDay = kotlin.math.min(uiState.selectedDate.dayOfMonth, yearMonth.lengthOfMonth())
+                onDateSelected(yearMonth.atDay(newDay))
+                showYearMonthPicker = false
+            }
         )
     }
 }
@@ -482,7 +499,8 @@ private fun NavigationHeader(
     currentMonth: YearMonth,
     selectedDate: LocalDate,
     onPrev: () -> Unit,
-    onNext: () -> Unit
+    onNext: () -> Unit,
+    onTitleClick: () -> Unit
 ) {
     val title = when (currentView) {
         CalendarView.MONTH -> currentMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy"))
@@ -515,7 +533,11 @@ private fun NavigationHeader(
         }
 
         Box(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .clip(RoundedCornerShape(8.dp))
+                .clickable { onTitleClick() }
+                .padding(vertical = 4.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(

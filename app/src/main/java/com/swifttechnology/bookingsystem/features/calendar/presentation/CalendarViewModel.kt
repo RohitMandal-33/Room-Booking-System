@@ -243,6 +243,20 @@ class CalendarViewModel @Inject constructor(
         refreshBookings()
     }
 
+    fun deleteBooking(bookingId: Long, onResult: (success: Boolean, message: String) -> Unit) {
+        viewModelScope.launch {
+            bookingRepository.changeBookingStatus(bookingId, "INACTIVE")
+                .onSuccess {
+                    _uiState.update { it.copy(selectedEvent = null) }
+                    refreshBookings()
+                    onResult(true, "Meeting cancelled successfully")
+                }
+                .onFailure { e ->
+                    onResult(false, e.message ?: "Failed to cancel meeting")
+                }
+        }
+    }
+
     suspend fun logout() {
         authRepository.logout()
     }

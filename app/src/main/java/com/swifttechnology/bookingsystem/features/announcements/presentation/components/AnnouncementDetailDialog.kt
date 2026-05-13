@@ -67,39 +67,6 @@ fun AnnouncementDetailDialog(
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (showActions) {
-                        Box {
-                            IconButton(onClick = { menuExpanded = true }) {
-                                Icon(
-                                    imageVector = Icons.Default.MoreVert,
-                                    contentDescription = "More options",
-                                    tint = colors.textSecondary
-                                )
-                            }
-    
-                            DropdownMenu(
-                                expanded = menuExpanded,
-                                onDismissRequest = { menuExpanded = false },
-                                modifier = Modifier
-                                    .background(
-                                        color = MaterialTheme.colorScheme.surface,
-                                        shape = RoundedCornerShape(12.dp)
-                                    )
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text("Edit", fontSize = 15.sp, color = colors.deepBlack) },
-                                    leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = Color(0xFF9C6FE4), modifier = Modifier.size(20.dp)) },
-                                    onClick = { menuExpanded = false; onEdit() }
-                                )
-                                HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                                DropdownMenuItem(
-                                    text = { Text("Delete", fontSize = 15.sp, color = Color(0xFFD32F2F)) },
-                                    leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = Color(0xFFD32F2F), modifier = Modifier.size(20.dp)) },
-                                    onClick = { menuExpanded = false; onDelete() }
-                                )
-                            }
-                        }
-                    }
 
                     IconButton(onClick = onDismiss) {
                         Icon(imageVector = Icons.Default.Close, contentDescription = "Close", tint = colors.deepBlack)
@@ -165,21 +132,60 @@ fun AnnouncementDetailDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = announcement.authorName,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = colors.deepBlack
-                    )
-                    Text("•", color = colors.textSecondary)
-                    Text(
-                        text = formatDateString(announcement.createdAt),
-                        fontSize = 13.sp,
-                        color = colors.textSecondary
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = announcement.authorName,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = colors.deepBlack
+                        )
+                        Text("•", color = colors.textSecondary)
+                        Text(
+                            text = formatDateString(announcement.createdAt),
+                            fontSize = 13.sp,
+                            color = colors.textSecondary
+                        )
+                    }
+
+                    if (showActions) {
+                        Spacer(modifier = Modifier.weight(1f))
+                        Box {
+                            IconButton(onClick = { menuExpanded = true }) {
+                                Icon(
+                                    imageVector = Icons.Default.MoreVert,
+                                    contentDescription = "More options",
+                                    tint = colors.textSecondary
+                                )
+                            }
+
+                            DropdownMenu(
+                                expanded = menuExpanded,
+                                onDismissRequest = { menuExpanded = false },
+                                modifier = Modifier
+                                    .background(
+                                        color = MaterialTheme.colorScheme.surface,
+                                        shape = RoundedCornerShape(12.dp)
+                                    )
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Edit", fontSize = 15.sp, color = colors.deepBlack) },
+                                    leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = Color(0xFF9C6FE4), modifier = Modifier.size(20.dp)) },
+                                    onClick = { menuExpanded = false; onEdit() }
+                                )
+                                HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                DropdownMenuItem(
+                                    text = { Text("Delete", fontSize = 15.sp, color = Color(0xFFD32F2F)) },
+                                    leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = Color(0xFFD32F2F), modifier = Modifier.size(20.dp)) },
+                                    onClick = { menuExpanded = false; onDelete() }
+                                )
+                            }
+                        }
+                    }
                 }
 
                 if (!announcement.startDate.isNullOrBlank()) {

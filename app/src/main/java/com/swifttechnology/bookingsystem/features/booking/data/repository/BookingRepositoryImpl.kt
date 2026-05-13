@@ -138,4 +138,12 @@ class BookingRepositoryImpl @Inject constructor(
         if (!response.success || response.data == null) throw Exception(ErrorMapper.sanitizeServerMessage(response.message))
         response.data
     }.mapErrors()
+
+    override suspend fun changeBookingStatus(bookingId: Long, status: String): Result<Unit> = runCatching {
+        val response = api.changeBookedRoomStatus(
+            bookingId,
+            com.swifttechnology.bookingsystem.features.meetingrooms.data.dtos.StatusChangeRequestDTO(status = status)
+        )
+        if (!response.success) throw Exception(ErrorMapper.sanitizeServerMessage(response.message))
+    }.mapErrors()
 }

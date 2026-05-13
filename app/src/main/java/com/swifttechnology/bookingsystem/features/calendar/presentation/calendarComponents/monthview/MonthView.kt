@@ -157,21 +157,37 @@ private fun MonthDayTile(
                 contentAlignment = Alignment.TopCenter
             ) {
                 if (isToday) {
-                    // Single solid purple circle for today's date
-                    Box(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clip(CircleShape)
-                            .background(CalendarTodayPurple),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = dayNumber.toString(),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp,
-                            color = Color.White
-                        )
+                    if (isSelected) {
+                        // Solid purple bubble when today is selected
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clip(CircleShape)
+                                .background(CalendarTodayPurple),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = dayNumber.toString(),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
+                                color = Color.White
+                            )
+                        }
+                    } else {
+                        // Just purple text when today is NOT selected
+                        Box(
+                            modifier = Modifier.size(24.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = dayNumber.toString(),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
+                                color = CalendarTodayPurple
+                            )
+                        }
                     }
                 } else if (isSelected) {
                     Box(
@@ -242,7 +258,7 @@ private fun EventPill(
             text = event.title,
             style = MaterialTheme.typography.labelSmall,
             fontSize = 8.sp,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = MaterialTheme.customColors.textPrimary,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )

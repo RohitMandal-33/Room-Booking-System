@@ -29,8 +29,23 @@ interface UserRepository {
         departmentId: Long
     ): Result<Unit>
 
-    suspend fun getAllUsers(pageNo: Int = 0, pageSize: Int = 10, email: String? = null, deptName: String? = null): Result<UserPageDTO>
-    suspend fun getAllActiveUsers(pageNo: Int = 0, pageSize: Int = 10, email: String? = null, deptName: String? = null): Result<UserPageDTO>
+    suspend fun getAllUsers(
+        pageNo: Int = 0,
+        pageSize: Int = 10,
+        email: String? = null,
+        deptName: String? = null,
+        sortBy: String = "id",
+        sortDir: String = "asc"
+    ): Result<UserPageDTO>
+
+    suspend fun getAllActiveUsers(
+        pageNo: Int = 0,
+        pageSize: Int = 10,
+        email: String? = null,
+        deptName: String? = null,
+        sortBy: String = "id",
+        sortDir: String = "asc"
+    ): Result<UserPageDTO>
     suspend fun getUserById(id: Long): Result<UserDetailsDTO>
     suspend fun searchUsers(email: String? = null, departmentId: Long? = null, page: Int = 0, size: Int = 10): Result<UserPageDTO>
     suspend fun getCurrentUser(): Result<UserDetailsDTO>

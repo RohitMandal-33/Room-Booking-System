@@ -84,10 +84,19 @@ class UserRepositoryImpl @Inject constructor(
         pageNo: Int,
         pageSize: Int,
         email: String?,
-        deptName: String?
+        deptName: String?,
+        sortBy: String,
+        sortDir: String
     ): Result<UserPageDTO> = runCatching {
         val response = api.getAllUsers(
-            UserDataRequestDTO(pageNo = pageNo, pageSize = pageSize, email = email, departmentId = deptName)
+            UserDataRequestDTO(
+                pageNo = pageNo,
+                pageSize = pageSize,
+                email = email,
+                departmentId = deptName,
+                sortBy = sortBy,
+                sortDir = sortDir
+            )
         )
         if (!response.success || response.data == null) throw Exception(response.message)
         response.data
@@ -97,10 +106,19 @@ class UserRepositoryImpl @Inject constructor(
         pageNo: Int,
         pageSize: Int,
         email: String?,
-        deptName: String?
+        deptName: String?,
+        sortBy: String,
+        sortDir: String
     ): Result<UserPageDTO> = runCatching {
         val response = api.getAllActiveUsers(
-            UserDataRequestDTO(pageNo = pageNo, pageSize = pageSize, email = email, departmentId = deptName)
+            UserDataRequestDTO(
+                pageNo = pageNo,
+                pageSize = pageSize,
+                email = email,
+                departmentId = deptName,
+                sortBy = sortBy,
+                sortDir = sortDir
+            )
         )
         if (!response.success || response.data == null) throw Exception(response.message)
         response.data

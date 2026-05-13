@@ -74,10 +74,10 @@ fun LoginTextField(
             singleLine = true,
             shape = RoundedCornerShape(16.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                focusedBorderColor = if (hasError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                 unfocusedBorderColor = borderColor,
                 errorBorderColor = MaterialTheme.colorScheme.error,
-                focusedLabelColor = MaterialTheme.colorScheme.primary,
+                focusedLabelColor = if (hasError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                 unfocusedLabelColor = labelColor,
                 errorLabelColor = MaterialTheme.colorScheme.error,
                 cursorColor = MaterialTheme.colorScheme.primary,
@@ -91,7 +91,7 @@ fun LoginTextField(
         )
 
         AnimatedVisibility(
-            visible = hasError,
+            visible = !errorMessage.isNullOrBlank(),
             enter = fadeIn(),
             exit = fadeOut()
         ) {

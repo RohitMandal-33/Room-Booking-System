@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.features.calendar.presentation.MeetingEvent
 import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.shared.DayPickerUiState
 import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.shared.formatHourLabel
@@ -301,7 +302,7 @@ fun DayColumnWithPicker(
                                 Text(
                                     text = event.title,
                                     fontSize = if (durationMin < 30) 10.sp else 13.sp,
-                                    color = eventColor,
+                                    color = MaterialTheme.customColors.textPrimary,
                                     fontWeight = FontWeight.SemiBold,
                                     maxLines = if (durationMin < 30) 1 else 2,
                                     overflow = TextOverflow.Ellipsis
@@ -310,7 +311,7 @@ fun DayColumnWithPicker(
                                     Text(
                                         text = "${IntervalUtils.formatMinutes(startMin)} – ${IntervalUtils.formatMinutes(endMin)}",
                                         fontSize = 10.sp,
-                                        color = eventColor.copy(alpha = 0.8f),
+                                        color = MaterialTheme.customColors.textPrimary.copy(alpha = 0.8f),
                                         fontWeight = FontWeight.Normal,
                                         maxLines = 1
                                     )

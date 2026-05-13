@@ -42,7 +42,7 @@ data class ReportItemDTO(
     @SerializedName("meetingTitle") val meetingTitle: String? = null,
     @SerializedName("date")         val date: String? = null,
     @SerializedName("startTime")    val startTime: Any? = null, // Can be String or LocalTime object
-    @SerializedName("endTime")      val endTime: Any? = null,   // Can be String or LocalTime object
+    @SerializedName("EndTime")      val EndTime: Any? = null,   // Can be String or LocalTime object
     @SerializedName("roomName")     val roomName: String? = null,
     @SerializedName("createdBy")    val createdBy: String? = null
 ) {
@@ -59,7 +59,7 @@ data class ReportItemDTO(
         }
 
     val endTimeString: String?
-        get() = when (val time = endTime) {
+        get() = when (val time = EndTime) {
             is String -> time
             is Map<*, *> -> {
                 val h = (time["hour"] as? Number)?.toInt() ?: 0

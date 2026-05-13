@@ -100,7 +100,7 @@ class LoginViewModel @Inject constructor(
                     _events.emit(LoginEvent.NavigateToHome)
                 }
                 is AuthResult.Error -> {
-                    _uiState.update { it.copy(isLoading = false, passwordError = result.message) }
+                    _uiState.update { it.copy(isLoading = false, emailError = "", passwordError = result.message) }
                     _events.emit(LoginEvent.ShowSnackbar(result.message))
                 }
                 AuthResult.Loading -> {

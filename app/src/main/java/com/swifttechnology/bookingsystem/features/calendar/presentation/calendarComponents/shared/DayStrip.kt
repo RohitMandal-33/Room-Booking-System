@@ -97,7 +97,7 @@ fun DayStrip(
             }
         }
 
-        // Day-of-week + date number row
+        // Day of week + date number row
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -114,25 +114,26 @@ fun DayStrip(
                         .padding(horizontal = 4.dp, vertical = 2.dp)
                 ) {
                     val isToday = day == LocalDate.now()
-                    // Day-of-week abbreviation — TextStyle.SHORT gives Title Case (Mon, Tue …)
+                    // Day of week abbreviation   TextStyle.SHORT gives Title Case (Mon, Tue …)
                     Text(
                         text = day.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)
                             .take(3),
                         fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Normal
+                        color = if (isToday) CalendarTodayPurple else MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal
                     )
                     Spacer(modifier = Modifier.height(2.dp))
-                    // Date number — solid purple circle for today, primary circle for selected, transparent otherwise
+                    // Date number  solid purple circle for today, primary circle for selected, transparent otherwise
                     Box(
                         modifier = Modifier
                             .size(30.dp)
                             .clip(CircleShape)
                             .background(
                                 when {
-                                    isToday   -> CalendarTodayPurple          // today always gets the fill
-                                    isSelected -> MaterialTheme.colorScheme.primary
-                                    else       -> Color.Transparent
+                                    isToday && isSelected -> CalendarTodayPurple
+                                    isToday               -> Color.Transparent
+                                    isSelected            -> MaterialTheme.colorScheme.primary
+                                    else                  -> Color.Transparent
                                 }
                             ),
                         contentAlignment = Alignment.Center
@@ -142,7 +143,9 @@ fun DayStrip(
                             fontSize = 13.sp,
                             fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal,
                             color = when {
-                                isToday || isSelected -> Color.White
+                                isToday && isSelected -> Color.White
+                                isToday               -> CalendarTodayPurple
+                                isSelected            -> Color.White
                                 else                  -> MaterialTheme.colorScheme.onSurface
                             }
                         )

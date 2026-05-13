@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.AccountCircle
@@ -47,6 +48,7 @@ import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
@@ -62,6 +64,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -98,7 +101,8 @@ import com.swifttechnology.bookingsystem.core.utils.ColorUtils
 fun MeetingDetailBottomSheet(
     event: MeetingEvent,
     onDismiss: () -> Unit,
-    onEdit: (String) -> Unit
+    onEdit: (String) -> Unit,
+    onDelete: ((Long) -> Unit)? = null
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val isDark = isSystemInDarkTheme()
@@ -245,7 +249,8 @@ fun MeetingDetailBottomSheet(
             ) {
                 ActionBar(
                     event = event,
-                    onEdit = onEdit
+                    onEdit = onEdit,
+                    onDelete = onDelete
                 )
             }
         }
@@ -703,69 +708,137 @@ private fun AttendeeRow(
 @Composable
 private fun ActionBar(
     event: MeetingEvent,
-    onEdit: (String) -> Unit
+    onEdit: (String) -> Unit,
+    onDelete: ((Long) -> Unit)? = null
 ) {
-    Row(
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = {
+                Text(
+                    text = "Cancel Meeting",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(text = "Are you sure you want to cancel \"${event.title}\"? This will mark it as inactive.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteDialog = false
+                        val id = event.meetingId ?: event.id.toLong()
+                        onDelete?.invoke(id)
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Error
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Yes, Cancel", color = Color.White, fontWeight = FontWeight.SemiBold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Keep", fontWeight = FontWeight.SemiBold)
+                }
+            },
+            shape = RoundedCornerShape(20.dp)
+        )
+    }
+
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
+        // Edit button(s) row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            if (!event.recurrenceId.isNullOrBlank() && event.recurrenceType != "NONE") {
+                OutlinedButton(
+                    onClick = { onEdit("THIS") },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Text(
+                        text = "Edit this",
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
 
-        if (!event.recurrenceId.isNullOrBlank() && event.recurrenceType != "NONE") {
+                Button(
+                    onClick = { onEdit("ALL") },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Edit,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Edit all",
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            } else {
+                Button(
+                    onClick = { onEdit("ASK") },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Edit,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Edit booking",
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+        }
+
+        // Delete button  always shown when onDelete is provided
+        if (onDelete != null) {
             OutlinedButton(
-                onClick = { onEdit("THIS") },
-                modifier = Modifier.weight(1f),
+                onClick = { showDeleteDialog = true },
+                modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                border = BorderStroke(1.dp, Error),
                 colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.primary
-                )
-            ) {
-                Text(
-                    text = "Edit this",
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-
-            Button(
-                onClick = { onEdit("ALL") },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
+                    contentColor = Error
                 )
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.Edit,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.onPrimary
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Cancel meeting",
+                    modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Edit all",
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-        } else {
-            Button(
-                onClick = { onEdit("ASK") },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Edit,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.onPrimary
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Edit booking",
-                    color = MaterialTheme.colorScheme.onPrimary,
+                    text = "Cancel Meeting",
                     fontWeight = FontWeight.SemiBold
                 )
             }

@@ -364,7 +364,7 @@ private fun DayColumn(
                 Text(
                     text = event.title,
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = MaterialTheme.customColors.textPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )

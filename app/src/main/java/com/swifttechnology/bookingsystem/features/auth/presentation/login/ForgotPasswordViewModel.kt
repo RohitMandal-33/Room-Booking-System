@@ -28,7 +28,9 @@ data class ForgotPasswordUiState(
     val otpError: String? = null,
     val passwordError: String? = null,
     val confirmPasswordError: String? = null,
-    val isPasswordVisible: Boolean = false
+    val isPasswordVisible: Boolean = false,
+    val resendCooldownSeconds: Int = 0,
+    val isResendEnabled: Boolean = true
 )
 
 sealed class ForgotPasswordEvent {
@@ -78,11 +80,16 @@ class ForgotPasswordViewModel @Inject constructor(
             _uiState.update { it.copy(emailError = "Email is required") }
             return
         }
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            _uiState.update { it.copy(emailError = "Invalid email") }
+            return
+        }
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             when (val result = forgotPasswordUseCase(email)) {
                 is AuthResult.Success -> {
                     _uiState.update { it.copy(isLoading = false) }
+                    startResendTimer()
                     _events.send(ForgotPasswordEvent.NavigateToOtp)
                 }
                 is AuthResult.Error -> {
@@ -91,6 +98,17 @@ class ForgotPasswordViewModel @Inject constructor(
                 }
                 AuthResult.Loading -> {}
             }
+        }
+    }
+
+    private fun startResendTimer() {
+        _uiState.update { it.copy(resendCooldownSeconds = 60, isResendEnabled = false) }
+        viewModelScope.launch {
+            for (remaining in 59 downTo 0) {
+                kotlinx.coroutines.delay(1000L)
+                _uiState.update { it.copy(resendCooldownSeconds = remaining) }
+            }
+            _uiState.update { it.copy(isResendEnabled = true) }
         }
     }
 
@@ -146,8 +164,9 @@ class ForgotPasswordViewModel @Inject constructor(
 
     fun resendOtp() {
         viewModelScope.launch {
-            when (val result = resendOtpUseCase(_uiState.value.email)) {
+            when (val result = forgotPasswordUseCase(_uiState.value.email)) {
                 is AuthResult.Success -> {
+                    startResendTimer()
                     _events.send(ForgotPasswordEvent.ShowSnackbar("OTP resent successfully"))
                 }
                 is AuthResult.Error -> {

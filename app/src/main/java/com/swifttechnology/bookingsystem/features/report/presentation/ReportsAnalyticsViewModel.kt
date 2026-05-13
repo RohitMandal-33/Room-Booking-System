@@ -94,7 +94,7 @@ class ReportsAnalyticsViewModel @Inject constructor(
                             meetingTitle = dto.meetingTitle ?: "Untitled",
                             date = dto.date ?: "Unknown Date",
                             startTime = dto.startTimeString ?: "",
-                            endTime = dto.endTimeString ?: "",
+                            EndTime = dto.endTimeString ?: "",
                             roomName = dto.roomName ?: "Unknown Room",
                             createdBy = dto.createdBy ?: "System"
                         )

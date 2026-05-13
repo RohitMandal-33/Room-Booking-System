@@ -353,7 +353,7 @@ internal fun TableBodyRow(
         "Meeting Title" to entry.meetingTitle,
         "Date"          to entry.date,
         "Start Time"    to entry.startTime,
-        "End Time"      to entry.endTime,
+        "End Time"      to entry.EndTime,
         "Room"          to entry.roomName,
         "Created By"    to entry.createdBy
     )

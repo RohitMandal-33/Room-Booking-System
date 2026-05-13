@@ -44,7 +44,7 @@ class AddCustomGroupViewModel @Inject constructor(
     init {
         searchJob = viewModelScope.launch {
             _uiState.update { it.copy(isSearchingParticipants = true) }
-            participantRepository.searchParticipants("").collect { participants ->
+            participantRepository.searchActiveParticipants("").collect { participants ->
                 val internalMembers = participants.map { p ->
                     InternalMember(
                         id = p.id,
@@ -116,7 +116,7 @@ class AddCustomGroupViewModel @Inject constructor(
         searchJob = viewModelScope.launch {
             if (query.isNotEmpty()) delay(300)
             _uiState.update { it.copy(isSearchingParticipants = true) }
-            participantRepository.searchParticipants(query).collect { participants ->
+            participantRepository.searchActiveParticipants(query).collect { participants ->
                 val internalMembers = participants.map { p ->
                     InternalMember(
                         id = p.id,

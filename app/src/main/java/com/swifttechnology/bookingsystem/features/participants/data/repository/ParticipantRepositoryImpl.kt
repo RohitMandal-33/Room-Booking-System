@@ -41,7 +41,7 @@ class ParticipantRepositoryImpl @Inject constructor(
     override fun searchActiveParticipants(query: String): Flow<List<Participant>> = flow {
         val response = userRepository.getAllActiveUsers(
             pageNo = 0,
-            pageSize = 100,
+            pageSize = 150,
             email = query.takeIf { it.isNotBlank() }
         )
         val content = response.getOrThrow().content ?: emptyList()

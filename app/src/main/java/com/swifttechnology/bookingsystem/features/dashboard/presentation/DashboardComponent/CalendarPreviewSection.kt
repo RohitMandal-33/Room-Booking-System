@@ -61,6 +61,8 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import com.swifttechnology.bookingsystem.core.designsystem.CalendarTodayPurple
 import com.swifttechnology.bookingsystem.core.utils.ColorUtils
+import com.swifttechnology.bookingsystem.features.calendar.presentation.calendarComponents.shared.YearMonthPickerBottomSheet
+import java.time.temporal.ChronoUnit
 
 
   
@@ -117,6 +119,7 @@ fun CalendarPreviewSection(
     // Which month the calendar grid is showing
     var monthOffset    by remember { mutableIntStateOf(0) }
     val displayYearMonth = remember(monthOffset) { YearMonth.from(today).plusMonths(monthOffset.toLong()) }
+    var showPicker     by remember { mutableStateOf(false) }
 
     // Notify parent when month changes
     androidx.compose.runtime.LaunchedEffect(displayYearMonth) {
@@ -200,7 +203,8 @@ fun CalendarPreviewSection(
                 rangeEnd       = rangeEnd,
                 onDayTap       = { handleDayTap(it) },
                 onPrevMonth    = { monthOffset-- },
-                onNextMonth    = { monthOffset++ }
+                onNextMonth    = { monthOffset++ },
+                onLabelClick   = { showPicker = true }
             )
 
             Spacer(Modifier.height(Spacing.sm))
@@ -243,6 +247,19 @@ fun CalendarPreviewSection(
             }
         }
     }
+
+    if (showPicker) {
+        YearMonthPickerBottomSheet(
+            currentYearMonth = displayYearMonth,
+            onDismiss = { showPicker = false },
+            onConfirm = { ym ->
+                val todayYM = YearMonth.from(today)
+                val monthsBetween = ChronoUnit.MONTHS.between(todayYM, ym)
+                monthOffset = monthsBetween.toInt()
+                showPicker = false
+            }
+        )
+    }
 }
 
   
@@ -273,7 +290,8 @@ private fun buildRangeLabel(
 private fun NavigationRow(
     label: String,
     onPrevious: () -> Unit,
-    onNext: () -> Unit
+    onNext: () -> Unit,
+    onLabelClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -298,7 +316,8 @@ private fun NavigationRow(
             text       = label,
             style      = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
-            color      = MaterialTheme.colorScheme.onSurface
+            color      = MaterialTheme.colorScheme.onSurface,
+            modifier   = Modifier.clickable { onLabelClick() }
         )
         IconButton(
             onClick  = onNext,
@@ -327,13 +346,19 @@ private fun MonthView(
     rangeEnd: LocalDate?,
     onDayTap: (LocalDate) -> Unit,
     onPrevMonth: () -> Unit,
-    onNextMonth: () -> Unit
+    onNextMonth: () -> Unit,
+    onLabelClick: () -> Unit
 ) {
     val monthLabel = displayYearMonth.format(
         DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
     )
 
-    NavigationRow(label = monthLabel, onPrevious = onPrevMonth, onNext = onNextMonth)
+    NavigationRow(
+        label = monthLabel,
+        onPrevious = onPrevMonth,
+        onNext = onNextMonth,
+        onLabelClick = onLabelClick
+    )
 
     Spacer(Modifier.height(Spacing.sm))
 
