@@ -82,12 +82,11 @@ fun AddEditAnnouncementSheet(
     var endDate by rememberSaveable(editingAnnouncement) {
         mutableStateOf(formatToDisplayDate(editingAnnouncement?.endDate ?: ""))
     }
-    var allUser by rememberSaveable { mutableStateOf(true) }
 
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
 
-    val canSave = title.isNotBlank() && startDate.isNotBlank() && endDate.isNotBlank()
+    val canSave = title.isNotBlank() && message.isNotBlank() && endDate.isNotBlank()
     
     // Pinning restriction: if already at 5 and this one isn't pinned, disable toggle
     val isMaxReached = pinnedCount >= 5 && !(editingAnnouncement?.pinned ?: false)
@@ -137,11 +136,11 @@ fun AddEditAnnouncementSheet(
                     .padding(horizontal = Spacing.md),
                 verticalArrangement = Arrangement.spacedBy(Spacing.ml)
             ) {
-                // Meeting Title
+                // Announcement Title
                 BookingTextField(
-                    label = "Meeting Title",
+                    label = "Announcement Title",
                     value = title,
-                    placeholder = "Enter meeting title",
+                    placeholder = "Enter announcement title",
                     isRequired = true,
                     onValueChange = { title = it }
                 )
@@ -150,8 +149,8 @@ fun AddEditAnnouncementSheet(
                 BookingTextField(
                     label = "Description",
                     value = message,
-                    placeholder = "Enter Details",
-                    isRequired = false,
+                    placeholder = "Enter announcement details",
+                    isRequired = true,
                     singleLine = false,
                     minLines = 4,
                     onValueChange = { message = it }

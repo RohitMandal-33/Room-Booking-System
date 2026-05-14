@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -84,15 +85,44 @@ fun DayColumnWithPicker(
     val pointerViewportY = remember { mutableFloatStateOf(0f) }
     var viewportH by remember { mutableFloatStateOf(0f) }
 
-    // Auto-scroll to current time on first composition
     val now = LocalTime.now()
     val currentTimeMinutes = now.hour * 60 + now.minute
-    LaunchedEffect(Unit) {
-        val targetScroll = ((currentTimeMinutes - 60).coerceAtLeast(0) * minutePx).roundToInt()
-        scrollState.animateScrollTo(targetScroll)
+    var lastScrolledDate by remember { mutableStateOf<LocalDate?>(null) }
+    var hasScrolledToEvents by remember(selectedDate) { mutableStateOf(false) }
+
+    LaunchedEffect(selectedDate, regularEvents) {
+        val eventsForDate = regularEvents.filter { it.date == selectedDate }
+        val isToday = selectedDate == LocalDate.now()
+
+        // We scroll if:
+        // 1. Date changed (lastScrolledDate != selectedDate)
+        // 2. Date is the same, but we haven't scrolled to events yet, and events just arrived
+        val shouldScroll = lastScrolledDate != selectedDate || (!hasScrolledToEvents && eventsForDate.isNotEmpty())
+
+        if (shouldScroll) {
+            val targetScroll = if (isToday) {
+                // Today: scroll to current time (with 1 hour look-ahead buffer)
+                ((currentTimeMinutes - 60).coerceAtLeast(0) * minutePx).roundToInt()
+            } else {
+                // Other dates: scroll to first event on that day, if any
+                val firstEvent = eventsForDate
+                    .minByOrNull { it.startTime.hour * 60 + it.startTime.minute }
+                if (firstEvent != null) {
+                    val firstEventMinutes = firstEvent.startTime.hour * 60 + firstEvent.startTime.minute
+                    ((firstEventMinutes - 60).coerceAtLeast(0) * minutePx).roundToInt()
+                } else {
+                    0 // No events: scroll to top
+                }
+            }
+            scrollState.animateScrollTo(targetScroll)
+            lastScrolledDate = selectedDate
+            if (isToday || eventsForDate.isNotEmpty()) {
+                hasScrolledToEvents = true
+            }
+        }
     }
 
-    // Auto-scroll during drags
+    // Auto scroll during drags
     LaunchedEffect(pickerState.isDragging) {
         if (!pickerState.isDragging) return@LaunchedEffect
         while (true) {
@@ -166,7 +196,7 @@ fun DayColumnWithPicker(
                     }
                 }
 
-                // 30-minute sub-grid dashed lines
+                // 30 minute sub grid dashed lines
                 val dashEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 4f), 0f)
                 val timeLabelWidthPx = with(density) { TIME_LABEL_WIDTH_DP.dp.toPx() }
                 val dashLineColor = MaterialTheme.colorScheme.outlineVariant

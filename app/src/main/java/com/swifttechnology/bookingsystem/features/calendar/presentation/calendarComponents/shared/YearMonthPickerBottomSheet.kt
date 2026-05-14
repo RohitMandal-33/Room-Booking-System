@@ -34,7 +34,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.unit.Dp
 
 
-private val YEARS = (2020..2035).toList()
+private val YEARS = (2020..2050).toList()
 private val MONTHS = Month.values().toList()
 
 // Visible rows in the drum roll; the middle row is the selected one

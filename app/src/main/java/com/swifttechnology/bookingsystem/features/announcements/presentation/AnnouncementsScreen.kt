@@ -41,6 +41,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -80,9 +81,7 @@ fun AnnouncementsScreen(
     }
     
     var showDeleteConfirmDialog by remember { androidx.compose.runtime.mutableStateOf(false) }
-    var showEditConfirmDialog by remember { androidx.compose.runtime.mutableStateOf(false) }
-    var itemToDeleteFromDialog by remember { androidx.compose.runtime.mutableStateOf<Long?>(null) }
-    var itemToEditFromDialog by remember { androidx.compose.runtime.mutableStateOf<com.swifttechnology.bookingsystem.features.announcements.domain.model.Announcement?>(null) }
+    var itemToDeleteFromDialog by remember { mutableStateOf<Long?>(null) }
 
     // Clear selection when exiting edit mode
     LaunchedEffect(isEditable) {
@@ -214,7 +213,11 @@ fun AnnouncementsScreen(
                 canEdit = selectedIds.size == 1,
                 canDelete = selectedIds.isNotEmpty(),
                 onEdit = {
-                    showEditConfirmDialog = true
+                    val selected = uiState.displayedAnnouncements
+                        .firstOrNull { it.id == selectedIds.firstOrNull() }
+                    if (selected != null) {
+                        viewModel.openEditSheet(selected)
+                    }
                 },
                 onDelete = { 
                     showDeleteConfirmDialog = true
@@ -261,8 +264,7 @@ fun AnnouncementsScreen(
             onDismiss = { viewingAnnouncement = null },
             onEdit = {
                 viewingAnnouncement = null
-                itemToEditFromDialog = announcement
-                showEditConfirmDialog = true
+                viewModel.openEditSheet(announcement)
             },
             onDelete = {
                 viewingAnnouncement = null
@@ -310,45 +312,6 @@ fun AnnouncementsScreen(
         )
     }
 
-    if (showEditConfirmDialog) {
-        androidx.compose.material3.AlertDialog(
-            onDismissRequest = { 
-                showEditConfirmDialog = false 
-                itemToEditFromDialog = null
-            },
-            title = { Text("Edit Announcement") },
-            text = { Text("Are you sure you want to edit this announcement?") },
-            confirmButton = {
-                androidx.compose.material3.TextButton(
-                    onClick = {
-                        if (itemToEditFromDialog != null) {
-                            viewModel.openEditSheet(itemToEditFromDialog!!)
-                            itemToEditFromDialog = null
-                        } else {
-                            val selected = uiState.displayedAnnouncements
-                                .firstOrNull { it.id == selectedIds.firstOrNull() }
-                            if (selected != null) {
-                                viewModel.openEditSheet(selected)
-                            }
-                        }
-                        showEditConfirmDialog = false
-                    }
-                ) {
-                    Text("Edit", color = Primary)
-                }
-            },
-            dismissButton = {
-                androidx.compose.material3.TextButton(
-                    onClick = { 
-                        showEditConfirmDialog = false 
-                        itemToEditFromDialog = null
-                    }
-                ) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
 
     //     Add / Edit bottom sheet                                                
     if (uiState.showAddEditSheet) {

@@ -2,6 +2,7 @@ package com.swifttechnology.bookingsystem.features.calendar.presentation.calenda
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -14,10 +15,16 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -27,9 +34,11 @@ import com.swifttechnology.bookingsystem.core.designsystem.customColors
 import com.swifttechnology.bookingsystem.features.calendar.presentation.MeetingEvent
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.format.TextStyle
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
+import kotlin.math.roundToInt
 
 private val PurplePrimary = Color(0xFF6C3EE8)
 
@@ -44,6 +53,46 @@ fun WeekView(
     val startOfWeek = selectedDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
     val leftDate = selectedDate
     val rightDate = selectedDate.plusDays(1)
+
+    val scrollState = rememberScrollState()
+    val now = LocalTime.now()
+    val currentTimeMinutes = now.hour * 60 + now.minute
+    var lastScrolledDate by remember { mutableStateOf<LocalDate?>(null) }
+    var hasScrolledToEvents by remember(selectedDate) { mutableStateOf(false) }
+
+    val density = LocalDensity.current
+    val minutePx = with(density) { 1.dp.toPx() }
+
+    LaunchedEffect(selectedDate, events) {
+        val visibleEvents = events.filter { it.date == leftDate || it.date == rightDate }
+        val isTodayVisible = leftDate == LocalDate.now() || rightDate == LocalDate.now()
+
+        // We scroll if:
+        // 1. Date changed (lastScrolledDate != selectedDate)
+        // 2. Date is the same, but we haven't scrolled to events yet, and events just arrived
+        val shouldScroll = lastScrolledDate != selectedDate || (!hasScrolledToEvents && visibleEvents.isNotEmpty())
+
+        if (shouldScroll) {
+            val targetMinutes = if (isTodayVisible) {
+                // Scroll to current time (with 1 hour look-ahead buffer)
+                (currentTimeMinutes - 60).coerceAtLeast(0)
+            } else {
+                // Scroll to first event among visible days
+                val firstEvent = visibleEvents.minByOrNull { it.startTime.hour * 60 + it.startTime.minute }
+                if (firstEvent != null) {
+                    val startMin = firstEvent.startTime.hour * 60 + firstEvent.startTime.minute
+                    (startMin - 60).coerceAtLeast(0)
+                } else {
+                    0
+                }
+            }
+            scrollState.animateScrollTo((targetMinutes * minutePx).roundToInt())
+            lastScrolledDate = selectedDate
+            if (isTodayVisible || visibleEvents.isNotEmpty()) {
+                hasScrolledToEvents = true
+            }
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         //    Horizontal-scrollable week day strip                             
@@ -65,6 +114,7 @@ fun WeekView(
             leftDate = leftDate,
             rightDate = rightDate,
             events = events,
+            scrollState = scrollState,
             onEventClick = onEventClick,
             modifier = Modifier.weight(1f)
         )
@@ -245,6 +295,7 @@ private fun WeekCalendarGrid(
     leftDate: LocalDate,
     rightDate: LocalDate,
     events: List<MeetingEvent>,
+    scrollState: ScrollState,
     onEventClick: (MeetingEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -266,7 +317,7 @@ private fun WeekCalendarGrid(
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
         ) {
             //    Time labels column                                           
             Column(
